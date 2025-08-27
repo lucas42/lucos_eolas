@@ -1,0 +1,29 @@
+version: 2
+updates:
+- package-ecosystem: pip
+  directory: "/app"
+  schedule:
+    interval: daily
+    time: "07:00"
+  allow:
+  - dependency-type: direct
+  - dependency-type: indirect
+  ignore:
+  - dependency-name: asgiref
+    versions:
+    - 3.3.4
+- package-ecosystem: docker
+  directory: "/app"
+  schedule:
+    interval: daily
+    time: "07:00"
+- package-ecosystem: docker
+  directory: "/web"
+  schedule:
+    interval: daily
+    time: "07:00"
+- package-ecosystem: "github-actions"
+  directory: "/"
+  schedule:
+    interval: daily
+    time: "07:00"
