@@ -1,0 +1,37 @@
+services:
+  web:
+    build: ./web
+    container_name: lucos_eolas_web
+    ports:
+      - "8032:80"
+    image: lucas42/lucos_eolas_web
+    volumes:
+      - "staticfiles:/usr/share/nginx/html/resources"
+    restart: always
+    depends_on:
+      - app
+  app:
+    build: ./app
+    container_name: lucos_eolas_app
+    image: lucas42/lucos_eolas_app
+    environment:
+      - SECRET_KEY
+      - CLIENT_KEYS
+      - LOGANNE_ENDPOINT
+      - POSTGRES_PASSWORD
+    volumes:
+      - "staticfiles:/usr/src/app/static"
+    restart: always
+    depends_on:
+      - db
+  db:
+    container_name: lucos_eolas_db
+    image: postgres:17-alpine
+    volumes:
+      - db_data:/var/lib/postgresql/data/
+    environment:
+      - POSTGRES_PASSWORD
+    restart: always
+volumes:
+  staticfiles:
+  db_data:
