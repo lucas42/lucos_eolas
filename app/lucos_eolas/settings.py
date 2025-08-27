@@ -21,6 +21,9 @@ SECRET_KEY = os.environ["SECRET_KEY"]
 
 ALLOWED_HOSTS = ["eolas.l42.eu", "localhost", "host.docker.internal"]
 
+AUTHENTICATION_BACKENDS = (
+    'lucos_eolas.lucosauth.models.LucosAuthBackend',
+)
 
 # Application definition
 
@@ -31,6 +34,7 @@ INSTALLED_APPS = [
     'django.contrib.sessions',
     'django.contrib.messages',
     'django.contrib.staticfiles',
+    'lucos_eolas.lucosauth',
 ]
 
 MIDDLEWARE = [

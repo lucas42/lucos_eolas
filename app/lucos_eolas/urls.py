@@ -1,22 +1,21 @@
-"""
-URL configuration for lucos_eolas project.
-
-The `urlpatterns` list routes URLs to views. For more information please see:
-    https://docs.djangoproject.com/en/5.2/topics/http/urls/
-Examples:
-Function views
-    1. Add an import:  from my_app import views
-    2. Add a URL to urlpatterns:  path('', views.home, name='home')
-Class-based views
-    1. Add an import:  from other_app.views import Home
-    2. Add a URL to urlpatterns:  path('', Home.as_view(), name='home')
-Including another URLconf
-    1. Import the include() function: from django.urls import include, path
-    2. Add a URL to urlpatterns:  path('blog/', include('blog.urls'))
-"""
+from django.urls import re_path, include
 from django.contrib import admin
 from django.urls import path
+from django.shortcuts import redirect
+from django.utils.http import urlencode
+from lucos_eolas.lucosauth import views as auth_views
+
+
+
+"""Send all admin login attempts straight to /accounts/login."""
+def direct_admin_login(request, extra_context=None):
+    params = urlencode({"next": request.GET.get("next", "/admin/")})
+    return redirect(f"/accounts/login/?{params}")
+
+admin.site.login = direct_admin_login
 
 urlpatterns = [
     path('admin/', admin.site.urls),
+    re_path(r'^accounts/login/', auth_views.loginview),
+    # Static files are handled by nginx so not listed here
 ]

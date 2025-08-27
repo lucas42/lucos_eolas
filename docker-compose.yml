@@ -19,6 +19,7 @@ services:
       - CLIENT_KEYS
       - LOGANNE_ENDPOINT
       - POSTGRES_PASSWORD
+      - AUTH_ORIGIN=https://auth.l42.eu
     volumes:
       - "staticfiles:/usr/src/app/static"
     restart: always
