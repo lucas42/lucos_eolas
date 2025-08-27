@@ -20,6 +20,7 @@ services:
       - LOGANNE_ENDPOINT
       - POSTGRES_PASSWORD
       - AUTH_ORIGIN=https://auth.l42.eu
+      - ENVIRONMENT
     volumes:
       - "staticfiles:/usr/src/app/static"
     restart: always
