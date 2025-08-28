@@ -21,6 +21,10 @@ SECRET_KEY = os.environ["SECRET_KEY"]
 
 ALLOWED_HOSTS = ["eolas.l42.eu", "localhost", "host.docker.internal"]
 
+SECURE_PROXY_SSL_HEADER = (
+    'HTTP_X_FORWARDED_PROTO', 'https'
+)
+
 AUTHENTICATION_BACKENDS = (
     'lucos_eolas.lucosauth.models.LucosAuthBackend',
 )
