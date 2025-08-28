@@ -22,7 +22,7 @@ services:
       - AUTH_ORIGIN=https://auth.l42.eu
       - ENVIRONMENT
     volumes:
-      - "staticfiles:/usr/src/app/static"
+      - "staticfiles:/usr/src/app/lucos_eolas/static"
     restart: always
     depends_on:
       - db
