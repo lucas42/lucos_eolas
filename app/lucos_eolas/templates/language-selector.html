@@ -1,0 +1,11 @@
+{% load i18n %}
+{% get_current_language as current_language %}
+{% get_available_languages as available_languages %}
+{% get_language_info_list for available_languages as languages %}
+
+<language-selector 
+	languages="{{languages|json_script:"needed-pre-django-4.1"|striptags|force_escape}}"
+	current-language="{{current_language}}"
+	endpoint="{% url 'set_language' %}"
+	>
+</language-selector>

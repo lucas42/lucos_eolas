@@ -3,11 +3,13 @@
 {% block header %}
 	<lucos-navbar bg-colour="#44265d">
 		Eolas - {{ title }}
+		{% include "language-selector.html" %}
 	</lucos-navbar>
 {% endblock header %}
 
 {% block extrabody %}
 	<script src="/resources/lucos_navbar.js" type="text/javascript"></script>
+	<script src="/resources/language-selector.js" type="text/javascript"></script>
 {% endblock extrabody %}
 
 {% block dark-mode-vars %}{% endblock %}
@@ -31,6 +33,9 @@
 			--breadcrumbs-fg: #c4dce8;
 			--breadcrumbs-link-fg: var(--body-bg);
 			--breadcrumbs-bg: #785cab;
+
+			--lang-disabled: #ccc;
+			--lang-enabled: #dac6ff;
 		}
 	</style>
 {% endblock %}
