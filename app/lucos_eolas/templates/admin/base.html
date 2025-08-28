@@ -2,7 +2,7 @@
 
 {% block header %}
 	<lucos-navbar bg-colour="#44265d">
-		Eolas - {{ title }}
+		Eolas{% if title %} - {{ title }}{% endif %}
 		{% include "language-selector.html" %}
 	</lucos-navbar>
 {% endblock header %}

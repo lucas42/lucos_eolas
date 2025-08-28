@@ -5,6 +5,7 @@ from lucos_eolas.metadata import views as metadata_views
 
 admin.site.login = auth_views.loginview
 admin.site.site_title = 'LucOS Eolas'
+admin.site.index_title = None
 
 urlpatterns = [
     re_path(r'^_info$', metadata_views.info),
