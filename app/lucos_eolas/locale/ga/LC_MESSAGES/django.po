@@ -1,0 +1,55 @@
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2025-08-28 22:21+0000\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=5; plural=(n==1 ? 0 : n==2 ? 1 : n<7 ? 2 : n<11 ? 3 : "
+"4);\n"
+
+#: lucos_eolas/metadata/admin.py:28
+msgid "contains"
+msgstr "comhdhéanta"
+
+#: lucos_eolas/metadata/apps.py:7
+msgid "Metadata"
+msgstr "Meiteashonraí"
+
+#: lucos_eolas/metadata/models.py:8
+msgid "name"
+msgstr "ainm"
+
+#: lucos_eolas/metadata/models.py:14
+msgid "also known as"
+msgstr "nó mar is fearr aithne"
+
+#: lucos_eolas/metadata/models.py:15
+msgid "Enter alternate names separated by commas."
+msgstr "Cuir isteach ainmneacha eile scartha le camóga."
+
+#: lucos_eolas/metadata/models.py:22
+msgid "located in"
+msgstr "suite"
+
+#: lucos_eolas/metadata/models.py:26
+msgid "place"
+msgstr "áit"
+
+#: lucos_eolas/metadata/models.py:27
+msgid "places"
+msgstr "áiteanna"
+
+#: lucos_eolas/settings.py:116
+msgid "Irish"
+msgstr "Gaelige"
+
+#: lucos_eolas/settings.py:117
+msgid "English"
+msgstr "Béarla"

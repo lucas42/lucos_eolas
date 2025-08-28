@@ -25,7 +25,7 @@ The UI is available in English or Irish languages.  Irish is the default and thi
 
 ## Updating Translations
 
-* `docker-compose exec app django-admin makemessages --all`
+* `docker-compose exec app python manage.py makemessages --all`
 * `docker cp lucos_eolas_app:/usr/src/app/lucos_eolas/locale app/lucos_eolas/`
 * Update the `.po` files in the locale directory with the relevant languages
 * Rebuild & restart the container for the translations to take effect.  (translations are compiled as part of the docker build process)
