@@ -3,8 +3,16 @@ from lucos_eolas.metadata.models import Place
 from django.utils.html import format_html, format_html_join
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
+from lucos_eolas.lucosauth import views as auth_views
 
-@admin.register(Place)
+class EolasAdminSite(admin.AdminSite):
+	site_title = 'LucOS Eolas'
+	index_title = None
+	def login(self, request):
+		return auth_views.loginview(request)
+
+eolasadmin = EolasAdminSite()
+
 class PlaceAdmin(admin.ModelAdmin):
 	filter_horizontal = ('located_in',)
 	readonly_fields = ('contained_places',)
@@ -26,3 +34,5 @@ class PlaceAdmin(admin.ModelAdmin):
 		)
 		return links or "-"
 	contained_places.short_description = _("contains")
+
+eolasadmin.register(Place, PlaceAdmin)
