@@ -1,9 +1,9 @@
 from django.contrib import admin
-from lucos_eolas.metadata.models import Place
+from .models import Place
 from django.utils.html import format_html, format_html_join
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
-from lucos_eolas.lucosauth import views as auth_views
+from ..lucosauth import views as auth_views
 
 class EolasAdminSite(admin.AdminSite):
 	site_title = 'LucOS Eolas'

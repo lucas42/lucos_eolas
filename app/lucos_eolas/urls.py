@@ -1,7 +1,7 @@
 from django.contrib import admin
 from django.urls import path, re_path, include
-from lucos_eolas.metadata import views as metadata_views
-from lucos_eolas.metadata.admin import eolasadmin as admin
+from .metadata import views as metadata_views
+from .metadata.admin import eolasadmin as admin
 
 urlpatterns = [
     re_path(r'^_info$', metadata_views.info),
