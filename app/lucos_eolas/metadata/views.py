@@ -8,7 +8,7 @@ def info(request):
 		'ci': {
 			'circle': "gh/lucas42/lucos_eolas",
 		},
-		'icon': "/resources/logo.png",
+		'icon': "/resources/icon.png",
 		'network_only': True,
 		'title': "Eolas",
 		'show_on_homepage': True
