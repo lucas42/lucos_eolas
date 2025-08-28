@@ -1,0 +1,36 @@
+{% extends 'admin/base.html' %}
+
+{% block header %}
+	<lucos-navbar bg-colour="#44265d">
+		Eolas - {{ title }}
+	</lucos-navbar>
+{% endblock header %}
+
+{% block extrabody %}
+	<script src="/resources/lucos_navbar.js" type="text/javascript"></script>
+{% endblock extrabody %}
+
+{% block dark-mode-vars %}{% endblock %}
+
+{% block extrastyle %}
+{{ block.super }}
+	<style>
+		body {
+			padding-top: 30px;
+		}
+		lucos-navbar {
+			top: -30px;
+		}
+		html[data-theme="light"], :root {
+			--primary: #9774d5;
+			--secondary: #785cab;
+			--link-fg: #7c449b;
+			--link-selected-fg: #8f5bb2;
+			--default-button-bg: #44265d;
+
+			--breadcrumbs-fg: #c4dce8;
+			--breadcrumbs-link-fg: var(--body-bg);
+			--breadcrumbs-bg: #785cab;
+		}
+	</style>
+{% endblock %}

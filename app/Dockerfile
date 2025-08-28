@@ -22,7 +22,7 @@ RUN apk del build-deps gcc python3-dev musl-dev
 
 # Copy project after dependencies, so cached dependencies can be used if unchanged
 COPY . .
-COPY --from=navbar lucos_navbar.js templates/resources/
+COPY --from=navbar lucos_navbar.js lucos_eolas/templates/resources/
 
 # Compile Translations
 RUN django-admin compilemessages
