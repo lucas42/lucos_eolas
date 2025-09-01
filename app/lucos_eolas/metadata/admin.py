@@ -17,12 +17,6 @@ class PlaceAdmin(admin.ModelAdmin):
 	filter_horizontal = ('located_in',)
 	readonly_fields = ('contained_places',)
 
-	fieldsets = (
-		(None, {
-			'fields': ('name', 'alternate_names', 'located_in', 'contained_places')
-		}),
-	)
-
 	def contained_places(self, obj):
 		links = format_html_join(
 			", ",

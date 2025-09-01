@@ -37,6 +37,18 @@
 			--lang-disabled: #ccc;
 			--lang-enabled: #dac6ff;
 		}
+
+		/* Hack to switch label and checkbox around for boolean fields*/
+		.checkbox-row {
+			flex-direction: row-reverse;
+			justify-content: left;
+		}
+		.aligned .vCheckboxLabel {
+			padding: 4px 10px 0 0 !important;
+		}
+		.vCheckboxLabel:after {
+			content: ":";
+		}
 	</style>
 {% endblock %}
 

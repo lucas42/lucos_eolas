@@ -14,6 +14,10 @@ class Place(models.Model):
 		verbose_name=_('also known as'),
 		help_text=_("Enter alternate names separated by commas."),
 	)
+	fictional = models.BooleanField(
+		default=False,
+		verbose_name=_('fictional'),
+	)
 	located_in = models.ManyToManyField(
 		'self',
 		symmetrical=False,
