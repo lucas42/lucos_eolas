@@ -16,6 +16,8 @@ eolasadmin = EolasAdminSite()
 class PlaceAdmin(admin.ModelAdmin):
 	filter_horizontal = ('located_in',)
 	readonly_fields = ('contained_places',)
+	search_fields = ['name','alternate_names']
+	autocomplete_fields =  ['located_in']
 
 	def contained_places(self, obj):
 		links = format_html_join(
