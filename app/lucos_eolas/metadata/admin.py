@@ -21,16 +21,46 @@ class PlaceAdmin(admin.ModelAdmin):
 	autocomplete_fields =  ['located_in']
 
 	def contained_places(self, obj):
-		links = format_html_join(
-			", ",
-			'<a href="{}">{}</a>',
-			(
-				(reverse("admin:metadata_place_change", args=[p.pk]), p.name)
-				for p in obj.contains.all()
+		# Group contained places by their type (including None)
+		grouped = {}
+		for place in obj.contains.all().select_related("type"):
+			grouped.setdefault(place.type, []).append(place)
+
+		if not grouped:
+			return "-"
+
+		rows = []
+		# Sort: all types alphabetically, then None at the end
+		for placetype, places in sorted(
+			grouped.items(),
+			key=lambda item: (
+				item[0] is None,  # False (typed) comes before True (None)
+				"" if item[0] is None else item[0].plural.lower(),
+			),
+		):
+			links = format_html_join(
+				", ",
+				'<a href="{}">{}</a>',
+				(
+					(reverse("admin:metadata_place_change", args=[p.pk]), p.name)
+					for p in sorted(places, key=lambda p: p.name.lower())
+				)
 			)
+
+			label = placetype.plural.title() if placetype else ""
+			rows.append(
+				format_html("<tr><td>{}</td><td>{}</td></tr>", label, links)
+			)
+
+		# Wrap in table
+		return format_html(
+			'<table style="border-collapse: collapse;">{}</table>',
+			format_html_join("", "{}", ((row,) for row in rows))
 		)
-		return links or "-"
 	contained_places.short_description = _("contains")
+
+	contained_places.short_description = _("contains")
+
 
 eolasadmin.register(Place, PlaceAdmin)
 
