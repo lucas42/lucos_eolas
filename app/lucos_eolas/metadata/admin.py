@@ -19,6 +19,8 @@ class PlaceAdmin(admin.ModelAdmin):
 	readonly_fields = ('contained_places',)
 	search_fields = ['name','alternate_names']
 	autocomplete_fields =  ['located_in']
+	list_filter = ['type','fictional']
+	show_facets = admin.ShowFacets.ALWAYS
 
 	def contained_places(self, obj):
 		# Group contained places by their type (including None)
