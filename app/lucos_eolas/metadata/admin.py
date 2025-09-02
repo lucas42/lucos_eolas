@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Place
+from .models import Place, PlaceType
 from django.utils.html import format_html, format_html_join
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -33,3 +33,11 @@ class PlaceAdmin(admin.ModelAdmin):
 	contained_places.short_description = _("contains")
 
 eolasadmin.register(Place, PlaceAdmin)
+
+class PlaceTypeAdmin(admin.ModelAdmin):
+	ordering = ["name"]
+	def save_model(self, request, obj, form, change):
+		obj.name = obj.name.lower()
+		super().save_model(request, obj, form, change)
+
+eolasadmin.register(PlaceType, PlaceTypeAdmin)
