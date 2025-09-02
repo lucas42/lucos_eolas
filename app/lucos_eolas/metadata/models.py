@@ -32,7 +32,7 @@ class Place(models.Model):
 	type = models.ForeignKey(
 		PlaceType,
 		on_delete=models.RESTRICT,
-		null=True, # Needed while existing data exists without a type.
+		null=False,
 		blank=False,
 	)
 	alternate_names = ArrayField(

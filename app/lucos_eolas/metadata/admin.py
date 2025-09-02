@@ -23,23 +23,17 @@ class PlaceAdmin(admin.ModelAdmin):
 	show_facets = admin.ShowFacets.ALWAYS
 
 	def contained_places(self, obj):
-		# Group contained places by their type (including None)
+		# Group contained places by their type plural
 		grouped = {}
 		for place in obj.contains.all().select_related("type"):
-			grouped.setdefault(place.type, []).append(place)
+			grouped.setdefault(place.type.plural, []).append(place)
 
 		if not grouped:
 			return "-"
 
 		rows = []
-		# Sort: all types alphabetically, then None at the end
-		for placetype, places in sorted(
-			grouped.items(),
-			key=lambda item: (
-				item[0] is None,  # False (typed) comes before True (None)
-				"" if item[0] is None else item[0].plural.lower(),
-			),
-		):
+		# Sort rows alphabetically by plural (already lowercase)
+		for plural, places in sorted(grouped.items()):
 			links = format_html_join(
 				", ",
 				'<a href="{}">{}</a>',
@@ -49,9 +43,8 @@ class PlaceAdmin(admin.ModelAdmin):
 				)
 			)
 
-			label = placetype.plural.title() if placetype else ""
 			rows.append(
-				format_html("<tr><td>{}</td><td>{}</td></tr>", label, links)
+				format_html("<tr><td>{}</td><td>{}</td></tr>", plural.title(), links)
 			)
 
 		# Wrap in table
@@ -59,8 +52,6 @@ class PlaceAdmin(admin.ModelAdmin):
 			'<table style="border-collapse: collapse;">{}</table>',
 			format_html_join("", "{}", ((row,) for row in rows))
 		)
-	contained_places.short_description = _("contains")
-
 	contained_places.short_description = _("contains")
 
 
