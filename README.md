@@ -20,7 +20,7 @@ Has three components:
 ## Database commands
 ### Manually creating a backup
 (on machine with docker installed)
-* `docker compose exec db pg_dump --user postgres postgres > /tmp/eolas.sql`
+* `docker exec lucos_eolas_db pg_dump --user postgres postgres > /tmp/eolas.sql`
 
 ### Wiping database clean so restore doesn't cause any conflicts
 (on machine with docker & docker-compose installed)

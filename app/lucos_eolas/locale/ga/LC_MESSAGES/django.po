@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-02 17:56+0000\n"
+"POT-Creation-Date: 2025-09-02 18:19+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -22,39 +22,43 @@ msgstr "comhdhéanta"
 msgid "Metadata"
 msgstr "Meiteashonraí"
 
-#: lucos_eolas/metadata/models.py:8 lucos_eolas/metadata/models.py:20
+#: lucos_eolas/metadata/models.py:8 lucos_eolas/metadata/models.py:30
 msgid "name"
 msgstr "ainm"
 
-#: lucos_eolas/metadata/models.py:11
+#: lucos_eolas/metadata/models.py:15
+msgid "plural"
+msgstr "iolra"
+
+#: lucos_eolas/metadata/models.py:21
 msgid "place type"
 msgstr "cineál áite"
 
-#: lucos_eolas/metadata/models.py:12
+#: lucos_eolas/metadata/models.py:22
 msgid "place types"
 msgstr "cineálacha áiteanna"
 
-#: lucos_eolas/metadata/models.py:32
+#: lucos_eolas/metadata/models.py:42
 msgid "also known as"
 msgstr "nó mar is fearr aithne"
 
-#: lucos_eolas/metadata/models.py:33
+#: lucos_eolas/metadata/models.py:43
 msgid "Enter alternate names separated by commas."
 msgstr "Cuir isteach ainmneacha eile scartha le camóga."
 
-#: lucos_eolas/metadata/models.py:37
+#: lucos_eolas/metadata/models.py:47
 msgid "fictional"
 msgstr "ficseanúil"
 
-#: lucos_eolas/metadata/models.py:44
+#: lucos_eolas/metadata/models.py:54
 msgid "located in"
 msgstr "suite"
 
-#: lucos_eolas/metadata/models.py:48
+#: lucos_eolas/metadata/models.py:58
 msgid "place"
 msgstr "áit"
 
-#: lucos_eolas/metadata/models.py:49
+#: lucos_eolas/metadata/models.py:59
 msgid "places"
 msgstr "áiteanna"
 

@@ -38,6 +38,7 @@ class PlaceTypeAdmin(admin.ModelAdmin):
 	ordering = ["name"]
 	def save_model(self, request, obj, form, change):
 		obj.name = obj.name.lower()
+		obj.plural = obj.plural.lower()
 		super().save_model(request, obj, form, change)
 
 eolasadmin.register(PlaceType, PlaceTypeAdmin)

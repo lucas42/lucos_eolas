@@ -6,6 +6,16 @@ class PlaceType(models.Model):
 	name = models.CharField(
 		max_length=255,
 		verbose_name=_('name'),
+		null=False,
+		blank=False,
+		unique=True,
+	)
+	plural = models.CharField(
+		max_length=255,
+		verbose_name=_('plural'),
+		null=False,
+		blank=False,
+		unique=True,
 	)
 	class Meta:
 		verbose_name = _('place type')
