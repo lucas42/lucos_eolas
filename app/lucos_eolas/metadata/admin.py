@@ -32,26 +32,44 @@ class PlaceAdmin(admin.ModelAdmin):
 			return "-"
 
 		rows = []
-		# Sort rows alphabetically by plural (already lowercase)
+		has_fictional = False
+
 		for plural, places in sorted(grouped.items()):
-			links = format_html_join(
-				", ",
-				'<a href="{}">{}</a>',
-				(
-					(reverse("admin:metadata_place_change", args=[p.pk]), p.name)
-					for p in sorted(places, key=lambda p: p.name.lower())
-				)
+			# Sort places alphabetically by name, fictional last
+			sorted_places = sorted(
+				places,
+				key=lambda p: (p.fictional, p.name.lower())
 			)
 
+			links_list = []
+			for p in sorted_places:
+				if p.fictional and not obj.fictional:
+					has_fictional = True
+					link_html = format_html("<em>{}</em>*", p.name)
+				else:
+					link_html = p.name
+				links_list.append(format_html('<a href="{}">{}</a>', reverse("admin:metadata_place_change", args=[p.pk]), link_html))
+
+			links = format_html_join(", ", "{}", ((l,) for l in links_list))
 			rows.append(
 				format_html("<tr><td>{}</td><td>{}</td></tr>", plural.title(), links)
 			)
 
-		# Wrap in table
-		return format_html(
+		# Build table HTML
+		table_html = format_html(
 			'<table style="border-collapse: collapse;">{}</table>',
 			format_html_join("", "{}", ((row,) for row in rows))
 		)
+
+		# Append native admin help text with the reusable custom class
+		if has_fictional:
+			table_html = format_html(
+				'{}<p class="help help-inline">* Fictional places</p>',
+				table_html
+			)
+
+		return table_html
+
 	contained_places.short_description = _("contains")
 
 
