@@ -14,6 +14,7 @@ class EolasAdminSite(admin.AdminSite):
 eolasadmin = EolasAdminSite()
 
 class PlaceAdmin(admin.ModelAdmin):
+	ordering = ["name"]
 	filter_horizontal = ('located_in',)
 	readonly_fields = ('contained_places',)
 	search_fields = ['name','alternate_names']
