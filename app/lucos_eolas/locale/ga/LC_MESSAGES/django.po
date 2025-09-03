@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-03 09:17+0000\n"
+"POT-Creation-Date: 2025-09-03 09:54+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -23,8 +23,8 @@ msgid "Metadata"
 msgstr "Meiteashonraí"
 
 #: lucos_eolas/metadata/models.py:8 lucos_eolas/metadata/models.py:30
-#: lucos_eolas/metadata/models.py:67 lucos_eolas/metadata/models.py:88
-#: lucos_eolas/metadata/models.py:103
+#: lucos_eolas/metadata/models.py:76 lucos_eolas/metadata/models.py:97
+#: lucos_eolas/metadata/models.py:112 lucos_eolas/metadata/models.py:139
 msgid "name"
 msgstr "ainm"
 
@@ -64,37 +64,49 @@ msgstr "Áit"
 msgid "Places"
 msgstr "Áiteanna"
 
-#: lucos_eolas/metadata/models.py:73
+#: lucos_eolas/metadata/models.py:82
 msgid "order"
 msgstr "ord"
 
-#: lucos_eolas/metadata/models.py:79
+#: lucos_eolas/metadata/models.py:88
 msgid "Day of the Week"
 msgstr "Lá na Seachtaine"
 
-#: lucos_eolas/metadata/models.py:80
+#: lucos_eolas/metadata/models.py:89
 msgid "Days of the Week"
 msgstr "Laethanta na Seachtaine"
 
-#: lucos_eolas/metadata/models.py:94
+#: lucos_eolas/metadata/models.py:103
 msgid "Calendar"
 msgstr "Féilire"
 
-#: lucos_eolas/metadata/models.py:95
+#: lucos_eolas/metadata/models.py:104
 msgid "Calendars"
 msgstr "Féilirí"
 
-#: lucos_eolas/metadata/models.py:114
+#: lucos_eolas/metadata/models.py:123
 msgid "order in calendar"
 msgstr "ordú sa fhéilire"
 
-#: lucos_eolas/metadata/models.py:119
+#: lucos_eolas/metadata/models.py:128
 msgid "Month"
 msgstr "Mí"
 
-#: lucos_eolas/metadata/models.py:120
+#: lucos_eolas/metadata/models.py:129
 msgid "Months"
 msgstr "Míonna"
+
+#: lucos_eolas/metadata/models.py:145
+msgid "day of month"
+msgstr "lá den mhí"
+
+#: lucos_eolas/metadata/models.py:156
+msgid "Festival"
+msgstr "Féile"
+
+#: lucos_eolas/metadata/models.py:157
+msgid "Festivals"
+msgstr "Féilte"
 
 #: lucos_eolas/settings.py:116
 msgid "Irish"

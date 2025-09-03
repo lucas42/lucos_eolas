@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Place, PlaceType, DayOfWeek, Calendar, Month
+from .models import Place, PlaceType, DayOfWeek, Calendar, Month, Festival
 from django.utils.html import format_html, format_html_join
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -97,3 +97,8 @@ class MonthAdmin(admin.ModelAdmin):
 	show_facets = admin.ShowFacets.ALWAYS
 
 eolasadmin.register(Month, MonthAdmin)
+
+class FestivalAdmin(admin.ModelAdmin):
+	pass
+
+eolasadmin.register(Festival, FestivalAdmin)

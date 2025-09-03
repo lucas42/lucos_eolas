@@ -132,3 +132,30 @@ class Month(models.Model):
 
 	def __str__(self):
 		return self.name
+
+class Festival(models.Model):
+	name = models.CharField(
+		max_length=255,
+		verbose_name=_('name'),
+		null=False,
+		blank=False,
+		unique=True,
+	)
+	day_of_month = models.IntegerField(
+		verbose_name=_('day of month'),
+		null=True,
+		blank=True,
+	)
+	month = models.ForeignKey(
+		Month,
+		on_delete=models.RESTRICT,
+		null=True,
+		blank=True,
+	)
+	class Meta:
+		verbose_name = _('Festival')
+		verbose_name_plural = _('Festivals')
+		ordering = ['name']
+
+	def __str__(self):
+		return self.name
