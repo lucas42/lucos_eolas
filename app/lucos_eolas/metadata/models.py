@@ -68,7 +68,7 @@ class Place(models.Model):
 		)
 
 		if qs.count() > 1:
-			return f"{self.name} ({self.type.name.title()})"
+			return f"{self.name} ({self.type})"
 
 		return self.name
 
@@ -135,6 +135,10 @@ class Month(models.Model):
 		unique_together = [['calendar', 'name'],['calendar', 'order_in_calendar']]
 
 	def __str__(self):
+		# Check if this name occurs multiple times (case-insensitive)
+		qs = Month.objects.filter(name__iexact=self.name)
+		if qs.count() > 1:
+			return f"{self.name} ({self.calendar})"
 		return self.name
 
 class Festival(models.Model):
