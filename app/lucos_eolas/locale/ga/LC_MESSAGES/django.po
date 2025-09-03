@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-03 10:38+0000\n"
+"POT-Creation-Date: 2025-09-03 19:17+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -26,6 +26,7 @@ msgstr "Meiteashonraí"
 #: lucos_eolas/metadata/models.py:78 lucos_eolas/metadata/models.py:100
 #: lucos_eolas/metadata/models.py:116 lucos_eolas/metadata/models.py:147
 #: lucos_eolas/metadata/models.py:174 lucos_eolas/metadata/models.py:201
+#: lucos_eolas/metadata/models.py:225
 msgid "name"
 msgstr "ainm"
 
@@ -144,6 +145,14 @@ msgstr "Uimhir"
 #: lucos_eolas/metadata/models.py:216
 msgid "Numbers"
 msgstr "Uimhreacha"
+
+#: lucos_eolas/metadata/models.py:231
+msgid "Mode of Transport"
+msgstr "Modh Iompair"
+
+#: lucos_eolas/metadata/models.py:232
+msgid "Modes of Transport"
+msgstr "Modhanna Iompair"
 
 #: lucos_eolas/settings.py:116
 msgid "Irish"

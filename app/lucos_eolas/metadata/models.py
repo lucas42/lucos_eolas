@@ -218,3 +218,19 @@ class Number(models.Model):
 
 	def __str__(self):
 		return self.name
+
+class TransportMode(models.Model):
+	name = models.CharField(
+		max_length=255,
+		verbose_name=_('name'),
+		null=False,
+		blank=False,
+		unique=True,
+	)
+	class Meta:
+		verbose_name = _('Mode of Transport')
+		verbose_name_plural = _('Modes of Transport')
+		ordering = ["name"]
+
+	def __str__(self):
+		return self.name
