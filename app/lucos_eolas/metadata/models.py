@@ -59,6 +59,15 @@ class Place(models.Model):
 		verbose_name_plural = _('Places')
 
 	def __str__(self):
+		# Build a queryset matching either exact name or element in alternate_names
+		qs = Place.objects.filter(
+			models.Q(name__iexact=self.name) |
+			models.Q(alternate_names__contains=[self.name])
+		)
+
+		if qs.count() > 1:
+			return f"{self.name} ({self.type.name.title()})"
+
 		return self.name
 
 class DayOfWeek(models.Model):
