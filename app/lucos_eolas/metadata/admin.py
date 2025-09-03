@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Place, PlaceType
+from .models import Place, PlaceType, DayOfWeek
 from django.utils.html import format_html, format_html_join
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -83,3 +83,8 @@ class PlaceTypeAdmin(admin.ModelAdmin):
 		super().save_model(request, obj, form, change)
 
 eolasadmin.register(PlaceType, PlaceTypeAdmin)
+
+class DayOfWeekAdmin(admin.ModelAdmin):
+	ordering = ["order"]
+
+eolasadmin.register(DayOfWeek, DayOfWeekAdmin)

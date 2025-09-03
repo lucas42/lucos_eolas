@@ -60,3 +60,24 @@ class Place(models.Model):
 
 	def __str__(self):
 		return self.name
+
+class DayOfWeek(models.Model):
+	name = models.CharField(
+		max_length=255,
+		verbose_name=_('name'),
+		null=False,
+		blank=False,
+		unique=True,
+	)
+	order = models.IntegerField(
+		verbose_name=_('order'),
+		null=False,
+		blank=False,
+		unique=True,
+	)
+	class Meta:
+		verbose_name = _('day of the week')
+		verbose_name_plural = _('days of the week')
+
+	def __str__(self):
+		return self.name

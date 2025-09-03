@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-02 18:19+0000\n"
+"POT-Creation-Date: 2025-09-03 08:45+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -14,7 +14,7 @@ msgstr ""
 "Plural-Forms: nplurals=5; plural=(n==1 ? 0 : n==2 ? 1 : n<7 ? 2 : n<11 ? 3 : "
 "4);\n"
 
-#: lucos_eolas/metadata/admin.py:33
+#: lucos_eolas/metadata/admin.py:73
 msgid "contains"
 msgstr "comhdhéanta"
 
@@ -23,6 +23,7 @@ msgid "Metadata"
 msgstr "Meiteashonraí"
 
 #: lucos_eolas/metadata/models.py:8 lucos_eolas/metadata/models.py:30
+#: lucos_eolas/metadata/models.py:67
 msgid "name"
 msgstr "ainm"
 
@@ -61,6 +62,18 @@ msgstr "áit"
 #: lucos_eolas/metadata/models.py:59
 msgid "places"
 msgstr "áiteanna"
+
+#: lucos_eolas/metadata/models.py:74
+msgid "order"
+msgstr "ord"
+
+#: lucos_eolas/metadata/models.py:80
+msgid "day of the week"
+msgstr "lá na seachtaine"
+
+#: lucos_eolas/metadata/models.py:81
+msgid "days of the week"
+msgstr "laethanta na seachtaine"
 
 #: lucos_eolas/settings.py:116
 msgid "Irish"
