@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Place, PlaceType, DayOfWeek
+from .models import Place, PlaceType, DayOfWeek, Calendar, Month
 from django.utils.html import format_html, format_html_join
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -88,3 +88,12 @@ class DayOfWeekAdmin(admin.ModelAdmin):
 	ordering = ["order"]
 
 eolasadmin.register(DayOfWeek, DayOfWeekAdmin)
+class CalendarAdmin(admin.ModelAdmin):
+	pass
+
+eolasadmin.register(Calendar, CalendarAdmin)
+class MonthAdmin(admin.ModelAdmin):
+	list_filter = ['calendar']
+	show_facets = admin.ShowFacets.ALWAYS
+
+eolasadmin.register(Month, MonthAdmin)

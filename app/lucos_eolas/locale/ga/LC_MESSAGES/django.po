@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-03 08:56+0000\n"
+"POT-Creation-Date: 2025-09-03 09:17+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -23,7 +23,8 @@ msgid "Metadata"
 msgstr "Meiteashonraí"
 
 #: lucos_eolas/metadata/models.py:8 lucos_eolas/metadata/models.py:30
-#: lucos_eolas/metadata/models.py:67
+#: lucos_eolas/metadata/models.py:67 lucos_eolas/metadata/models.py:88
+#: lucos_eolas/metadata/models.py:103
 msgid "name"
 msgstr "ainm"
 
@@ -74,6 +75,26 @@ msgstr "Lá na Seachtaine"
 #: lucos_eolas/metadata/models.py:80
 msgid "Days of the Week"
 msgstr "Laethanta na Seachtaine"
+
+#: lucos_eolas/metadata/models.py:94
+msgid "Calendar"
+msgstr "Féilire"
+
+#: lucos_eolas/metadata/models.py:95
+msgid "Calendars"
+msgstr "Féilirí"
+
+#: lucos_eolas/metadata/models.py:114
+msgid "order in calendar"
+msgstr "ordú sa fhéilire"
+
+#: lucos_eolas/metadata/models.py:119
+msgid "Month"
+msgstr "Mí"
+
+#: lucos_eolas/metadata/models.py:120
+msgid "Months"
+msgstr "Míonna"
 
 #: lucos_eolas/settings.py:116
 msgid "Irish"

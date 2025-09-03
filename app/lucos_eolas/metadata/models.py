@@ -81,3 +81,45 @@ class DayOfWeek(models.Model):
 
 	def __str__(self):
 		return self.name
+
+class Calendar(models.Model):
+	name = models.CharField(
+		max_length=255,
+		verbose_name=_('name'),
+		null=False,
+		blank=False,
+		unique=True,
+	)
+	class Meta:
+		verbose_name = _('Calendar')
+		verbose_name_plural = _('Calendars')
+
+	def __str__(self):
+		return self.name
+
+class Month(models.Model):
+	name = models.CharField(
+		max_length=255,
+		verbose_name=_('name'),
+		null=False,
+		blank=False,
+	)
+	calendar = models.ForeignKey(
+		Calendar,
+		on_delete=models.RESTRICT,
+		null=False,
+		blank=False,
+	)
+	order_in_calendar = models.IntegerField(
+		verbose_name=_('order in calendar'),
+		null=False,
+		blank=False,
+	)
+	class Meta:
+		verbose_name = _('Month')
+		verbose_name_plural = _('Months')
+		ordering = ['calendar', 'order_in_calendar']
+		unique_together = [['calendar', 'name'],['calendar', 'order_in_calendar']]
+
+	def __str__(self):
+		return self.name
