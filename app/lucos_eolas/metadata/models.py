@@ -18,8 +18,8 @@ class PlaceType(models.Model):
 		unique=True,
 	)
 	class Meta:
-		verbose_name = _('place type')
-		verbose_name_plural = _('place types')
+		verbose_name = _('Place Type')
+		verbose_name_plural = _('Place Types')
 
 	def __str__(self):
 		return self.name.title()
@@ -55,8 +55,8 @@ class Place(models.Model):
 	)
 
 	class Meta:
-		verbose_name = _('place')
-		verbose_name_plural = _('places')
+		verbose_name = _('Place')
+		verbose_name_plural = _('Places')
 
 	def __str__(self):
 		return self.name
@@ -76,8 +76,8 @@ class DayOfWeek(models.Model):
 		unique=True,
 	)
 	class Meta:
-		verbose_name = _('day of the week')
-		verbose_name_plural = _('days of the week')
+		verbose_name = _('Day of the Week')
+		verbose_name_plural = _('Days of the Week')
 
 	def __str__(self):
 		return self.name

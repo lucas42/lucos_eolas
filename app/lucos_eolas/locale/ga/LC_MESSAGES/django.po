@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-03 08:45+0000\n"
+"POT-Creation-Date: 2025-09-03 08:56+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -32,12 +32,12 @@ msgid "plural"
 msgstr "iolra"
 
 #: lucos_eolas/metadata/models.py:21
-msgid "place type"
-msgstr "cineál áite"
+msgid "Place Type"
+msgstr "Cineál Áite"
 
 #: lucos_eolas/metadata/models.py:22
-msgid "place types"
-msgstr "cineálacha áiteanna"
+msgid "Place Types"
+msgstr "Cineálacha Áiteanna"
 
 #: lucos_eolas/metadata/models.py:42
 msgid "also known as"
@@ -56,24 +56,24 @@ msgid "located in"
 msgstr "suite"
 
 #: lucos_eolas/metadata/models.py:58
-msgid "place"
-msgstr "áit"
+msgid "Place"
+msgstr "Áit"
 
 #: lucos_eolas/metadata/models.py:59
-msgid "places"
-msgstr "áiteanna"
+msgid "Places"
+msgstr "Áiteanna"
 
-#: lucos_eolas/metadata/models.py:74
+#: lucos_eolas/metadata/models.py:73
 msgid "order"
 msgstr "ord"
 
-#: lucos_eolas/metadata/models.py:80
-msgid "day of the week"
-msgstr "lá na seachtaine"
+#: lucos_eolas/metadata/models.py:79
+msgid "Day of the Week"
+msgstr "Lá na Seachtaine"
 
-#: lucos_eolas/metadata/models.py:81
-msgid "days of the week"
-msgstr "laethanta na seachtaine"
+#: lucos_eolas/metadata/models.py:80
+msgid "Days of the Week"
+msgstr "Laethanta na Seachtaine"
 
 #: lucos_eolas/settings.py:116
 msgid "Irish"
