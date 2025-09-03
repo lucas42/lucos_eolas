@@ -20,6 +20,7 @@ class PlaceType(models.Model):
 	class Meta:
 		verbose_name = _('Place Type')
 		verbose_name_plural = _('Place Types')
+		ordering = ["name"]
 
 	def __str__(self):
 		return self.name.title()
@@ -57,6 +58,7 @@ class Place(models.Model):
 	class Meta:
 		verbose_name = _('Place')
 		verbose_name_plural = _('Places')
+		ordering = ["name"]
 
 	def __str__(self):
 		# Build a queryset matching either exact name or element in alternate_names
@@ -87,6 +89,7 @@ class DayOfWeek(models.Model):
 	class Meta:
 		verbose_name = _('Day of the Week')
 		verbose_name_plural = _('Days of the Week')
+		ordering = ['order']
 
 	def __str__(self):
 		return self.name
@@ -102,6 +105,7 @@ class Calendar(models.Model):
 	class Meta:
 		verbose_name = _('Calendar')
 		verbose_name_plural = _('Calendars')
+		ordering = ["name"]
 
 	def __str__(self):
 		return self.name

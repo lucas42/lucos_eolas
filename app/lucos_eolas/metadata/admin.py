@@ -14,7 +14,6 @@ class EolasAdminSite(admin.AdminSite):
 eolasadmin = EolasAdminSite()
 
 class PlaceAdmin(admin.ModelAdmin):
-	ordering = ["name"]
 	filter_horizontal = ('located_in',)
 	readonly_fields = ('contained_places',)
 	search_fields = ['name','alternate_names']
@@ -76,7 +75,6 @@ class PlaceAdmin(admin.ModelAdmin):
 eolasadmin.register(Place, PlaceAdmin)
 
 class PlaceTypeAdmin(admin.ModelAdmin):
-	ordering = ["name"]
 	def save_model(self, request, obj, form, change):
 		obj.name = obj.name.lower()
 		obj.plural = obj.plural.lower()
@@ -85,7 +83,7 @@ class PlaceTypeAdmin(admin.ModelAdmin):
 eolasadmin.register(PlaceType, PlaceTypeAdmin)
 
 class DayOfWeekAdmin(admin.ModelAdmin):
-	ordering = ["order"]
+	pass
 
 eolasadmin.register(DayOfWeek, DayOfWeekAdmin)
 class CalendarAdmin(admin.ModelAdmin):
