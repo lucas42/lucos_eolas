@@ -194,3 +194,27 @@ class Memory(models.Model):
 
 	def __str__(self):
 		return self.name
+
+class Number(models.Model):
+	name = models.CharField(
+		max_length=255,
+		verbose_name=_('name'),
+		null=False,
+		blank=False,
+		unique=True,
+	)
+	value = models.DecimalField(
+		max_digits=32,
+		decimal_places=2,
+		verbose_name=_('value'),
+		null=True,
+		blank=True,
+		help_text=_('Approximate value of this number, up to 2 decimal places')
+	)
+	class Meta:
+		verbose_name = _('Number')
+		verbose_name_plural = _('Numbers')
+		ordering = ["value", "name"]
+
+	def __str__(self):
+		return self.name

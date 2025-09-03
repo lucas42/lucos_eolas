@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Place, PlaceType, DayOfWeek, Calendar, Month, Festival, Memory
+from .models import Place, PlaceType, DayOfWeek, Calendar, Month, Festival, Memory, Number
 from django.utils.html import format_html, format_html_join
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -98,3 +98,7 @@ eolasadmin.register(Festival, FestivalAdmin)
 class MemoryAdmin(admin.ModelAdmin):
 	pass
 eolasadmin.register(Memory, MemoryAdmin)
+
+class NumberAdmin(admin.ModelAdmin):
+	pass
+eolasadmin.register(Number, NumberAdmin)

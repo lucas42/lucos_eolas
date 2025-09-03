@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-03 10:25+0000\n"
+"POT-Creation-Date: 2025-09-03 10:38+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -14,7 +14,7 @@ msgstr ""
 "Plural-Forms: nplurals=5; plural=(n==1 ? 0 : n==2 ? 1 : n<7 ? 2 : n<11 ? 3 : "
 "4);\n"
 
-#: lucos_eolas/metadata/admin.py:72
+#: lucos_eolas/metadata/admin.py:71
 msgid "contains"
 msgstr "comhdhéanta"
 
@@ -25,7 +25,7 @@ msgstr "Meiteashonraí"
 #: lucos_eolas/metadata/models.py:8 lucos_eolas/metadata/models.py:31
 #: lucos_eolas/metadata/models.py:78 lucos_eolas/metadata/models.py:100
 #: lucos_eolas/metadata/models.py:116 lucos_eolas/metadata/models.py:147
-#: lucos_eolas/metadata/models.py:174
+#: lucos_eolas/metadata/models.py:174 lucos_eolas/metadata/models.py:201
 msgid "name"
 msgstr "ainm"
 
@@ -119,7 +119,7 @@ msgstr "bliain"
 
 #: lucos_eolas/metadata/models.py:188
 msgid "Approximate year of the memory"
-msgstr "Bliain thart ar an gcuimhne"
+msgstr "Garbh-bhliain ar an gcuimhne"
 
 #: lucos_eolas/metadata/models.py:191
 msgid "Memory"
@@ -128,6 +128,22 @@ msgstr "Cuimhne"
 #: lucos_eolas/metadata/models.py:192
 msgid "Memories"
 msgstr "Cuimhní"
+
+#: lucos_eolas/metadata/models.py:209
+msgid "value"
+msgstr "luach"
+
+#: lucos_eolas/metadata/models.py:212
+msgid "Approximate value of this number, up to 2 decimal places"
+msgstr "Garluach an uimhir seo, suas le 2 ionaid dheachúlacha"
+
+#: lucos_eolas/metadata/models.py:215
+msgid "Number"
+msgstr "Uimhir"
+
+#: lucos_eolas/metadata/models.py:216
+msgid "Numbers"
+msgstr "Uimhreacha"
 
 #: lucos_eolas/settings.py:116
 msgid "Irish"
