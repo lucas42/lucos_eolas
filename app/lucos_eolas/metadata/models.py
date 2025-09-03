@@ -167,3 +167,30 @@ class Festival(models.Model):
 
 	def __str__(self):
 		return self.name
+
+class Memory(models.Model):
+	name = models.CharField(
+		max_length=255,
+		verbose_name=_('name'),
+		null=False,
+		blank=False,
+		unique=True,
+	)
+	description = models.TextField(
+		verbose_name=_('description'),
+		null=False,
+		blank=True,
+	)
+	year = models.IntegerField(
+		verbose_name=_('year'),
+		null=True,
+		blank=True,
+		help_text=_('Approximate year of the memory')
+	)
+	class Meta:
+		verbose_name = _('Memory')
+		verbose_name_plural = _('Memories')
+		ordering = ["year", "name"]
+
+	def __str__(self):
+		return self.name

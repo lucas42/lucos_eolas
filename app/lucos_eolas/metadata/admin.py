@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Place, PlaceType, DayOfWeek, Calendar, Month, Festival
+from .models import Place, PlaceType, DayOfWeek, Calendar, Month, Festival, Memory
 from django.utils.html import format_html, format_html_join
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -10,7 +10,6 @@ class EolasAdminSite(admin.AdminSite):
 	index_title = None
 	def login(self, request):
 		return auth_views.loginview(request)
-
 eolasadmin = EolasAdminSite()
 
 class PlaceAdmin(admin.ModelAdmin):
@@ -70,8 +69,6 @@ class PlaceAdmin(admin.ModelAdmin):
 		return table_html
 
 	contained_places.short_description = _("contains")
-
-
 eolasadmin.register(Place, PlaceAdmin)
 
 class PlaceTypeAdmin(admin.ModelAdmin):
@@ -79,24 +76,25 @@ class PlaceTypeAdmin(admin.ModelAdmin):
 		obj.name = obj.name.lower()
 		obj.plural = obj.plural.lower()
 		super().save_model(request, obj, form, change)
-
 eolasadmin.register(PlaceType, PlaceTypeAdmin)
 
 class DayOfWeekAdmin(admin.ModelAdmin):
 	pass
-
 eolasadmin.register(DayOfWeek, DayOfWeekAdmin)
+
 class CalendarAdmin(admin.ModelAdmin):
 	pass
-
 eolasadmin.register(Calendar, CalendarAdmin)
+
 class MonthAdmin(admin.ModelAdmin):
 	list_filter = ['calendar']
 	show_facets = admin.ShowFacets.ALWAYS
-
 eolasadmin.register(Month, MonthAdmin)
 
 class FestivalAdmin(admin.ModelAdmin):
 	pass
-
 eolasadmin.register(Festival, FestivalAdmin)
+
+class MemoryAdmin(admin.ModelAdmin):
+	pass
+eolasadmin.register(Memory, MemoryAdmin)
