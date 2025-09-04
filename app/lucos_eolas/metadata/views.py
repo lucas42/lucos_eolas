@@ -92,6 +92,30 @@ def thing_data(request, type, pk):
 	# Default to Turtle serialization for now
 	return HttpResponse(g.serialize(format='turtle'), content_type='text/turtle')
 
+@api_auth
+def all_rdf(request):
+	# Serialize all items of every type into a single RDF graph
+	g = rdflib.Graph()
+	for obj in PlaceType.objects.all():
+		g += placetype_to_rdf(obj)
+	for obj in Place.objects.all():
+		g += place_to_rdf(obj)
+	for obj in DayOfWeek.objects.all():
+		g += dayofweek_to_rdf(obj)
+	for obj in Calendar.objects.all():
+		g += calendar_to_rdf(obj)
+	for obj in Month.objects.all():
+		g += month_to_rdf(obj)
+	for obj in Festival.objects.all():
+		g += festival_to_rdf(obj)
+	for obj in Memory.objects.all():
+		g += memory_to_rdf(obj)
+	for obj in Number.objects.all():
+		g += number_to_rdf(obj)
+	for obj in TransportMode.objects.all():
+		g += transportmode_to_rdf(obj)
+	return HttpResponse(g.serialize(format='turtle'), content_type='text/turtle')
+
 def place_to_rdf(place):
 	place_uri = rdflib.URIRef(f"{BASE_URL}metadata/place/{place.pk}/")
 	type_uri = rdflib.URIRef(f"{BASE_URL}metadata/placetype/{place.type.pk}/")
