@@ -5,7 +5,8 @@ from .models import Place, PlaceType, DayOfWeek, Calendar, Month, Festival, Memo
 from ..lucosauth.decorators import api_auth
 
 BASE_URL = os.environ.get("BASE_URL")
-ONTOLOGY_NS = rdflib.Namespace(f"{BASE_URL}ontology/")
+EOLAS_NS = rdflib.Namespace(f"{BASE_URL}ontology/")
+TM_JOURNEYS_NS = rdflib.Namespace("https://w3id.org/transmodel/journeys#")
 
 def info(request):
 	output = {
@@ -96,6 +97,7 @@ def thing_data(request, type, pk):
 def all_rdf(request):
 	# Serialize all items of every type into a single RDF graph
 	g = rdflib.Graph()
+	g.bind('eolas', EOLAS_NS)
 	for obj in PlaceType.objects.all():
 		g += placetype_to_rdf(obj)
 	for obj in Place.objects.all():
@@ -120,37 +122,41 @@ def place_to_rdf(place):
 	place_uri = rdflib.URIRef(f"{BASE_URL}metadata/place/{place.pk}/")
 	type_uri = rdflib.URIRef(f"{BASE_URL}metadata/placetype/{place.type.pk}/")
 	g = rdflib.Graph()
+	g.bind('eolas', EOLAS_NS)
 	g.add((place_uri, rdflib.RDF.type, type_uri))
 	g.add((place_uri, rdflib.SKOS.prefLabel, rdflib.Literal(str(place))))
-	g.add((place_uri, ONTOLOGY_NS.fictional, rdflib.Literal(place.fictional)))
+	g.add((place_uri, EOLAS_NS.isFictional, rdflib.Literal(place.fictional)))
 	g.add((place_uri, rdflib.RDFS.label, rdflib.Literal(place.name)))
 	for alt in place.alternate_names:
 		g.add((place_uri, rdflib.RDFS.label, rdflib.Literal(alt)))
 	for container in place.located_in.all():
 		container_uri = rdflib.URIRef(f"{BASE_URL}metadata/place/{container.pk}/")
-		g.add((place_uri, ONTOLOGY_NS.locatedIn, container_uri))
+		g.add((place_uri, rdflib.namespace.SDO.containedInPlace, container_uri))
 	return g
 
 def placetype_to_rdf(placetype):
 	type_uri = rdflib.URIRef(f"{BASE_URL}metadata/placetype/{placetype.pk}/")
 	g = rdflib.Graph()
+	g.bind('eolas', EOLAS_NS)
 	g.add((type_uri, rdflib.SKOS.prefLabel, rdflib.Literal(str(placetype))))
-	g.add((type_uri, rdflib.RDFS.subClassOf, ONTOLOGY_NS.Place))
+	g.add((type_uri, rdflib.RDFS.subClassOf, rdflib.namespace.SDO.Place))
 	return g
 
 def dayofweek_to_rdf(day):
 	day_uri = rdflib.URIRef(f"{BASE_URL}metadata/dayofweek/{day.pk}/")
 	g = rdflib.Graph()
-	g.add((day_uri, rdflib.RDF.type, ONTOLOGY_NS.DayOfWeek))
+	g.bind('eolas', EOLAS_NS)
+	g.add((day_uri, rdflib.RDF.type, rdflib.TIME.DayOfWeek))
 	g.add((day_uri, rdflib.SKOS.prefLabel, rdflib.Literal(day.name)))
 	g.add((day_uri, rdflib.RDFS.label, rdflib.Literal(day.name)))
-	g.add((day_uri, ONTOLOGY_NS.order, rdflib.Literal(day.order)))
+	g.add((day_uri, EOLAS_NS.orderInWeek, rdflib.Literal(day.order)))
 	return g
 
 def calendar_to_rdf(calendar):
 	calendar_uri = rdflib.URIRef(f"{BASE_URL}metadata/calendar/{calendar.pk}/")
 	g = rdflib.Graph()
-	g.add((calendar_uri, rdflib.RDF.type, ONTOLOGY_NS.Calendar))
+	g.bind('eolas', EOLAS_NS)
+	g.add((calendar_uri, rdflib.RDF.type, EOLAS_NS.Calendar))
 	g.add((calendar_uri, rdflib.SKOS.prefLabel, rdflib.Literal(calendar.name)))
 	g.add((calendar_uri, rdflib.RDFS.label, rdflib.Literal(calendar.name)))
 	return g
@@ -159,52 +165,64 @@ def month_to_rdf(month):
 	month_uri = rdflib.URIRef(f"{BASE_URL}metadata/month/{month.pk}/")
 	calendar_uri = rdflib.URIRef(f"{BASE_URL}metadata/calendar/{month.calendar.pk}/")
 	g = rdflib.Graph()
-	g.add((month_uri, rdflib.RDF.type, ONTOLOGY_NS.Month))
+	g.bind('eolas', EOLAS_NS)
+	g.add((month_uri, rdflib.RDF.type, rdflib.TIME.MonthOfYear))
 	g.add((month_uri, rdflib.SKOS.prefLabel, rdflib.Literal(str(month))))
 	g.add((month_uri, rdflib.RDFS.label, rdflib.Literal(month.name)))
-	g.add((month_uri, ONTOLOGY_NS.calendar, calendar_uri))
-	g.add((month_uri, ONTOLOGY_NS.orderInCalendar, rdflib.Literal(month.order_in_calendar)))
+	g.add((month_uri, EOLAS_NS.calendar, calendar_uri))
+	g.add((month_uri, EOLAS_NS.orderInCalendar, rdflib.Literal(month.order_in_calendar)))
 	return g
 
 def festival_to_rdf(festival):
 	festival_uri = rdflib.URIRef(f"{BASE_URL}metadata/festival/{festival.pk}/")
 	g = rdflib.Graph()
-	g.add((festival_uri, rdflib.RDF.type, ONTOLOGY_NS.Festival))
+	g.bind('eolas', EOLAS_NS)
+	g.add((festival_uri, rdflib.RDF.type, EOLAS_NS.Festival))
 	g.add((festival_uri, rdflib.SKOS.prefLabel, rdflib.Literal(str(festival))))
 	g.add((festival_uri, rdflib.RDFS.label, rdflib.Literal(festival.name)))
-	if festival.day_of_month is not None:
-		g.add((festival_uri, ONTOLOGY_NS.dayOfMonth, rdflib.Literal(festival.day_of_month)))
-	if festival.month is not None:
-		month_uri = rdflib.URIRef(f"{BASE_URL}metadata/month/{festival.month.pk}/")
-		g.add((festival_uri, ONTOLOGY_NS.month, month_uri))
+	# Represent startDay as a blank node
+	if festival.day_of_month is not None or festival.month is not None:
+		start_day_bnode = rdflib.BNode()
+		g.add((festival_uri, EOLAS_NS.festivalStartsOn, start_day_bnode))
+		if festival.day_of_month is not None:
+			g.add((start_day_bnode, rdflib.TIME.day, rdflib.Literal(festival.day_of_month)))
+		if festival.month is not None:
+			month_uri = rdflib.URIRef(f"{BASE_URL}metadata/month/{festival.month.pk}/")
+			g.add((start_day_bnode, rdflib.TIME.MonthOfYear, month_uri))
 	return g
 
 def memory_to_rdf(memory):
 	memory_uri = rdflib.URIRef(f"{BASE_URL}metadata/memory/{memory.pk}/")
 	g = rdflib.Graph()
-	g.add((memory_uri, rdflib.RDF.type, ONTOLOGY_NS.Memory))
+	g.bind('eolas', EOLAS_NS)
+	g.add((memory_uri, rdflib.RDF.type, EOLAS_NS.Memory))
 	g.add((memory_uri, rdflib.SKOS.prefLabel, rdflib.Literal(str(memory))))
 	g.add((memory_uri, rdflib.RDFS.label, rdflib.Literal(memory.name)))
 	if memory.description:
-		g.add((memory_uri, ONTOLOGY_NS.description, rdflib.Literal(memory.description)))
+		g.add((memory_uri, rdflib.DC.description, rdflib.Literal(memory.description)))
 	if memory.year is not None:
-		g.add((memory_uri, ONTOLOGY_NS.year, rdflib.Literal(memory.year)))
+		datetime_bnode = rdflib.BNode()
+		g.add((memory_uri, EOLAS_NS.occuredOn, datetime_bnode))
+		g.add((datetime_bnode, rdflib.TIME.year, rdflib.Literal(memory.year)))
 	return g
 
 def number_to_rdf(number):
 	number_uri = rdflib.URIRef(f"{BASE_URL}metadata/number/{number.pk}/")
 	g = rdflib.Graph()
-	g.add((number_uri, rdflib.RDF.type, ONTOLOGY_NS.Number))
+	g.bind('eolas', EOLAS_NS)
+	g.add((number_uri, rdflib.RDF.type, EOLAS_NS.Number))
 	g.add((number_uri, rdflib.SKOS.prefLabel, rdflib.Literal(str(number))))
 	g.add((number_uri, rdflib.RDFS.label, rdflib.Literal(number.name)))
 	if number.value is not None:
-		g.add((number_uri, ONTOLOGY_NS.value, rdflib.Literal(number.value)))
+		g.add((number_uri, EOLAS_NS.numericValue, rdflib.Literal(number.value, datatype=rdflib.XSD.decimal)))
 	return g
 
 def transportmode_to_rdf(transportmode):
 	transport_uri = rdflib.URIRef(f"{BASE_URL}metadata/transportmode/{transportmode.pk}/")
 	g = rdflib.Graph()
-	g.add((transport_uri, rdflib.RDF.type, ONTOLOGY_NS.TransportMode))
+	g.bind('eolas', EOLAS_NS)
+	g.bind('tm', TM_JOURNEYS_NS)
+	g.add((transport_uri, rdflib.RDF.type, TM_JOURNEYS_NS.MeanOfTransport))
 	g.add((transport_uri, rdflib.SKOS.prefLabel, rdflib.Literal(str(transportmode))))
 	g.add((transport_uri, rdflib.RDFS.label, rdflib.Literal(transportmode.name)))
 	return g
