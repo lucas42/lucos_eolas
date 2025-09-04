@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "8c657534bfb301795fd08414248d355753ae4adc7f78313e59b936ee0346fbb6"
+            "sha256": "d418f45fc686b7b17dc992bde86247788d90bc55190335d166951e9979310144"
         },
         "pipfile-spec": 6,
         "requires": {
@@ -58,6 +58,23 @@
             "index": "pypi",
             "markers": "python_version >= '3.8'",
             "version": "==3.2.9"
+        },
+        "pyparsing": {
+            "hashes": [
+                "sha256:a749938e02d6fd0b59b356ca504a24982314bb090c383e3cf201c95ef7e2bfcf",
+                "sha256:b9c13f1ab8b3b542f72e28f634bad4de758ab3ce4546e4301970ad6fa77c38be"
+            ],
+            "markers": "python_version >= '3.9'",
+            "version": "==3.2.3"
+        },
+        "rdflib": {
+            "hashes": [
+                "sha256:72f4adb1990fa5241abd22ddaf36d7cafa5d91d9ff2ba13f3086d339b213d997",
+                "sha256:fed46e24f26a788e2ab8e445f7077f00edcf95abb73bcef4b86cefa8b62dd174"
+            ],
+            "index": "pypi",
+            "markers": "python_full_version >= '3.8.1' and python_full_version < '4.0.0'",
+            "version": "==7.1.4"
         },
         "sqlparse": {
             "hashes": [

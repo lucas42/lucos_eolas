@@ -1,13 +1,15 @@
 from functools import wraps
-from lucosauth.envvars import getUserByKey
+from .envvars import getUserByKey
 from django.http import HttpResponse
 
 def api_auth(func):
 	@wraps(func)
 	def _decorator(request, *args, **kwargs):
-		from django.contrib.auth import login
 		if 'HTTP_AUTHORIZATION' in request.META:
-			authmeth, auth = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+			try:
+				authmeth, auth = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
+			except ValueError:
+				return HttpResponse(status=400)
 			if authmeth.lower() == 'key':
 				user = getUserByKey(apikey=auth)
 				if user:

@@ -21,6 +21,7 @@ services:
       - POSTGRES_PASSWORD
       - AUTH_ORIGIN=https://auth.l42.eu
       - ENVIRONMENT
+      - BASE_URL
     volumes:
       - "staticfiles:/usr/src/app/lucos_eolas/static"
     restart: always
