@@ -3,6 +3,8 @@ import rdflib
 from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from .models import Place, PlaceType, DayOfWeek, Calendar, Month, Festival, Memory, Number, TransportMode
 from ..lucosauth.decorators import api_auth
+from django.utils import translation
+from django.conf import settings
 
 BASE_URL = os.environ.get("BASE_URL")
 EOLAS_NS = rdflib.Namespace(f"{BASE_URL}ontology/")
@@ -20,6 +22,47 @@ def info(request):
 		'show_on_homepage': True
 	}
 	return JsonResponse(output)
+
+def ontology(request):
+	return HttpResponse(ontology_graph().serialize(format='turtle'), content_type='text/turtle')
+
+def ontology_graph():
+	g = rdflib.Graph()
+	g.bind('eolas', EOLAS_NS)
+	g.bind('tm', TM_JOURNEYS_NS)
+	ontology_uri = rdflib.URIRef(f"{BASE_URL}ontology/")
+	g.add((ontology_uri, rdflib.RDF.type, rdflib.OWL.Ontology))
+	# Classes
+	for class_name, doc in [
+		('Calendar', 'A system for organizing dates.'),
+		('Festival', 'A recurring celebration or event.'),
+		('Memory', 'A remembered event or fact.'),
+		('Number', 'A numeric concept.'),
+	]:
+		class_uri = EOLAS_NS[class_name]
+		g.add((class_uri, rdflib.RDF.type, rdflib.OWL.Class))
+		for lang, _ in settings.LANGUAGES:
+			with translation.override(lang):
+				g.add((class_uri, rdflib.RDFS.label, rdflib.Literal(translation.gettext(class_name), lang=lang)))
+		g.add((class_uri, rdflib.RDFS.comment, rdflib.Literal(doc, lang='en')))
+	# Properties: (name, property type, comment, domain, range)
+	props = [
+		('isFictional', rdflib.OWL.DatatypeProperty, 'Whether a place is fictional (boolean).', EOLAS_NS.Place, rdflib.XSD.boolean),
+		('orderInWeek', rdflib.OWL.DatatypeProperty, 'Order of day in the week (integer).', EOLAS_NS.DayOfWeek, rdflib.XSD.integer),
+		('calendar', rdflib.OWL.ObjectProperty, 'Calendar this month belongs to.', EOLAS_NS.Month, EOLAS_NS.Calendar),
+		('orderInCalendar', rdflib.OWL.DatatypeProperty, 'Order of month in calendar (integer).', EOLAS_NS.Month, rdflib.XSD.integer),
+		('festivalStartsOn', rdflib.OWL.ObjectProperty, 'When a festival starts.', EOLAS_NS.Festival, rdflib.TIME.DateTimeDescription),
+		('occuredOn', rdflib.OWL.ObjectProperty, 'The point in time a memory is recalling.', EOLAS_NS.Memory, rdflib.TIME.DateTimeDescription),
+		('numericValue', rdflib.OWL.DatatypeProperty, 'The (approximate) numeric value for a number (decimal).', EOLAS_NS.Number, rdflib.XSD.decimal),
+	]
+	for name, prop_type, comment, domain, rng in props:
+		prop_uri = EOLAS_NS[name]
+		g.add((prop_uri, rdflib.RDF.type, prop_type))
+		g.add((prop_uri, rdflib.RDFS.label, rdflib.Literal(name, lang='en')))
+		g.add((prop_uri, rdflib.RDFS.comment, rdflib.Literal(comment, lang='en')))
+		g.add((prop_uri, rdflib.RDFS.domain, domain))
+		g.add((prop_uri, rdflib.RDFS.range, rng))
+	return g
 
 def thing_entrypoint(request, type, pk):
 	accept = request.headers.get('Accept', '')
@@ -98,6 +141,7 @@ def all_rdf(request):
 	# Serialize all items of every type into a single RDF graph
 	g = rdflib.Graph()
 	g.bind('eolas', EOLAS_NS)
+	g += ontology_graph()
 	for obj in PlaceType.objects.all():
 		g += placetype_to_rdf(obj)
 	for obj in Place.objects.all():
@@ -137,7 +181,6 @@ def place_to_rdf(place):
 def placetype_to_rdf(placetype):
 	type_uri = rdflib.URIRef(f"{BASE_URL}metadata/placetype/{placetype.pk}/")
 	g = rdflib.Graph()
-	g.bind('eolas', EOLAS_NS)
 	g.add((type_uri, rdflib.SKOS.prefLabel, rdflib.Literal(str(placetype))))
 	g.add((type_uri, rdflib.RDFS.subClassOf, rdflib.namespace.SDO.Place))
 	return g

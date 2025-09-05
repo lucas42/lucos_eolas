@@ -10,6 +10,7 @@ urlpatterns = [
 	path('metadata/<slug:type>/<int:pk>/', metadata_views.thing_entrypoint),
 	path('metadata/<slug:type>/<int:pk>/data/', metadata_views.thing_data),
 	path('metadata/all/data/', metadata_views.all_rdf),
+	path('ontology', metadata_views.ontology),
 
 	path('', admin.urls),
 	# Static files are handled by nginx at /resources, so not listed here
