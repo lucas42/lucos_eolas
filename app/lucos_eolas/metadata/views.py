@@ -5,6 +5,7 @@ from .models import Place, PlaceType, DayOfWeek, Calendar, Month, Festival, Memo
 from ..lucosauth.decorators import api_auth
 from django.utils import translation
 from django.conf import settings
+from .utils_conneg import choose_rdf_over_html, pick_best_rdf_format
 
 BASE_URL = os.environ.get("BASE_URL")
 EOLAS_NS = rdflib.Namespace(f"{BASE_URL}ontology/")
@@ -23,8 +24,10 @@ def info(request):
 	}
 	return JsonResponse(output)
 
+# No auth needed as ontology shouldn't contain anything sensitive
 def ontology(request):
-	return HttpResponse(ontology_graph().serialize(format='turtle'), content_type='text/turtle')
+	format, content_type = pick_best_rdf_format(request)
+	return HttpResponse(ontology_graph().serialize(format=format), content_type=content_type)
 
 def ontology_graph():
 	g = rdflib.Graph()
@@ -65,18 +68,17 @@ def ontology_graph():
 	return g
 
 def thing_entrypoint(request, type, pk):
-	accept = request.headers.get('Accept', '')
-	if 'text/turtle' in accept or 'application/rdf+xml' in accept or 'application/ld+json' in accept:
-		# 303 See Other to the data endpoint for RDF requests
-		return HttpResponseRedirect(f'/metadata/{type}/{pk}/data/')
+	class HttpResponseSeeOther(HttpResponseRedirect):
+		status_code = 303
+	if choose_rdf_over_html(request):
+		return HttpResponseSeeOther(f'/metadata/{type}/{pk}/data/')
 	else:
 		# 303 See Other to the admin change endpoint for non-RDF requests
-		return HttpResponseRedirect(f'/metadata/{type}/{pk}/change/')
+		return HttpResponseSeeOther(f'/metadata/{type}/{pk}/change/')
 
 @api_auth
 def thing_data(request, type, pk):
-	# API key auth handled by decorator
-	accept = request.headers.get('Accept', '')
+	format, content_type = pick_best_rdf_format(request)
 	if type == 'place':
 		try:
 			obj = Place.objects.get(pk=pk)
@@ -133,12 +135,12 @@ def thing_data(request, type, pk):
 		g = transportmode_to_rdf(obj)
 	else:
 		return HttpResponse(status=404)
-	# Default to Turtle serialization for now
-	return HttpResponse(g.serialize(format='turtle'), content_type='text/turtle')
+	return HttpResponse(g.serialize(format=format), content_type=content_type)
 
 @api_auth
 def all_rdf(request):
 	# Serialize all items of every type into a single RDF graph
+	format, content_type = pick_best_rdf_format(request)
 	g = rdflib.Graph()
 	g.bind('eolas', EOLAS_NS)
 	g += ontology_graph()
@@ -160,7 +162,7 @@ def all_rdf(request):
 		g += number_to_rdf(obj)
 	for obj in TransportMode.objects.all():
 		g += transportmode_to_rdf(obj)
-	return HttpResponse(g.serialize(format='turtle'), content_type='text/turtle')
+	return HttpResponse(g.serialize(format=format), content_type=content_type)
 
 def place_to_rdf(place):
 	place_uri = rdflib.URIRef(f"{BASE_URL}metadata/place/{place.pk}/")
