@@ -9,7 +9,7 @@ from .utils_conneg import choose_rdf_over_html, pick_best_rdf_format
 
 BASE_URL = os.environ.get("BASE_URL")
 EOLAS_NS = rdflib.Namespace(f"{BASE_URL}ontology/")
-TM_JOURNEYS_NS = rdflib.Namespace("https://w3id.org/transmodel/journeys#")
+DBPEDIA_NS = rdflib.Namespace("https://dbpedia.org/ontology/")
 
 def info(request):
 	output = {
@@ -32,7 +32,7 @@ def ontology(request):
 def ontology_graph():
 	g = rdflib.Graph()
 	g.bind('eolas', EOLAS_NS)
-	g.bind('tm', TM_JOURNEYS_NS)
+	g.bind('dbpedia', DBPEDIA_NS)
 	ontology_uri = rdflib.URIRef(f"{BASE_URL}ontology/")
 	g.add((ontology_uri, rdflib.RDF.type, rdflib.OWL.Ontology))
 	# Classes
@@ -266,8 +266,8 @@ def transportmode_to_rdf(transportmode):
 	transport_uri = rdflib.URIRef(f"{BASE_URL}metadata/transportmode/{transportmode.pk}/")
 	g = rdflib.Graph()
 	g.bind('eolas', EOLAS_NS)
-	g.bind('tm', TM_JOURNEYS_NS)
-	g.add((transport_uri, rdflib.RDF.type, TM_JOURNEYS_NS.MeanOfTransport))
+	g.bind('dbpedia', DBPEDIA_NS)
+	g.add((transport_uri, rdflib.RDF.type, DBPEDIA_NS.MeanOfTransportation))
 	g.add((transport_uri, rdflib.SKOS.prefLabel, rdflib.Literal(str(transportmode))))
 	g.add((transport_uri, rdflib.RDFS.label, rdflib.Literal(transportmode.name)))
 	return g
