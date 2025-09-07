@@ -71,6 +71,9 @@ def ontology_graph():
 	g.add((rdflib.SDO.Place, rdflib.RDFS.subClassOf, rdflib.SDO.Thing))
 	g.add((rdflib.SDO.Place, rdflib.RDFS.label, rdflib.Literal("Place")))
 	g.add((rdflib.SDO.Place, rdflib.RDFS.comment, rdflib.Literal("Entities that have a somewhat fixed, physical extension.")))
+
+	# Label missing from dbpedia ontology
+	g.add((DBPEDIA_NS.MeanOfTransportation, rdflib.RDFS.label, rdflib.Literal("Mode of Transport", lang='en')))
 	return g
 
 def thing_entrypoint(request, type, pk):
