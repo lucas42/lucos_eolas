@@ -46,7 +46,7 @@ def ontology_graph():
 		g.add((class_uri, rdflib.RDF.type, rdflib.OWL.Class))
 		for lang, _ in settings.LANGUAGES:
 			with translation.override(lang):
-				g.add((class_uri, rdflib.RDFS.label, rdflib.Literal(translation.gettext(class_name), lang=lang)))
+				g.add((class_uri, rdflib.SKOS.prefLabel, rdflib.Literal(translation.gettext(class_name), lang=lang)))
 		g.add((class_uri, rdflib.RDFS.comment, rdflib.Literal(doc, lang='en')))
 	# Properties: (name, property type, comment, domain, range)
 	props = [
@@ -61,7 +61,7 @@ def ontology_graph():
 	for name, prop_type, comment, domain, rng in props:
 		prop_uri = EOLAS_NS[name]
 		g.add((prop_uri, rdflib.RDF.type, prop_type))
-		g.add((prop_uri, rdflib.RDFS.label, rdflib.Literal(name, lang='en')))
+		g.add((prop_uri, rdflib.SKOS.prefLabel, rdflib.Literal(name, lang='en')))
 		g.add((prop_uri, rdflib.RDFS.comment, rdflib.Literal(comment, lang='en')))
 		g.add((prop_uri, rdflib.RDFS.domain, domain))
 		g.add((prop_uri, rdflib.RDFS.range, rng))
