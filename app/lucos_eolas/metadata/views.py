@@ -50,10 +50,10 @@ def ontology_graph():
 		g.add((class_uri, rdflib.RDFS.comment, rdflib.Literal(doc, lang='en')))
 	# Properties: (name, property type, comment, domain, range)
 	props = [
-		('isFictional', rdflib.OWL.DatatypeProperty, 'Whether a place is fictional (boolean).', EOLAS_NS.Place, rdflib.XSD.boolean),
-		('orderInWeek', rdflib.OWL.DatatypeProperty, 'Order of day in the week (integer).', EOLAS_NS.DayOfWeek, rdflib.XSD.integer),
-		('calendar', rdflib.OWL.ObjectProperty, 'Calendar this month belongs to.', EOLAS_NS.Month, EOLAS_NS.Calendar),
-		('orderInCalendar', rdflib.OWL.DatatypeProperty, 'Order of month in calendar (integer).', EOLAS_NS.Month, rdflib.XSD.integer),
+		('isFictional', rdflib.OWL.DatatypeProperty, 'Whether a place is fictional (boolean).', rdflib.SDO.Place, rdflib.XSD.boolean),
+		('orderInWeek', rdflib.OWL.DatatypeProperty, 'Order of day in the week (integer).', rdflib.TIME.DayOfWeek, rdflib.XSD.integer),
+		('calendar', rdflib.OWL.ObjectProperty, 'Calendar this month belongs to.', rdflib.TIME.MonthOfYear, EOLAS_NS.Calendar),
+		('orderInCalendar', rdflib.OWL.DatatypeProperty, 'Order of month in calendar (integer).', rdflib.TIME.MonthOfYear, rdflib.XSD.integer),
 		('festivalStartsOn', rdflib.OWL.ObjectProperty, 'When a festival starts.', EOLAS_NS.Festival, rdflib.TIME.DateTimeDescription),
 		('occuredOn', rdflib.OWL.ObjectProperty, 'The point in time a memory is recalling.', EOLAS_NS.Memory, rdflib.TIME.DateTimeDescription),
 		('numericValue', rdflib.OWL.DatatypeProperty, 'The (approximate) numeric value for a number (decimal).', EOLAS_NS.Number, rdflib.XSD.decimal),
@@ -177,14 +177,14 @@ def place_to_rdf(place):
 		g.add((place_uri, rdflib.RDFS.label, rdflib.Literal(alt)))
 	for container in place.located_in.all():
 		container_uri = rdflib.URIRef(f"{BASE_URL}metadata/place/{container.pk}/")
-		g.add((place_uri, rdflib.namespace.SDO.containedInPlace, container_uri))
+		g.add((place_uri, rdflib.SDO.containedInPlace, container_uri))
 	return g
 
 def placetype_to_rdf(placetype):
 	type_uri = rdflib.URIRef(f"{BASE_URL}metadata/placetype/{placetype.pk}/")
 	g = rdflib.Graph()
 	g.add((type_uri, rdflib.SKOS.prefLabel, rdflib.Literal(str(placetype))))
-	g.add((type_uri, rdflib.RDFS.subClassOf, rdflib.namespace.SDO.Place))
+	g.add((type_uri, rdflib.RDFS.subClassOf, rdflib.SDO.Place))
 	return g
 
 def dayofweek_to_rdf(day):
