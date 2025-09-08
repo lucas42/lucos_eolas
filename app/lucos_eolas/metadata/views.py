@@ -66,11 +66,16 @@ def ontology_graph():
 		g.add((prop_uri, rdflib.RDFS.domain, domain))
 		g.add((prop_uri, rdflib.RDFS.range, rng))
 
-	# Schema.org ontology is huge and importing it all slows down queries.  Instead just add the bit we use here.
+	# Schema.org ontology is huge and importing it all slows down queries.  Instead just add the bits we use here.
 	g.add((rdflib.SDO.Place, rdflib.RDF.type, rdflib.RDFS.Class))
 	g.add((rdflib.SDO.Place, rdflib.RDFS.subClassOf, rdflib.SDO.Thing))
 	g.add((rdflib.SDO.Place, rdflib.RDFS.label, rdflib.Literal("Place")))
 	g.add((rdflib.SDO.Place, rdflib.RDFS.comment, rdflib.Literal("Entities that have a somewhat fixed, physical extension.")))
+
+	g.add((rdflib.SDO.CreativeWork, rdflib.RDF.type, rdflib.RDFS.Class))
+	g.add((rdflib.SDO.CreativeWork, rdflib.RDFS.subClassOf, rdflib.SDO.Thing))
+	g.add((rdflib.SDO.CreativeWork, rdflib.RDFS.label, rdflib.Literal("CreativeWork")))
+	g.add((rdflib.SDO.CreativeWork, rdflib.RDFS.comment, rdflib.Literal("The most generic kind of creative work, including books, movies, photographs, software programs, etc.")))
 
 	g.add((rdflib.SDO.Thing, rdflib.RDF.type, rdflib.RDFS.Class))
 	g.add((rdflib.SDO.Thing, rdflib.RDFS.label, rdflib.Literal("Thing")))
