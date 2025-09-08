@@ -76,6 +76,7 @@ def ontology_graph():
 	g.add((rdflib.SDO.CreativeWork, rdflib.RDFS.subClassOf, rdflib.SDO.Thing))
 	g.add((rdflib.SDO.CreativeWork, rdflib.RDFS.label, rdflib.Literal("CreativeWork")))
 	g.add((rdflib.SDO.CreativeWork, rdflib.RDFS.comment, rdflib.Literal("The most generic kind of creative work, including books, movies, photographs, software programs, etc.")))
+	g.add((rdflib.SDO.CreativeWork, rdflib.OWL.equivalentClass, rdflib.URIRef("http://schema.org/CreativeWork"))) # FOAF refers to schema.org using http, so make clear it's equivalent to the https uri
 
 	g.add((rdflib.SDO.Thing, rdflib.RDF.type, rdflib.RDFS.Class))
 	g.add((rdflib.SDO.Thing, rdflib.RDFS.label, rdflib.Literal("Thing")))
