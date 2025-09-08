@@ -72,6 +72,10 @@ def ontology_graph():
 	g.add((rdflib.SDO.Place, rdflib.RDFS.label, rdflib.Literal("Place")))
 	g.add((rdflib.SDO.Place, rdflib.RDFS.comment, rdflib.Literal("Entities that have a somewhat fixed, physical extension.")))
 
+	g.add((rdflib.SDO.Thing, rdflib.RDF.type, rdflib.RDFS.Class))
+	g.add((rdflib.SDO.Thing, rdflib.RDFS.label, rdflib.Literal("Thing")))
+	g.add((rdflib.SDO.Thing, rdflib.RDFS.comment, rdflib.Literal("The most generic type of item.")))
+
 	# Label missing from dbpedia ontology
 	g.add((DBPEDIA_NS.MeanOfTransportation, rdflib.RDFS.label, rdflib.Literal("Mode of Transport", lang='en')))
 	return g
