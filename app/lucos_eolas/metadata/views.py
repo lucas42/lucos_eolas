@@ -65,6 +65,12 @@ def ontology_graph():
 		g.add((prop_uri, rdflib.RDFS.comment, rdflib.Literal(comment, lang='en')))
 		g.add((prop_uri, rdflib.RDFS.domain, domain))
 		g.add((prop_uri, rdflib.RDFS.range, rng))
+
+	# Schema.org ontology is huge and importing it all slows down queries.  Instead just add the bit we use here.
+	g.add((rdflib.SDO.Place, rdflib.RDF.type, rdflib.RDFS.Class))
+	g.add((rdflib.SDO.Place, rdflib.RDFS.subClassOf, rdflib.SDO.Thing))
+	g.add((rdflib.SDO.Place, rdflib.RDFS.label, rdflib.Literal("Place")))
+	g.add((rdflib.SDO.Place, rdflib.RDFS.comment, rdflib.Literal("Entities that have a somewhat fixed, physical extension.")))
 	return g
 
 def thing_entrypoint(request, type, pk):
