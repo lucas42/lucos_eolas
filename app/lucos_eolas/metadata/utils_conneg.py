@@ -4,7 +4,7 @@
 RDF_FORMATS = {
 	"text/turtle": "turtle",
 	"application/ld+json": "json-ld",
-	"application/rdf+xml": "pretty-xml",
+	"application/rdf+xml": "xml",
 	"application/n-triples": "nt",
 	"application/xml": "xml",  # Sometimes used for RDF/XML
 }
