@@ -234,3 +234,54 @@ class TransportMode(models.Model):
 
 	def __str__(self):
 		return self.name
+
+class LanguageFamily(models.Model):
+	code = models.CharField(
+		max_length=3,
+		primary_key=True,
+		verbose_name=_('code'),
+		help_text=_('A valid ISO 639-5 code')
+		)
+	name = models.CharField(
+		max_length=255,
+		verbose_name=_('name'),
+		null=False,
+		blank=False,
+		unique=True,
+	)
+	class Meta:
+		verbose_name = _('Language Family')
+		verbose_name_plural = _('Language Families')
+		ordering = ["code"]
+
+	def __str__(self):
+		return self.name
+
+class Language(models.Model):
+	code = models.CharField(
+		max_length=3,
+		primary_key=True,
+		verbose_name=_('code'),
+		help_text=_('A valid ISO 639-3 code')
+		)
+	name = models.CharField(
+		max_length=255,
+		verbose_name=_('name'),
+		null=False,
+		blank=False,
+		unique=True,
+	)
+	family = models.ForeignKey(
+		LanguageFamily,
+		on_delete=models.RESTRICT,
+		null=False,
+		blank=False,
+	)
+
+	class Meta:
+		verbose_name = _('Language')
+		verbose_name_plural = _('Languages')
+		ordering = ["code"]
+
+	def __str__(self):
+		return self.name

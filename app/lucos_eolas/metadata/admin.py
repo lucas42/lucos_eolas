@@ -1,5 +1,5 @@
 from django.contrib import admin
-from .models import Place, PlaceType, DayOfWeek, Calendar, Month, Festival, Memory, Number, TransportMode
+from .models import *
 from django.utils.html import format_html, format_html_join
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -106,3 +106,17 @@ eolasadmin.register(Number, NumberAdmin)
 class TransportModeAdmin(admin.ModelAdmin):
 	pass
 eolasadmin.register(TransportMode, TransportModeAdmin)
+
+class LanguageFamilyAdmin(admin.ModelAdmin):
+	def save_model(self, request, obj, form, change):
+		obj.code = obj.code.lower()
+		super().save_model(request, obj, form, change)
+eolasadmin.register(LanguageFamily, LanguageFamilyAdmin)
+
+class LanguageAdmin(admin.ModelAdmin):
+	list_filter = ['family']
+	show_facets = admin.ShowFacets.ALWAYS
+	def save_model(self, request, obj, form, change):
+		obj.code = obj.code.lower()
+		super().save_model(request, obj, form, change)
+eolasadmin.register(Language, LanguageAdmin)

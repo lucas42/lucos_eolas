@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-09-03 19:17+0000\n"
+"POT-Creation-Date: 2025-09-11 00:05+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -26,7 +26,8 @@ msgstr "Meiteashonraí"
 #: lucos_eolas/metadata/models.py:78 lucos_eolas/metadata/models.py:100
 #: lucos_eolas/metadata/models.py:116 lucos_eolas/metadata/models.py:147
 #: lucos_eolas/metadata/models.py:174 lucos_eolas/metadata/models.py:201
-#: lucos_eolas/metadata/models.py:225
+#: lucos_eolas/metadata/models.py:225 lucos_eolas/metadata/models.py:247
+#: lucos_eolas/metadata/models.py:269
 msgid "name"
 msgstr "ainm"
 
@@ -153,6 +154,34 @@ msgstr "Modh Iompair"
 #: lucos_eolas/metadata/models.py:232
 msgid "Modes of Transport"
 msgstr "Modhanna Iompair"
+
+#: lucos_eolas/metadata/models.py:242 lucos_eolas/metadata/models.py:264
+msgid "code"
+msgstr "cód"
+
+#: lucos_eolas/metadata/models.py:243
+msgid "A valid ISO 639-5 code"
+msgstr "Cód bailí ISO 639-5"
+
+#: lucos_eolas/metadata/models.py:253
+msgid "Language Family"
+msgstr "Fine Teangacha"
+
+#: lucos_eolas/metadata/models.py:254
+msgid "Language Families"
+msgstr "Finte Teangacha"
+
+#: lucos_eolas/metadata/models.py:265
+msgid "A valid ISO 639-3 code"
+msgstr "Cód bailí ISO 639-5"
+
+#: lucos_eolas/metadata/models.py:282
+msgid "Language"
+msgstr "Teanga"
+
+#: lucos_eolas/metadata/models.py:283
+msgid "Languages"
+msgstr "Teangacha"
 
 #: lucos_eolas/settings.py:116
 msgid "Irish"
