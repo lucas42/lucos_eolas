@@ -1,0 +1,22 @@
+{
+	"name": "lucOS Eolas",
+	"short_name": "Eolas",
+	"start_url": "/",
+	"display": "standalone",
+	"theme_color": "#44265d",
+	"background_color": "#9774d5",
+	"icons":[
+		{
+			"src": "/resources/icon.png",
+			"sizes": "1024x1024",
+			"type": "image/png",
+			"purpose": "any monochrome"
+		},
+		{
+			"src": "/resources/maskable_icon.png",
+			"sizes": "133x133",
+			"type": "image/png",
+			"purpose": "maskable"
+		}
+	]
+}
