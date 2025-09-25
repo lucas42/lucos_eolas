@@ -27,7 +27,7 @@ def info(request):
 # No auth needed as ontology shouldn't contain anything sensitive
 def ontology(request):
 	format, content_type = pick_best_rdf_format(request)
-	return HttpResponse(ontology_graph().serialize(format=format), content_type=content_type)
+	return HttpResponse(ontology_graph().serialize(format=format), content_type=f'{content_type}; charset={settings.DEFAULT_CHARSET}')
 
 def ontology_graph():
 	g = rdflib.Graph()
@@ -153,7 +153,7 @@ def thing_data(request, type, pk):
 		g = transportmode_to_rdf(obj)
 	else:
 		return HttpResponse(status=404)
-	return HttpResponse(g.serialize(format=format), content_type=content_type)
+	return HttpResponse(g.serialize(format=format), content_type=f'{content_type}; charset={settings.DEFAULT_CHARSET}')
 
 @api_auth
 def all_rdf(request):
@@ -180,7 +180,7 @@ def all_rdf(request):
 		g += number_to_rdf(obj)
 	for obj in TransportMode.objects.all():
 		g += transportmode_to_rdf(obj)
-	return HttpResponse(g.serialize(format=format), content_type=content_type)
+	return HttpResponse(g.serialize(format=format), content_type=f'{content_type}; charset={settings.DEFAULT_CHARSET}')
 
 def place_to_rdf(place):
 	place_uri = rdflib.URIRef(f"{BASE_URL}metadata/place/{place.pk}/")
