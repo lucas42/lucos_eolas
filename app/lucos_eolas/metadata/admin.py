@@ -4,6 +4,7 @@ from django.utils.html import format_html, format_html_join
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from ..lucosauth import views as auth_views
+from .loganne import loganneRequest
 
 class EolasAdminSite(admin.AdminSite):
 	site_title = 'LucOS Eolas'
@@ -12,7 +13,38 @@ class EolasAdminSite(admin.AdminSite):
 		return auth_views.loginview(request)
 eolasadmin = EolasAdminSite()
 
-class PlaceAdmin(admin.ModelAdmin):
+class EolasModelAdmin(admin.ModelAdmin):
+	def response_add(self, request, item):
+		loganneRequest({
+			"type": "itemCreated",
+			"humanReadable": f'{str(item._meta.verbose_name).title()} "{item}" created',
+			"url": item.get_absolute_url(),
+		})
+		return super().response_add(request, item)
+
+	def response_change(self, request, item):
+		loganneRequest({
+			"type": "itemUpdated",
+			"humanReadable": f'{str(item._meta.verbose_name).title()} "{item}" updated',
+			"url": item.get_absolute_url(),
+		})
+		return super().response_change(request, item)
+
+	def delete_model(self, request, item):
+		# Get details from object before delete
+		item_name = str(item)
+		item_url = item.get_absolute_url()
+		item_type = str(item._meta.verbose_name).title()
+
+		super().delete_model(request, item)
+
+		loganneRequest({
+			"type": "itemDeleted",
+			"humanReadable": f'{item_type} "{item_name}" deleted',
+			"url": item_url,
+		})
+
+class PlaceAdmin(EolasModelAdmin):
 	filter_horizontal = ('located_in',)
 	readonly_fields = ('contained_places',)
 	search_fields = ['name','alternate_names']
@@ -71,49 +103,49 @@ class PlaceAdmin(admin.ModelAdmin):
 	contained_places.short_description = _("contains")
 eolasadmin.register(Place, PlaceAdmin)
 
-class PlaceTypeAdmin(admin.ModelAdmin):
+class PlaceTypeAdmin(EolasModelAdmin):
 	def save_model(self, request, obj, form, change):
 		obj.name = obj.name.lower()
 		obj.plural = obj.plural.lower()
 		super().save_model(request, obj, form, change)
 eolasadmin.register(PlaceType, PlaceTypeAdmin)
 
-class DayOfWeekAdmin(admin.ModelAdmin):
+class DayOfWeekAdmin(EolasModelAdmin):
 	pass
 eolasadmin.register(DayOfWeek, DayOfWeekAdmin)
 
-class CalendarAdmin(admin.ModelAdmin):
+class CalendarAdmin(EolasModelAdmin):
 	pass
 eolasadmin.register(Calendar, CalendarAdmin)
 
-class MonthAdmin(admin.ModelAdmin):
+class MonthAdmin(EolasModelAdmin):
 	list_filter = ['calendar']
 	show_facets = admin.ShowFacets.ALWAYS
 eolasadmin.register(Month, MonthAdmin)
 
-class FestivalAdmin(admin.ModelAdmin):
+class FestivalAdmin(EolasModelAdmin):
 	pass
 eolasadmin.register(Festival, FestivalAdmin)
 
-class MemoryAdmin(admin.ModelAdmin):
+class MemoryAdmin(EolasModelAdmin):
 	pass
 eolasadmin.register(Memory, MemoryAdmin)
 
-class NumberAdmin(admin.ModelAdmin):
+class NumberAdmin(EolasModelAdmin):
 	pass
 eolasadmin.register(Number, NumberAdmin)
 
-class TransportModeAdmin(admin.ModelAdmin):
+class TransportModeAdmin(EolasModelAdmin):
 	pass
 eolasadmin.register(TransportMode, TransportModeAdmin)
 
-class LanguageFamilyAdmin(admin.ModelAdmin):
+class LanguageFamilyAdmin(EolasModelAdmin):
 	def save_model(self, request, obj, form, change):
 		obj.code = obj.code.lower()
 		super().save_model(request, obj, form, change)
 eolasadmin.register(LanguageFamily, LanguageFamilyAdmin)
 
-class LanguageAdmin(admin.ModelAdmin):
+class LanguageAdmin(EolasModelAdmin):
 	list_filter = ['family']
 	show_facets = admin.ShowFacets.ALWAYS
 	def save_model(self, request, obj, form, change):

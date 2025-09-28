@@ -1,6 +1,9 @@
+import os
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.utils.translation import gettext_lazy as _
+
+BASE_URL = os.environ.get("BASE_URL")
 
 class PlaceType(models.Model):
 	name = models.CharField(
@@ -24,6 +27,9 @@ class PlaceType(models.Model):
 
 	def __str__(self):
 		return self.name.title()
+
+	def get_absolute_url(self):
+		return f"{BASE_URL}metadata/placetype/{self.pk}/"
 
 class Place(models.Model):
 	name = models.CharField(
@@ -66,11 +72,12 @@ class Place(models.Model):
 			models.Q(name__iexact=self.name) |
 			models.Q(alternate_names__contains=[self.name])
 		)
-
 		if qs.count() > 1:
 			return f"{self.name} ({self.type})"
-
 		return self.name
+
+	def get_absolute_url(self):
+		return f"{BASE_URL}metadata/place/{self.pk}/"
 
 class DayOfWeek(models.Model):
 	name = models.CharField(
@@ -94,6 +101,9 @@ class DayOfWeek(models.Model):
 	def __str__(self):
 		return self.name
 
+	def get_absolute_url(self):
+		return f"{BASE_URL}metadata/dayofweek/{self.pk}/"
+
 class Calendar(models.Model):
 	name = models.CharField(
 		max_length=255,
@@ -109,6 +119,9 @@ class Calendar(models.Model):
 
 	def __str__(self):
 		return self.name
+
+	def get_absolute_url(self):
+		return f"{BASE_URL}metadata/calendar/{self.pk}/"
 
 class Month(models.Model):
 	name = models.CharField(
@@ -141,6 +154,9 @@ class Month(models.Model):
 			return f"{self.name} ({self.calendar})"
 		return self.name
 
+	def get_absolute_url(self):
+		return f"{BASE_URL}metadata/month/{self.pk}/"
+
 class Festival(models.Model):
 	name = models.CharField(
 		max_length=255,
@@ -167,6 +183,9 @@ class Festival(models.Model):
 
 	def __str__(self):
 		return self.name
+
+	def get_absolute_url(self):
+		return f"{BASE_URL}metadata/festival/{self.pk}/"
 
 class Memory(models.Model):
 	name = models.CharField(
@@ -195,6 +214,9 @@ class Memory(models.Model):
 	def __str__(self):
 		return self.name
 
+	def get_absolute_url(self):
+		return f"{BASE_URL}metadata/memory/{self.pk}/"
+
 class Number(models.Model):
 	name = models.CharField(
 		max_length=255,
@@ -219,6 +241,9 @@ class Number(models.Model):
 	def __str__(self):
 		return self.name
 
+	def get_absolute_url(self):
+		return f"{BASE_URL}metadata/number/{self.pk}/"
+
 class TransportMode(models.Model):
 	name = models.CharField(
 		max_length=255,
@@ -234,6 +259,9 @@ class TransportMode(models.Model):
 
 	def __str__(self):
 		return self.name
+
+	def get_absolute_url(self):
+		return f"{BASE_URL}metadata/transportmode/{self.pk}/"
 
 class LanguageFamily(models.Model):
 	code = models.CharField(
@@ -256,6 +284,9 @@ class LanguageFamily(models.Model):
 
 	def __str__(self):
 		return self.name
+
+	def get_absolute_url(self):
+		return f"{BASE_URL}metadata/languagefamily/{self.pk}/"
 
 class Language(models.Model):
 	code = models.CharField(
@@ -285,3 +316,6 @@ class Language(models.Model):
 
 	def __str__(self):
 		return self.name
+
+	def get_absolute_url(self):
+		return f"{BASE_URL}metadata/language/{self.pk}/"
