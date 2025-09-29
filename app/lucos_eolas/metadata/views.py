@@ -122,6 +122,7 @@ def thing_data(request, type, pk):
 		except Calendar.DoesNotExist:
 			return HttpResponse(status=404)
 		g = calendar_to_rdf(obj)
+		g.add((EOLAS_NS['Calendar'], rdflib.SKOS.prefLabel, rdflib.Literal("Calendar")))
 	elif type == 'month':
 		try:
 			obj = Month.objects.get(pk=pk)
@@ -134,18 +135,21 @@ def thing_data(request, type, pk):
 		except Festival.DoesNotExist:
 			return HttpResponse(status=404)
 		g = festival_to_rdf(obj)
+		g.add((EOLAS_NS['Festival'], rdflib.SKOS.prefLabel, rdflib.Literal("Festival")))
 	elif type == 'memory':
 		try:
 			obj = Memory.objects.get(pk=pk)
 		except Memory.DoesNotExist:
 			return HttpResponse(status=404)
 		g = memory_to_rdf(obj)
+		g.add((EOLAS_NS['Memory'], rdflib.SKOS.prefLabel, rdflib.Literal("Memory")))
 	elif type == 'number':
 		try:
 			obj = Number.objects.get(pk=pk)
 		except Number.DoesNotExist:
 			return HttpResponse(status=404)
 		g = number_to_rdf(obj)
+		g.add((EOLAS_NS['Number'], rdflib.SKOS.prefLabel, rdflib.Literal("Number")))
 	elif type == 'transportmode':
 		try:
 			obj = TransportMode.objects.get(pk=pk)
