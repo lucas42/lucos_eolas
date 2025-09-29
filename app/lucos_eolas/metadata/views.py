@@ -103,6 +103,7 @@ def thing_data(request, type, pk):
 		except Place.DoesNotExist:
 			return HttpResponse(status=404)
 		g = place_to_rdf(obj)
+		g += placetype_to_rdf(obj.type)
 	elif type == 'placetype':
 		try:
 			obj = PlaceType.objects.get(pk=pk)
