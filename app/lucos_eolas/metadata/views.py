@@ -308,7 +308,7 @@ def historicalevent_to_rdf(historicalevent):
 	historicalevent_uri = rdflib.URIRef(f"{BASE_URL}metadata/historicalevent/{historicalevent.pk}/")
 	g = rdflib.Graph()
 	g.bind('eolas', EOLAS_NS)
-	g.add((historicalevent_uri, rdflib.RDF.type, EOLAS_NS.historicalevent))
+	g.add((historicalevent_uri, rdflib.RDF.type, EOLAS_NS.HistoricalEvent))
 	g.add((historicalevent_uri, rdflib.SKOS.prefLabel, rdflib.Literal(str(historicalevent))))
 	g.add((historicalevent_uri, rdflib.RDFS.label, rdflib.Literal(historicalevent.name)))
 	if historicalevent.wikipedia_slug:
