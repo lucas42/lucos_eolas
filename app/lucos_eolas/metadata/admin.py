@@ -152,3 +152,5 @@ class LanguageAdmin(EolasModelAdmin):
 		obj.code = obj.code.lower()
 		super().save_model(request, obj, form, change)
 eolasadmin.register(Language, LanguageAdmin)
+
+eolasadmin.register(HistoricalEvent, EolasModelAdmin)

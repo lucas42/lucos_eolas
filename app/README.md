@@ -15,7 +15,7 @@ This will spin up docker containers for the django app, database and web proxy.
 ## Creating a new database migration
 
 * Upgrade the approprite `models.py` files
-* `docker-compose exec app python manage.py makemigrations`
+* `docker compose exec app python manage.py makemigrations`
 * `docker cp lucos_eolas_app:/usr/src/app/lucos_eolas/metadata/migrations/ app/lucos_eolas/metadata`
 * Rebuild & restart the container for the migrations to take effect.
 * Commit the new migration files to git
@@ -25,7 +25,7 @@ The UI is available in English or Irish languages.  Irish is the default and thi
 
 ## Updating Translations
 
-* `docker-compose exec app python manage.py makemessages --all`
+* `docker compose exec app python manage.py makemessages --all`
 * `docker cp lucos_eolas_app:/usr/src/app/lucos_eolas/locale app/lucos_eolas/`
 * Update the `.po` files in the locale directory with the relevant languages
 * Rebuild & restart the container for the translations to take effect.  (translations are compiled as part of the docker build process)

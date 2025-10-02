@@ -319,3 +319,34 @@ class Language(models.Model):
 
 	def get_absolute_url(self):
 		return f"{BASE_URL}metadata/language/{self.pk}/"
+
+class HistoricalEvent(models.Model):
+	name = models.CharField(
+		max_length=255,
+		verbose_name=_('name'),
+		null=False,
+		blank=False,
+		unique=True,
+	)
+	wikipedia_slug = models.CharField(
+		max_length=255,
+		verbose_name=_('Wikipedia URL Slug'),
+		help_text=_('The URL Slug used by the primary page regarding this event on the English Language instance of Wikipedia'),
+		unique=True,
+	)
+	year = models.IntegerField(
+		verbose_name=_('year'),
+		null=True,
+		blank=True,
+		help_text=_('Approximate year of the event, in the Gregorian Calendar')
+	)
+	class Meta:
+		verbose_name = _('Historical Event')
+		verbose_name_plural = _('Historical Events')
+		ordering = ["year", "name"]
+
+	def __str__(self):
+		return self.name
+
+	def get_absolute_url(self):
+		return f"{BASE_URL}metadata/historicalevent/{self.pk}/"

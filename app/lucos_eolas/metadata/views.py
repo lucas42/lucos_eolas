@@ -1,7 +1,7 @@
 import os
 import rdflib
 from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
-from .models import Place, PlaceType, DayOfWeek, Calendar, Month, Festival, Memory, Number, TransportMode
+from .models import Place, PlaceType, DayOfWeek, Calendar, Month, Festival, Memory, Number, TransportMode, HistoricalEvent
 from ..lucosauth.decorators import api_auth
 from django.utils import translation
 from django.conf import settings
@@ -156,6 +156,13 @@ def thing_data(request, type, pk):
 		except TransportMode.DoesNotExist:
 			return HttpResponse(status=404)
 		g = transportmode_to_rdf(obj)
+	elif type == 'historicalevent':
+		try:
+			obj = HistoricalEvent.objects.get(pk=pk)
+		except HistoricalEvent.DoesNotExist:
+			return HttpResponse(status=404)
+		g = historicalevent_to_rdf(obj)
+		g.add((EOLAS_NS['HistoricalEvent'], rdflib.SKOS.prefLabel, rdflib.Literal("Historical Event")))
 	else:
 		return HttpResponse(status=404)
 	return HttpResponse(g.serialize(format=format), content_type=f'{content_type}; charset={settings.DEFAULT_CHARSET}')
@@ -185,6 +192,8 @@ def all_rdf(request):
 		g += number_to_rdf(obj)
 	for obj in TransportMode.objects.all():
 		g += transportmode_to_rdf(obj)
+	for obj in HistoricalEvent.objects.all():
+		g += historicalevent_to_rdf(obj)
 	return HttpResponse(g.serialize(format=format), content_type=f'{content_type}; charset={settings.DEFAULT_CHARSET}')
 
 def place_to_rdf(place):
@@ -293,4 +302,19 @@ def transportmode_to_rdf(transportmode):
 	g.add((transport_uri, rdflib.RDF.type, DBPEDIA_NS.MeanOfTransportation))
 	g.add((transport_uri, rdflib.SKOS.prefLabel, rdflib.Literal(str(transportmode))))
 	g.add((transport_uri, rdflib.RDFS.label, rdflib.Literal(transportmode.name)))
+	return g
+
+def historicalevent_to_rdf(historicalevent):
+	historicalevent_uri = rdflib.URIRef(f"{BASE_URL}metadata/historicalevent/{historicalevent.pk}/")
+	g = rdflib.Graph()
+	g.bind('eolas', EOLAS_NS)
+	g.add((historicalevent_uri, rdflib.RDF.type, EOLAS_NS.historicalevent))
+	g.add((historicalevent_uri, rdflib.SKOS.prefLabel, rdflib.Literal(str(historicalevent))))
+	g.add((historicalevent_uri, rdflib.RDFS.label, rdflib.Literal(historicalevent.name)))
+	if historicalevent.wikipedia_slug:
+		g.add((historicalevent_uri, rdflib.OWL.sameAs, rdflib.URIRef(f"http://dbpedia.org/resource/{historicalevent.wikipedia_slug}")))
+	if historicalevent.year is not None:
+		datetime_bnode = rdflib.BNode()
+		g.add((historicalevent_uri, EOLAS_NS.occuredOn, datetime_bnode))
+		g.add((datetime_bnode, rdflib.TIME.year, rdflib.Literal(historicalevent.year)))
 	return g
