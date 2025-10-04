@@ -41,8 +41,9 @@ def ontology_graph():
 		('Festival', 'A recurring celebration or event.'),
 		('Memory', 'A remembered event or fact.'),
 		('Number', 'A numeric concept.'),
+		('Historical Event', 'A notable thing that happened in the past.'),
 	]:
-		class_uri = EOLAS_NS[class_name]
+		class_uri = EOLAS_NS[class_name.replace(" ", "")]
 		g.add((class_uri, rdflib.RDF.type, rdflib.OWL.Class))
 		for lang, _ in settings.LANGUAGES:
 			with translation.override(lang):
