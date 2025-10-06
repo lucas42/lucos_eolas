@@ -22,11 +22,11 @@ class Command(BaseCommand):
 			for term in root_data:
 				uri = term.get('@id')
 				if uri and uri.startswith("http://id.loc.gov/vocabulary/iso639-5/") :
-					self._process_family(uri)
+					self._process_family(uri, None)
 
 		self.stdout.write(self.style.SUCCESS("✅ Done importing ISO 639-5 families."))
 
-	def _process_family(self, uri):
+	def _process_family(self, uri, parent):
 		# Fetch JSON-LD for this family
 		resp = requests.get(uri, headers=HEADERS, allow_redirects=True)
 		resp.raise_for_status()
@@ -45,7 +45,7 @@ class Command(BaseCommand):
 		# Insert/update Django model
 		obj, created = LanguageFamily.objects.update_or_create(
 			code=code,
-			defaults={"name": name},
+			defaults={"name": name, "parent": parent},
 		)
 		action = "Created" if created else "Updated"
 		self.stdout.write(f"{action}: {code} → {name}")
@@ -55,7 +55,7 @@ class Command(BaseCommand):
 		for child in narrower_list:
 			child_uri = child.get('@id')
 			if child_uri and child_uri.startswith("http://id.loc.gov/vocabulary/iso639-5/"):
-				self._process_family(child_uri)
+				self._process_family(child_uri, obj)
 
 	# Create a pseudo family to hold language isolates
 	# NB: this isn't included in ISO 639-5, so the code here is invented

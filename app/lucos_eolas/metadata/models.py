@@ -277,6 +277,12 @@ class LanguageFamily(models.Model):
 		blank=False,
 		unique=True,
 	)
+	parent = models.ForeignKey(
+		'self',
+		on_delete=models.RESTRICT,
+		null=True,
+		blank=True,
+	)
 	class Meta:
 		verbose_name = _('Language Family')
 		verbose_name_plural = _('Language Families')
@@ -290,10 +296,10 @@ class LanguageFamily(models.Model):
 
 class Language(models.Model):
 	code = models.CharField(
-		max_length=3,
+		max_length=15,
 		primary_key=True,
 		verbose_name=_('code'),
-		help_text=_('A valid ISO 639-3 code')
+		help_text=_('A valid ISO 639 code')
 		)
 	name = models.CharField(
 		max_length=255,
