@@ -30,3 +30,10 @@ The UI is available in English or Irish languages.  Irish is the default and thi
 * Update the `.po` files in the locale directory with the relevant languages
 * Rebuild & restart the container for the translations to take effect.  (translations are compiled as part of the docker build process)
 * Commit the locale files to git
+
+## Data Imports
+
+### Importing Language Families from Library of Congress
+
+Run the command:
+`docker compose exec app python manage.py load_language_families`
