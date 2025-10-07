@@ -1,7 +1,7 @@
 import os
 import rdflib
 from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
-from .models import Place, PlaceType, DayOfWeek, Calendar, Month, Festival, Memory, Number, TransportMode, HistoricalEvent
+from .models import Place, PlaceType, DayOfWeek, Calendar, Month, Festival, Memory, Number, TransportMode, LanguageFamily, Language, HistoricalEvent
 from ..lucosauth.decorators import api_auth
 from django.utils import translation
 from django.conf import settings
@@ -10,6 +10,7 @@ from .utils_conneg import choose_rdf_over_html, pick_best_rdf_format
 BASE_URL = os.environ.get("BASE_URL")
 EOLAS_NS = rdflib.Namespace(f"{BASE_URL}ontology/")
 DBPEDIA_NS = rdflib.Namespace("https://dbpedia.org/ontology/")
+LOC_NS = rdflib.Namespace("http://www.loc.gov/mads/rdf/v1#")
 
 def info(request):
 	output = {
@@ -157,6 +158,12 @@ def thing_data(request, type, pk):
 		except TransportMode.DoesNotExist:
 			return HttpResponse(status=404)
 		g = transportmode_to_rdf(obj)
+	elif type == 'languagefamily':
+		try:
+			obj = LanguageFamily.objects.get(code=pk)
+		except LanguageFamily.DoesNotExist:
+			return HttpResponse(status=404)
+		g = languagefamily_to_rdf(obj)
 	elif type == 'historicalevent':
 		try:
 			obj = HistoricalEvent.objects.get(pk=pk)
@@ -174,6 +181,7 @@ def all_rdf(request):
 	format, content_type = pick_best_rdf_format(request)
 	g = rdflib.Graph()
 	g.bind('eolas', EOLAS_NS)
+	g.bind('loc', LOC_NS)
 	g += ontology_graph()
 	for obj in PlaceType.objects.all():
 		g += placetype_to_rdf(obj)
@@ -193,6 +201,8 @@ def all_rdf(request):
 		g += number_to_rdf(obj)
 	for obj in TransportMode.objects.all():
 		g += transportmode_to_rdf(obj)
+	for obj in LanguageFamily.objects.all():
+		g += languagefamily_to_rdf(obj)
 	for obj in HistoricalEvent.objects.all():
 		g += historicalevent_to_rdf(obj)
 	return HttpResponse(g.serialize(format=format), content_type=f'{content_type}; charset={settings.DEFAULT_CHARSET}')
@@ -303,6 +313,18 @@ def transportmode_to_rdf(transportmode):
 	g.add((transport_uri, rdflib.RDF.type, DBPEDIA_NS.MeanOfTransportation))
 	g.add((transport_uri, rdflib.SKOS.prefLabel, rdflib.Literal(str(transportmode))))
 	g.add((transport_uri, rdflib.RDFS.label, rdflib.Literal(transportmode.name)))
+	return g
+
+def languagefamily_to_rdf(languagefamily):
+	languagefamily_uri = rdflib.URIRef(f"http://id.loc.gov/vocabulary/iso639-5/{languagefamily.pk}/")
+	g = rdflib.Graph()
+	g.bind('eolas', EOLAS_NS)
+	g.bind('loc', LOC_NS)
+	g.add((languagefamily_uri, rdflib.RDF.type, rdflib.URIRef("http://id.loc.gov/vocabulary/iso639-5/iso639-5_Language")))
+	g.add((languagefamily_uri, rdflib.SKOS.prefLabel, rdflib.Literal(str(languagefamily))))
+	g.add((languagefamily_uri, rdflib.RDFS.label, rdflib.Literal(languagefamily.name)))
+	if languagefamily.parent:
+		g.add((languagefamily_uri, LOC_NS.hasBroaderAuthority, rdflib.URIRef(f"http://id.loc.gov/vocabulary/iso639-5/{languagefamily.parent.pk}")))
 	return g
 
 def historicalevent_to_rdf(historicalevent):
