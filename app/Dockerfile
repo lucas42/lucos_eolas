@@ -1,5 +1,5 @@
 FROM lucas42/lucos_navbar:latest AS navbar
-FROM python:3.13.7-alpine
+FROM python:3.14.0-alpine
 
 # set working directory
 WORKDIR /usr/src/app
