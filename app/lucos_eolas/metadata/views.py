@@ -164,6 +164,12 @@ def thing_data(request, type, pk):
 		except LanguageFamily.DoesNotExist:
 			return HttpResponse(status=404)
 		g = languagefamily_to_rdf(obj)
+	elif type == 'language':
+		try:
+			obj = Language.objects.get(code=pk)
+		except Language.DoesNotExist:
+			return HttpResponse(status=404)
+		g = language_to_rdf(obj)
 	elif type == 'historicalevent':
 		try:
 			obj = HistoricalEvent.objects.get(pk=pk)
@@ -203,6 +209,8 @@ def all_rdf(request):
 		g += transportmode_to_rdf(obj)
 	for obj in LanguageFamily.objects.all():
 		g += languagefamily_to_rdf(obj)
+	for obj in Language.objects.all():
+		g += language_to_rdf(obj)
 	for obj in HistoricalEvent.objects.all():
 		g += historicalevent_to_rdf(obj)
 	return HttpResponse(g.serialize(format=format), content_type=f'{content_type}; charset={settings.DEFAULT_CHARSET}')
@@ -318,13 +326,25 @@ def transportmode_to_rdf(transportmode):
 def languagefamily_to_rdf(languagefamily):
 	languagefamily_uri = rdflib.URIRef(f"http://id.loc.gov/vocabulary/iso639-5/{languagefamily.pk}/")
 	g = rdflib.Graph()
-	g.bind('eolas', EOLAS_NS)
 	g.bind('loc', LOC_NS)
 	g.add((languagefamily_uri, rdflib.RDF.type, rdflib.URIRef("http://id.loc.gov/vocabulary/iso639-5/iso639-5_Language")))
 	g.add((languagefamily_uri, rdflib.SKOS.prefLabel, rdflib.Literal(str(languagefamily))))
 	g.add((languagefamily_uri, rdflib.RDFS.label, rdflib.Literal(languagefamily.name)))
 	if languagefamily.parent:
 		g.add((languagefamily_uri, LOC_NS.hasBroaderAuthority, rdflib.URIRef(f"http://id.loc.gov/vocabulary/iso639-5/{languagefamily.parent.pk}")))
+	return g
+
+def language_to_rdf(language):
+	language_uri = rdflib.URIRef(f"{BASE_URL}metadata/language/{language.pk}/")
+	g = rdflib.Graph()
+	g.bind('loc', LOC_NS)
+	g.add((language_uri, rdflib.RDF.type, LOC_NS.Language))
+	g.add((language_uri, rdflib.SKOS.prefLabel, rdflib.Literal(str(language))))
+	g.add((language_uri, rdflib.RDFS.label, rdflib.Literal(language.name)))
+	if language.family.pk == "qli": # 'qli' is used here for language isolates, but dosen't appear in iso639-5, nor the library of congress list.
+		g.add((language_uri, LOC_NS.hasBroaderExternalAuthority, rdflib.URIRef(language.family.get_absolute_url())))
+	else:
+		g.add((language_uri, LOC_NS.hasBroaderExternalAuthority, rdflib.URIRef(f"http://id.loc.gov/vocabulary/iso639-5/{language.family.pk}")))
 	return g
 
 def historicalevent_to_rdf(historicalevent):
