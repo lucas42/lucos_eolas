@@ -324,7 +324,7 @@ def transportmode_to_rdf(transportmode):
 	return g
 
 def languagefamily_to_rdf(languagefamily):
-	languagefamily_uri = rdflib.URIRef(f"http://id.loc.gov/vocabulary/iso639-5/{languagefamily.pk}/")
+	languagefamily_uri = rdflib.URIRef(languagefamily.get_absolute_url())
 	g = rdflib.Graph()
 	g.bind('loc', LOC_NS)
 	g.add((languagefamily_uri, rdflib.RDF.type, rdflib.URIRef("http://id.loc.gov/vocabulary/iso639-5/iso639-5_Language")))
@@ -341,10 +341,7 @@ def language_to_rdf(language):
 	g.add((language_uri, rdflib.RDF.type, LOC_NS.Language))
 	g.add((language_uri, rdflib.SKOS.prefLabel, rdflib.Literal(str(language))))
 	g.add((language_uri, rdflib.RDFS.label, rdflib.Literal(language.name)))
-	if language.family.pk == "qli": # 'qli' is used here for language isolates, but dosen't appear in iso639-5, nor the library of congress list.
-		g.add((language_uri, LOC_NS.hasBroaderExternalAuthority, rdflib.URIRef(language.family.get_absolute_url())))
-	else:
-		g.add((language_uri, LOC_NS.hasBroaderExternalAuthority, rdflib.URIRef(f"http://id.loc.gov/vocabulary/iso639-5/{language.family.pk}")))
+	g.add((language_uri, LOC_NS.hasBroaderExternalAuthority, rdflib.URIRef(language.family.get_absolute_url())))
 	return g
 
 def historicalevent_to_rdf(historicalevent):

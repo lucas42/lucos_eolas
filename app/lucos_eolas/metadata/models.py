@@ -292,7 +292,12 @@ class LanguageFamily(models.Model):
 		return self.name
 
 	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/languagefamily/{self.pk}/"
+		# 'qli' is used here for language isolates, but dosen't appear in iso639-5, nor the library of congress list, so needs a local URI
+		if self.pk == "qli":
+			return f"{BASE_URL}metadata/languagefamily/{self.pk}/"
+		# For other language families, use the library of congress URI
+		else:
+			return f"http://id.loc.gov/vocabulary/iso639-5/{self.pk}"
 
 class Language(models.Model):
 	code = models.CharField(
