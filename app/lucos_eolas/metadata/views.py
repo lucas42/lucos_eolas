@@ -216,8 +216,8 @@ def all_rdf(request):
 	return HttpResponse(g.serialize(format=format), content_type=f'{content_type}; charset={settings.DEFAULT_CHARSET}')
 
 def place_to_rdf(place):
-	place_uri = rdflib.URIRef(f"{BASE_URL}metadata/place/{place.pk}/")
-	type_uri = rdflib.URIRef(f"{BASE_URL}metadata/placetype/{place.type.pk}/")
+	place_uri = rdflib.URIRef(place.get_absolute_url())
+	type_uri = rdflib.URIRef(place.type.get_absolute_url())
 	g = rdflib.Graph()
 	g.bind('eolas', EOLAS_NS)
 	g.add((place_uri, rdflib.RDF.type, type_uri))
@@ -227,19 +227,19 @@ def place_to_rdf(place):
 	for alt in place.alternate_names:
 		g.add((place_uri, rdflib.RDFS.label, rdflib.Literal(alt)))
 	for container in place.located_in.all():
-		container_uri = rdflib.URIRef(f"{BASE_URL}metadata/place/{container.pk}/")
+		container_uri = rdflib.URIRef(container.get_absolute_url())
 		g.add((place_uri, rdflib.SDO.containedInPlace, container_uri))
 	return g
 
 def placetype_to_rdf(placetype):
-	type_uri = rdflib.URIRef(f"{BASE_URL}metadata/placetype/{placetype.pk}/")
+	type_uri = rdflib.URIRef(placetype.get_absolute_url())
 	g = rdflib.Graph()
 	g.add((type_uri, rdflib.SKOS.prefLabel, rdflib.Literal(str(placetype))))
 	g.add((type_uri, rdflib.RDFS.subClassOf, rdflib.SDO.Place))
 	return g
 
 def dayofweek_to_rdf(day):
-	day_uri = rdflib.URIRef(f"{BASE_URL}metadata/dayofweek/{day.pk}/")
+	day_uri = rdflib.URIRef(day.get_absolute_url())
 	g = rdflib.Graph()
 	g.bind('eolas', EOLAS_NS)
 	g.add((day_uri, rdflib.RDF.type, rdflib.TIME.DayOfWeek))
@@ -249,7 +249,7 @@ def dayofweek_to_rdf(day):
 	return g
 
 def calendar_to_rdf(calendar):
-	calendar_uri = rdflib.URIRef(f"{BASE_URL}metadata/calendar/{calendar.pk}/")
+	calendar_uri = rdflib.URIRef(calendar.get_absolute_url())
 	g = rdflib.Graph()
 	g.bind('eolas', EOLAS_NS)
 	g.add((calendar_uri, rdflib.RDF.type, EOLAS_NS.Calendar))
@@ -258,8 +258,8 @@ def calendar_to_rdf(calendar):
 	return g
 
 def month_to_rdf(month):
-	month_uri = rdflib.URIRef(f"{BASE_URL}metadata/month/{month.pk}/")
-	calendar_uri = rdflib.URIRef(f"{BASE_URL}metadata/calendar/{month.calendar.pk}/")
+	month_uri = rdflib.URIRef(month.get_absolute_url())
+	calendar_uri = rdflib.URIRef(month.calendar.get_absolute_url())
 	g = rdflib.Graph()
 	g.bind('eolas', EOLAS_NS)
 	g.add((month_uri, rdflib.RDF.type, rdflib.TIME.MonthOfYear))
@@ -270,7 +270,7 @@ def month_to_rdf(month):
 	return g
 
 def festival_to_rdf(festival):
-	festival_uri = rdflib.URIRef(f"{BASE_URL}metadata/festival/{festival.pk}/")
+	festival_uri = rdflib.URIRef(festival.get_absolute_url())
 	g = rdflib.Graph()
 	g.bind('eolas', EOLAS_NS)
 	g.add((festival_uri, rdflib.RDF.type, EOLAS_NS.Festival))
@@ -283,12 +283,12 @@ def festival_to_rdf(festival):
 		if festival.day_of_month is not None:
 			g.add((start_day_bnode, rdflib.TIME.day, rdflib.Literal(festival.day_of_month)))
 		if festival.month is not None:
-			month_uri = rdflib.URIRef(f"{BASE_URL}metadata/month/{festival.month.pk}/")
+			month_uri = rdflib.URIRef(festival.month.get_absolute_url())
 			g.add((start_day_bnode, rdflib.TIME.MonthOfYear, month_uri))
 	return g
 
 def memory_to_rdf(memory):
-	memory_uri = rdflib.URIRef(f"{BASE_URL}metadata/memory/{memory.pk}/")
+	memory_uri = rdflib.URIRef(memory.get_absolute_url())
 	g = rdflib.Graph()
 	g.bind('eolas', EOLAS_NS)
 	g.add((memory_uri, rdflib.RDF.type, EOLAS_NS.Memory))
@@ -303,7 +303,7 @@ def memory_to_rdf(memory):
 	return g
 
 def number_to_rdf(number):
-	number_uri = rdflib.URIRef(f"{BASE_URL}metadata/number/{number.pk}/")
+	number_uri = rdflib.URIRef(number.get_absolute_url())
 	g = rdflib.Graph()
 	g.bind('eolas', EOLAS_NS)
 	g.add((number_uri, rdflib.RDF.type, EOLAS_NS.Number))
@@ -314,7 +314,7 @@ def number_to_rdf(number):
 	return g
 
 def transportmode_to_rdf(transportmode):
-	transport_uri = rdflib.URIRef(f"{BASE_URL}metadata/transportmode/{transportmode.pk}/")
+	transport_uri = rdflib.URIRef(transportmode.get_absolute_url())
 	g = rdflib.Graph()
 	g.bind('eolas', EOLAS_NS)
 	g.bind('dbpedia', DBPEDIA_NS)
@@ -335,7 +335,7 @@ def languagefamily_to_rdf(languagefamily):
 	return g
 
 def language_to_rdf(language):
-	language_uri = rdflib.URIRef(f"{BASE_URL}metadata/language/{language.pk}/")
+	language_uri = rdflib.URIRef(language.get_absolute_url())
 	g = rdflib.Graph()
 	g.bind('loc', LOC_NS)
 	g.add((language_uri, rdflib.RDF.type, LOC_NS.Language))
@@ -345,7 +345,7 @@ def language_to_rdf(language):
 	return g
 
 def historicalevent_to_rdf(historicalevent):
-	historicalevent_uri = rdflib.URIRef(f"{BASE_URL}metadata/historicalevent/{historicalevent.pk}/")
+	historicalevent_uri = rdflib.URIRef(historicalevent.get_absolute_url())
 	g = rdflib.Graph()
 	g.bind('eolas', EOLAS_NS)
 	g.add((historicalevent_uri, rdflib.RDF.type, EOLAS_NS.HistoricalEvent))
