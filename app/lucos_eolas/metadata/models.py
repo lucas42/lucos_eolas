@@ -361,3 +361,22 @@ class HistoricalEvent(models.Model):
 
 	def get_absolute_url(self):
 		return f"{BASE_URL}metadata/historicalevent/{self.pk}/"
+
+class Weather(models.Model):
+	name = models.CharField(
+		max_length=255,
+		verbose_name=_('name'),
+		null=False,
+		blank=False,
+		unique=True,
+	)
+	class Meta:
+		verbose_name = _('Weather')
+		verbose_name_plural = _('Weathers')
+		ordering = ["name"]
+
+	def __str__(self):
+		return self.name
+
+	def get_absolute_url(self):
+		return f"{BASE_URL}metadata/weather/{self.pk}/"

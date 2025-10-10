@@ -1,7 +1,7 @@
 import os
 import rdflib
 from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
-from .models import Place, PlaceType, DayOfWeek, Calendar, Month, Festival, Memory, Number, TransportMode, LanguageFamily, Language, HistoricalEvent
+from .models import Place, PlaceType, DayOfWeek, Calendar, Month, Festival, Memory, Number, TransportMode, LanguageFamily, Language, HistoricalEvent, Weather
 from ..lucosauth.decorators import api_auth
 from django.utils import translation
 from django.conf import settings
@@ -43,6 +43,7 @@ def ontology_graph():
 		('Memory', 'A remembered event or fact.'),
 		('Number', 'A numeric concept.'),
 		('Historical Event', 'A notable thing that happened in the past.'),
+		('Weather', 'A short term state of the atmosphere.'),
 	]:
 		class_uri = EOLAS_NS[class_name.replace(" ", "")]
 		g.add((class_uri, rdflib.RDF.type, rdflib.OWL.Class))
@@ -177,6 +178,13 @@ def thing_data(request, type, pk):
 			return HttpResponse(status=404)
 		g = historicalevent_to_rdf(obj)
 		g.add((EOLAS_NS['HistoricalEvent'], rdflib.SKOS.prefLabel, rdflib.Literal("Historical Event")))
+	elif type == 'weather':
+		try:
+			obj = Weather.objects.get(pk=pk)
+		except Weather.DoesNotExist:
+			return HttpResponse(status=404)
+		g = weather_to_rdf(obj)
+		g.add((EOLAS_NS['Weather'], rdflib.SKOS.prefLabel, rdflib.Literal("Weather")))
 	else:
 		return HttpResponse(status=404)
 	return HttpResponse(g.serialize(format=format), content_type=f'{content_type}; charset={settings.DEFAULT_CHARSET}')
@@ -213,6 +221,8 @@ def all_rdf(request):
 		g += language_to_rdf(obj)
 	for obj in HistoricalEvent.objects.all():
 		g += historicalevent_to_rdf(obj)
+	for obj in Weather.objects.all():
+		g += weather_to_rdf(obj)
 	return HttpResponse(g.serialize(format=format), content_type=f'{content_type}; charset={settings.DEFAULT_CHARSET}')
 
 def place_to_rdf(place):
@@ -357,4 +367,13 @@ def historicalevent_to_rdf(historicalevent):
 		datetime_bnode = rdflib.BNode()
 		g.add((historicalevent_uri, EOLAS_NS.occuredOn, datetime_bnode))
 		g.add((datetime_bnode, rdflib.TIME.year, rdflib.Literal(historicalevent.year)))
+	return g
+
+def weather_to_rdf(weather):
+	weather_uri = rdflib.URIRef(weather.get_absolute_url())
+	g = rdflib.Graph()
+	g.bind('eolas', EOLAS_NS)
+	g.add((weather_uri, rdflib.RDF.type, EOLAS_NS.Weather))
+	g.add((weather_uri, rdflib.SKOS.prefLabel, rdflib.Literal(str(weather))))
+	g.add((weather_uri, rdflib.RDFS.label, rdflib.Literal(weather.name)))
 	return g

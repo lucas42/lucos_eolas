@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-02 15:43+0000\n"
+"POT-Creation-Date: 2025-10-10 23:03+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -27,7 +27,8 @@ msgstr "Meiteashonraí"
 #: lucos_eolas/metadata/models.py:129 lucos_eolas/metadata/models.py:163
 #: lucos_eolas/metadata/models.py:193 lucos_eolas/metadata/models.py:223
 #: lucos_eolas/metadata/models.py:250 lucos_eolas/metadata/models.py:275
-#: lucos_eolas/metadata/models.py:300 lucos_eolas/metadata/models.py:326
+#: lucos_eolas/metadata/models.py:311 lucos_eolas/metadata/models.py:337
+#: lucos_eolas/metadata/models.py:368
 msgid "name"
 msgstr "ainm"
 
@@ -115,7 +116,7 @@ msgstr "Féilte"
 msgid "description"
 msgstr "tuairisc"
 
-#: lucos_eolas/metadata/models.py:204 lucos_eolas/metadata/models.py:338
+#: lucos_eolas/metadata/models.py:204 lucos_eolas/metadata/models.py:349
 msgid "year"
 msgstr "bliain"
 
@@ -155,7 +156,7 @@ msgstr "Modh Iompair"
 msgid "Modes of Transport"
 msgstr "Modhanna Iompair"
 
-#: lucos_eolas/metadata/models.py:270 lucos_eolas/metadata/models.py:295
+#: lucos_eolas/metadata/models.py:270 lucos_eolas/metadata/models.py:306
 msgid "code"
 msgstr "cód"
 
@@ -163,47 +164,57 @@ msgstr "cód"
 msgid "A valid ISO 639-5 code"
 msgstr "Cód bailí ISO 639-5"
 
-#: lucos_eolas/metadata/models.py:281
+#: lucos_eolas/metadata/models.py:287
 msgid "Language Family"
 msgstr "Fine Teangacha"
 
-#: lucos_eolas/metadata/models.py:282
+#: lucos_eolas/metadata/models.py:288
 msgid "Language Families"
 msgstr "Finte Teangacha"
 
-#: lucos_eolas/metadata/models.py:296
-msgid "A valid ISO 639-3 code"
-msgstr "Cód bailí ISO 639-5"
+#: lucos_eolas/metadata/models.py:307
+msgid "A valid ISO 639 code"
+msgstr "Cód bailí ISO 639"
 
-#: lucos_eolas/metadata/models.py:313
+#: lucos_eolas/metadata/models.py:324
 msgid "Language"
 msgstr "Teanga"
 
-#: lucos_eolas/metadata/models.py:314
+#: lucos_eolas/metadata/models.py:325
 msgid "Languages"
 msgstr "Teangacha"
 
-#: lucos_eolas/metadata/models.py:333
+#: lucos_eolas/metadata/models.py:344
 msgid "Wikipedia URL Slug"
 msgstr "Sluga URL Vicipéid"
 
-#: lucos_eolas/metadata/models.py:334
+#: lucos_eolas/metadata/models.py:345
 msgid ""
 "The URL Slug used by the primary page regarding this event on the English "
 "Language instance of Wikipedia"
-msgstr "An sluga URL a úsáideann an príomhleathanach maidir leis an imeacht seo ar an Vicipéid Béarla"
+msgstr ""
+"An sluga URL a úsáideann an príomhleathanach maidir leis an imeacht seo ar "
+"an Vicipéid Béarla"
 
-#: lucos_eolas/metadata/models.py:341
+#: lucos_eolas/metadata/models.py:352
 msgid "Approximate year of the event, in the Gregorian Calendar"
 msgstr "Garbh-bhliain ar an imeacht, sa fhéilire Ghréagóra"
 
-#: lucos_eolas/metadata/models.py:344
+#: lucos_eolas/metadata/models.py:355
 msgid "Historical Event"
 msgstr "Imeacht Stairiúil"
 
-#: lucos_eolas/metadata/models.py:345
+#: lucos_eolas/metadata/models.py:356
 msgid "Historical Events"
 msgstr "Imeachtaí Stairiúla"
+
+#: lucos_eolas/metadata/models.py:374
+msgid "Weather"
+msgstr "Aimsir"
+
+#: lucos_eolas/metadata/models.py:375
+msgid "Weathers"
+msgstr "Aimsirí"
 
 #: lucos_eolas/settings.py:116
 msgid "Irish"
@@ -212,3 +223,12 @@ msgstr "Gaelige"
 #: lucos_eolas/settings.py:117
 msgid "English"
 msgstr "Béarla"
+
+#: lucos_eolas/templates/admin/metadata/languagefamily/change_form.html:6
+msgid "Home"
+msgstr ""
+
+#: lucos_eolas/templates/admin/metadata/languagefamily/change_form.html:13
+#, python-format
+msgid "Add %(name)s"
+msgstr ""

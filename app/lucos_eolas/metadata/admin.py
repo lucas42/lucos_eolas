@@ -154,3 +154,4 @@ class LanguageAdmin(EolasModelAdmin):
 eolasadmin.register(Language, LanguageAdmin)
 
 eolasadmin.register(HistoricalEvent, EolasModelAdmin)
+eolasadmin.register(Weather, EolasModelAdmin)
