@@ -110,34 +110,10 @@ class PlaceTypeAdmin(EolasModelAdmin):
 		super().save_model(request, obj, form, change)
 eolasadmin.register(PlaceType, PlaceTypeAdmin)
 
-class DayOfWeekAdmin(EolasModelAdmin):
-	pass
-eolasadmin.register(DayOfWeek, DayOfWeekAdmin)
-
-class CalendarAdmin(EolasModelAdmin):
-	pass
-eolasadmin.register(Calendar, CalendarAdmin)
-
 class MonthAdmin(EolasModelAdmin):
 	list_filter = ['calendar']
 	show_facets = admin.ShowFacets.ALWAYS
 eolasadmin.register(Month, MonthAdmin)
-
-class FestivalAdmin(EolasModelAdmin):
-	pass
-eolasadmin.register(Festival, FestivalAdmin)
-
-class MemoryAdmin(EolasModelAdmin):
-	pass
-eolasadmin.register(Memory, MemoryAdmin)
-
-class NumberAdmin(EolasModelAdmin):
-	pass
-eolasadmin.register(Number, NumberAdmin)
-
-class TransportModeAdmin(EolasModelAdmin):
-	pass
-eolasadmin.register(TransportMode, TransportModeAdmin)
 
 class LanguageFamilyAdmin(EolasModelAdmin):
 	def save_model(self, request, obj, form, change):
@@ -153,5 +129,12 @@ class LanguageAdmin(EolasModelAdmin):
 		super().save_model(request, obj, form, change)
 eolasadmin.register(Language, LanguageAdmin)
 
+## Models to include in admin, but don't need any custom config
+eolasadmin.register(DayOfWeek, EolasModelAdmin)
+eolasadmin.register(Calendar, EolasModelAdmin)
+eolasadmin.register(Festival, EolasModelAdmin)
+eolasadmin.register(Memory, EolasModelAdmin)
+eolasadmin.register(Number, EolasModelAdmin)
+eolasadmin.register(TransportMode, EolasModelAdmin)
 eolasadmin.register(HistoricalEvent, EolasModelAdmin)
 eolasadmin.register(Weather, EolasModelAdmin)

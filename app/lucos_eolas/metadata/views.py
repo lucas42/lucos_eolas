@@ -1,11 +1,12 @@
 import os
 import rdflib
 from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
-from .models import Place, PlaceType, DayOfWeek, Calendar, Month, Festival, Memory, Number, TransportMode, LanguageFamily, Language, HistoricalEvent, Weather
+from .models import *
 from ..lucosauth.decorators import api_auth
 from django.utils import translation
 from django.conf import settings
 from .utils_conneg import choose_rdf_over_html, pick_best_rdf_format
+from django.apps import apps
 
 BASE_URL = os.environ.get("BASE_URL")
 EOLAS_NS = rdflib.Namespace(f"{BASE_URL}ontology/")
@@ -100,93 +101,28 @@ def thing_entrypoint(request, type, pk):
 @api_auth
 def thing_data(request, type, pk):
 	format, content_type = pick_best_rdf_format(request)
+	try:
+		model_class = apps.get_model('metadata', type)
+		obj = model_class.objects.get(pk=pk)
+	except (ObjectDoesNotExist, LookupError):
+		return HttpResponse(status=404)
+	g = object_to_rdf[model_class](obj)
+
+	## For any types in the EOLAS_NS namespace, also return the type's prefLabel, to make it easier for lucos_arachne to add a type in its search index
 	if type == 'place':
-		try:
-			obj = Place.objects.get(pk=pk)
-		except Place.DoesNotExist:
-			return HttpResponse(status=404)
-		g = place_to_rdf(obj)
 		g += placetype_to_rdf(obj.type)
-	elif type == 'placetype':
-		try:
-			obj = PlaceType.objects.get(pk=pk)
-		except PlaceType.DoesNotExist:
-			return HttpResponse(status=404)
-		g = placetype_to_rdf(obj)
-	elif type == 'dayofweek':
-		try:
-			obj = DayOfWeek.objects.get(pk=pk)
-		except DayOfWeek.DoesNotExist:
-			return HttpResponse(status=404)
-		g = dayofweek_to_rdf(obj)
 	elif type == 'calendar':
-		try:
-			obj = Calendar.objects.get(pk=pk)
-		except Calendar.DoesNotExist:
-			return HttpResponse(status=404)
-		g = calendar_to_rdf(obj)
 		g.add((EOLAS_NS['Calendar'], rdflib.SKOS.prefLabel, rdflib.Literal("Calendar")))
-	elif type == 'month':
-		try:
-			obj = Month.objects.get(pk=pk)
-		except Month.DoesNotExist:
-			return HttpResponse(status=404)
-		g = month_to_rdf(obj)
 	elif type == 'festival':
-		try:
-			obj = Festival.objects.get(pk=pk)
-		except Festival.DoesNotExist:
-			return HttpResponse(status=404)
-		g = festival_to_rdf(obj)
 		g.add((EOLAS_NS['Festival'], rdflib.SKOS.prefLabel, rdflib.Literal("Festival")))
 	elif type == 'memory':
-		try:
-			obj = Memory.objects.get(pk=pk)
-		except Memory.DoesNotExist:
-			return HttpResponse(status=404)
-		g = memory_to_rdf(obj)
 		g.add((EOLAS_NS['Memory'], rdflib.SKOS.prefLabel, rdflib.Literal("Memory")))
 	elif type == 'number':
-		try:
-			obj = Number.objects.get(pk=pk)
-		except Number.DoesNotExist:
-			return HttpResponse(status=404)
-		g = number_to_rdf(obj)
 		g.add((EOLAS_NS['Number'], rdflib.SKOS.prefLabel, rdflib.Literal("Number")))
-	elif type == 'transportmode':
-		try:
-			obj = TransportMode.objects.get(pk=pk)
-		except TransportMode.DoesNotExist:
-			return HttpResponse(status=404)
-		g = transportmode_to_rdf(obj)
-	elif type == 'languagefamily':
-		try:
-			obj = LanguageFamily.objects.get(code=pk)
-		except LanguageFamily.DoesNotExist:
-			return HttpResponse(status=404)
-		g = languagefamily_to_rdf(obj)
-	elif type == 'language':
-		try:
-			obj = Language.objects.get(code=pk)
-		except Language.DoesNotExist:
-			return HttpResponse(status=404)
-		g = language_to_rdf(obj)
 	elif type == 'historicalevent':
-		try:
-			obj = HistoricalEvent.objects.get(pk=pk)
-		except HistoricalEvent.DoesNotExist:
-			return HttpResponse(status=404)
-		g = historicalevent_to_rdf(obj)
 		g.add((EOLAS_NS['HistoricalEvent'], rdflib.SKOS.prefLabel, rdflib.Literal("Historical Event")))
 	elif type == 'weather':
-		try:
-			obj = Weather.objects.get(pk=pk)
-		except Weather.DoesNotExist:
-			return HttpResponse(status=404)
-		g = weather_to_rdf(obj)
 		g.add((EOLAS_NS['Weather'], rdflib.SKOS.prefLabel, rdflib.Literal("Weather")))
-	else:
-		return HttpResponse(status=404)
 	return HttpResponse(g.serialize(format=format), content_type=f'{content_type}; charset={settings.DEFAULT_CHARSET}')
 
 @api_auth
@@ -197,32 +133,9 @@ def all_rdf(request):
 	g.bind('eolas', EOLAS_NS)
 	g.bind('loc', LOC_NS)
 	g += ontology_graph()
-	for obj in PlaceType.objects.all():
-		g += placetype_to_rdf(obj)
-	for obj in Place.objects.all():
-		g += place_to_rdf(obj)
-	for obj in DayOfWeek.objects.all():
-		g += dayofweek_to_rdf(obj)
-	for obj in Calendar.objects.all():
-		g += calendar_to_rdf(obj)
-	for obj in Month.objects.all():
-		g += month_to_rdf(obj)
-	for obj in Festival.objects.all():
-		g += festival_to_rdf(obj)
-	for obj in Memory.objects.all():
-		g += memory_to_rdf(obj)
-	for obj in Number.objects.all():
-		g += number_to_rdf(obj)
-	for obj in TransportMode.objects.all():
-		g += transportmode_to_rdf(obj)
-	for obj in LanguageFamily.objects.all():
-		g += languagefamily_to_rdf(obj)
-	for obj in Language.objects.all():
-		g += language_to_rdf(obj)
-	for obj in HistoricalEvent.objects.all():
-		g += historicalevent_to_rdf(obj)
-	for obj in Weather.objects.all():
-		g += weather_to_rdf(obj)
+	for model_class in object_to_rdf:
+		for obj in model_class.objects.all():
+			g += object_to_rdf[model_class](obj)
 	return HttpResponse(g.serialize(format=format), content_type=f'{content_type}; charset={settings.DEFAULT_CHARSET}')
 
 def place_to_rdf(place):
@@ -377,3 +290,19 @@ def weather_to_rdf(weather):
 	g.add((weather_uri, rdflib.SKOS.prefLabel, rdflib.Literal(str(weather))))
 	g.add((weather_uri, rdflib.RDFS.label, rdflib.Literal(weather.name)))
 	return g
+
+object_to_rdf = {
+	PlaceType: placetype_to_rdf,
+	Place: place_to_rdf,
+	DayOfWeek: dayofweek_to_rdf,
+	Calendar: calendar_to_rdf,
+	Month: month_to_rdf,
+	Festival: festival_to_rdf,
+	Memory: memory_to_rdf,
+	Number: number_to_rdf,
+	TransportMode: transportmode_to_rdf,
+	LanguageFamily: languagefamily_to_rdf,
+	Language: language_to_rdf,
+	HistoricalEvent: historicalevent_to_rdf,
+	Weather: weather_to_rdf,
+}
