@@ -187,12 +187,12 @@
         },
         "psycopg": {
             "hashes": [
-                "sha256:0bce99269d16ed18401683a8569b2c5abd94f72f8364856d56c0389bcd50972a",
-                "sha256:ab5caf09a9ec42e314a21f5216dbcceac528e0e05142e42eea83a3b28b320ac3"
+                "sha256:217231b2b6b72fba88281b94241b2f16043ee67f81def47c52a01b72ff0c086a",
+                "sha256:398bb484ed44361e041c8f804ed7af3d2fcefbffdace1d905b7446c319321706"
             ],
             "index": "pypi",
             "markers": "python_version >= '3.8'",
-            "version": "==3.2.10"
+            "version": "==3.2.11"
         },
         "pyparsing": {
             "hashes": [
