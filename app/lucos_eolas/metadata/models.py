@@ -380,3 +380,22 @@ class Weather(models.Model):
 
 	def get_absolute_url(self):
 		return f"{BASE_URL}metadata/weather/{self.pk}/"
+
+class EthnicGroup(models.Model):
+	name = models.CharField(
+		max_length=255,
+		verbose_name=_('name'),
+		null=False,
+		blank=False,
+		unique=True,
+	)
+	class Meta:
+		verbose_name = _('Ethnic Group')
+		verbose_name_plural = _('Ethnic Groups')
+		ordering = ["name"]
+
+	def __str__(self):
+		return self.name
+
+	def get_absolute_url(self):
+		return f"{BASE_URL}metadata/ethnicgroup/{self.pk}/"

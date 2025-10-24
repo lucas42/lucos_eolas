@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-10-10 23:03+0000\n"
+"POT-Creation-Date: 2025-10-24 17:07+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -28,7 +28,7 @@ msgstr "Meiteashonraí"
 #: lucos_eolas/metadata/models.py:193 lucos_eolas/metadata/models.py:223
 #: lucos_eolas/metadata/models.py:250 lucos_eolas/metadata/models.py:275
 #: lucos_eolas/metadata/models.py:311 lucos_eolas/metadata/models.py:337
-#: lucos_eolas/metadata/models.py:368
+#: lucos_eolas/metadata/models.py:368 lucos_eolas/metadata/models.py:387
 msgid "name"
 msgstr "ainm"
 
@@ -216,6 +216,14 @@ msgstr "Aimsir"
 msgid "Weathers"
 msgstr "Aimsirí"
 
+#: lucos_eolas/metadata/models.py:393
+msgid "Ethnic Group"
+msgstr "Grúpa Eitneach"
+
+#: lucos_eolas/metadata/models.py:394
+msgid "Ethnic Groups"
+msgstr "Grúpaí Eitneacha"
+
 #: lucos_eolas/settings.py:116
 msgid "Irish"
 msgstr "Gaelige"
@@ -226,9 +234,9 @@ msgstr "Béarla"
 
 #: lucos_eolas/templates/admin/metadata/languagefamily/change_form.html:6
 msgid "Home"
-msgstr ""
+msgstr "Abhaile"
 
 #: lucos_eolas/templates/admin/metadata/languagefamily/change_form.html:13
 #, python-format
 msgid "Add %(name)s"
-msgstr ""
+msgstr "Cuir %(name)s le"

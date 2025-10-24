@@ -260,6 +260,12 @@ def weather_to_rdf(weather):
 	g.add((weather_uri, rdflib.RDF.type, EOLAS_NS.Weather))
 	return g
 
+def ethnicgroup_to_rdf(transportmode):
+	(ethnicgroup_uri, g) = object_to_rdf(transportmode)
+	g.bind('dbpedia', DBPEDIA_NS)
+	g.add((ethnicgroup_uri, rdflib.RDF.type, DBPEDIA_NS.EthnicGroup))
+	return g
+
 to_rdf_by_model = {
 	PlaceType: placetype_to_rdf,
 	Place: place_to_rdf,
@@ -274,4 +280,5 @@ to_rdf_by_model = {
 	Language: language_to_rdf,
 	HistoricalEvent: historicalevent_to_rdf,
 	Weather: weather_to_rdf,
+	EthnicGroup: ethnicgroup_to_rdf,
 }
