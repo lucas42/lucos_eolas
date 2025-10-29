@@ -5,6 +5,8 @@ from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from ..lucosauth import views as auth_views
 from .loganne import loganneRequest
+from django.apps import apps
+from django.contrib.admin.sites import AlreadyRegistered
 
 class EolasAdminSite(admin.AdminSite):
 	site_title = 'LucOS Eolas'
@@ -129,13 +131,10 @@ class LanguageAdmin(EolasModelAdmin):
 		super().save_model(request, obj, form, change)
 eolasadmin.register(Language, LanguageAdmin)
 
-## Models to include in admin, but don't need any custom config
-eolasadmin.register(DayOfWeek, EolasModelAdmin)
-eolasadmin.register(Calendar, EolasModelAdmin)
-eolasadmin.register(Festival, EolasModelAdmin)
-eolasadmin.register(Memory, EolasModelAdmin)
-eolasadmin.register(Number, EolasModelAdmin)
-eolasadmin.register(TransportMode, EolasModelAdmin)
-eolasadmin.register(HistoricalEvent, EolasModelAdmin)
-eolasadmin.register(Weather, EolasModelAdmin)
-eolasadmin.register(EthnicGroup, EolasModelAdmin)
+## Register all the other models without any bespoke config
+app_models = apps.get_app_config('metadata').get_models()
+for model in app_models:
+	try:
+		eolasadmin.register(model, EolasModelAdmin)
+	except AlreadyRegistered:
+		pass
