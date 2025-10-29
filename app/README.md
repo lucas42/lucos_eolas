@@ -4,14 +4,6 @@
 * django
 * A database (and the relevant python libraries to use that database)
 
-## Running
-Requires [docker-compose](https://docs.docker.com/compose/)
-Run the following:
-
-`docker-compose up --build`
-
-This will spin up docker containers for the django app, database and web proxy.
-
 ## Creating a new database migration
 
 * Upgrade the approprite `models.py` files

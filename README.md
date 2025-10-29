@@ -12,10 +12,10 @@ Has three components:
 * web - an nginx server for routing traffic to app and serving static files
 
 ## Running in Production
-`nice -19 docker-compose up -d --no-build`
+`docker compose up -d --no-build`
 
 ## Running locally
-`docker-compose up --build`
+`docker compose up --build`
 
 ## Database commands
 ### Manually creating a backup
@@ -34,3 +34,9 @@ Assuming the backup file is available on the current machine's /tmp directory, r
 * `docker compose cp /tmp/eolas.sql db:/tmp/`
 * `docker compose exec db sh -c 'dropdb --user postgres postgres && createdb --user postgres postgres'` (To wipe data, if there's an existing DB)
 * `docker compose exec db sh -c 'psql --user postgres postgres < /tmp/eolas.sql'`
+
+## Helper script for updating migration & translation files locally
+
+`./update.sh`
+
+Depends on docker compose.  This script will start the containers, run the appropriate `makemigrations` & `makemessages` commands, copy the relevant files to the local filesystem and stop the containers again.
