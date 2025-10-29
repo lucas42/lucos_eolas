@@ -195,6 +195,26 @@ class Festival(models.Model):
 	def get_absolute_url(self):
 		return f"{BASE_URL}metadata/festival/{self.pk}/"
 
+class Season(models.Model):
+	rdf_type = DBPEDIA_NS.Season
+	name = models.CharField(
+		max_length=255,
+		verbose_name=_('name'),
+		null=False,
+		blank=False,
+		unique=True,
+	)
+	class Meta:
+		verbose_name = _('Season')
+		verbose_name_plural = _('Seasons')
+		ordering = ["pk"]
+
+	def __str__(self):
+		return self.name
+
+	def get_absolute_url(self):
+		return f"{BASE_URL}metadata/season/{self.pk}/"
+
 class Memory(models.Model):
 	rdf_type = EOLAS_NS.Memory
 	name = models.CharField(
