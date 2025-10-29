@@ -2,8 +2,12 @@ import os
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.utils.translation import gettext_lazy as _
+import rdflib
 
 BASE_URL = os.environ.get("BASE_URL")
+EOLAS_NS = rdflib.Namespace(f"{BASE_URL}ontology/")
+DBPEDIA_NS = rdflib.Namespace("https://dbpedia.org/ontology/")
+LOC_NS = rdflib.Namespace("http://www.loc.gov/mads/rdf/v1#")
 
 class PlaceType(models.Model):
 	name = models.CharField(
@@ -80,6 +84,7 @@ class Place(models.Model):
 		return f"{BASE_URL}metadata/place/{self.pk}/"
 
 class DayOfWeek(models.Model):
+	rdf_type = rdflib.TIME.DayOfWeek
 	name = models.CharField(
 		max_length=255,
 		verbose_name=_('name'),
@@ -105,6 +110,7 @@ class DayOfWeek(models.Model):
 		return f"{BASE_URL}metadata/dayofweek/{self.pk}/"
 
 class Calendar(models.Model):
+	rdf_type = EOLAS_NS.Calendar
 	name = models.CharField(
 		max_length=255,
 		verbose_name=_('name'),
@@ -124,6 +130,7 @@ class Calendar(models.Model):
 		return f"{BASE_URL}metadata/calendar/{self.pk}/"
 
 class Month(models.Model):
+	rdf_type = rdflib.TIME.MonthOfYear
 	name = models.CharField(
 		max_length=255,
 		verbose_name=_('name'),
@@ -158,6 +165,7 @@ class Month(models.Model):
 		return f"{BASE_URL}metadata/month/{self.pk}/"
 
 class Festival(models.Model):
+	rdf_type = EOLAS_NS.Festival
 	name = models.CharField(
 		max_length=255,
 		verbose_name=_('name'),
@@ -188,6 +196,7 @@ class Festival(models.Model):
 		return f"{BASE_URL}metadata/festival/{self.pk}/"
 
 class Memory(models.Model):
+	rdf_type = EOLAS_NS.Memory
 	name = models.CharField(
 		max_length=255,
 		verbose_name=_('name'),
@@ -218,6 +227,7 @@ class Memory(models.Model):
 		return f"{BASE_URL}metadata/memory/{self.pk}/"
 
 class Number(models.Model):
+	rdf_type = EOLAS_NS.Number
 	name = models.CharField(
 		max_length=255,
 		verbose_name=_('name'),
@@ -245,6 +255,7 @@ class Number(models.Model):
 		return f"{BASE_URL}metadata/number/{self.pk}/"
 
 class TransportMode(models.Model):
+	rdf_type = DBPEDIA_NS.MeanOfTransportation
 	name = models.CharField(
 		max_length=255,
 		verbose_name=_('name'),
@@ -264,6 +275,7 @@ class TransportMode(models.Model):
 		return f"{BASE_URL}metadata/transportmode/{self.pk}/"
 
 class LanguageFamily(models.Model):
+	rdf_type = rdflib.URIRef("http://id.loc.gov/vocabulary/iso639-5/iso639-5_Language")
 	code = models.CharField(
 		max_length=3,
 		primary_key=True,
@@ -300,6 +312,7 @@ class LanguageFamily(models.Model):
 			return f"http://id.loc.gov/vocabulary/iso639-5/{self.pk}"
 
 class Language(models.Model):
+	rdf_type = LOC_NS.Language
 	code = models.CharField(
 		max_length=15,
 		primary_key=True,
@@ -332,6 +345,7 @@ class Language(models.Model):
 		return f"{BASE_URL}metadata/language/{self.pk}/"
 
 class HistoricalEvent(models.Model):
+	rdf_type = EOLAS_NS.HistoricalEvent
 	name = models.CharField(
 		max_length=255,
 		verbose_name=_('name'),
@@ -363,6 +377,7 @@ class HistoricalEvent(models.Model):
 		return f"{BASE_URL}metadata/historicalevent/{self.pk}/"
 
 class Weather(models.Model):
+	rdf_type = EOLAS_NS.Weather
 	name = models.CharField(
 		max_length=255,
 		verbose_name=_('name'),
@@ -382,6 +397,7 @@ class Weather(models.Model):
 		return f"{BASE_URL}metadata/weather/{self.pk}/"
 
 class EthnicGroup(models.Model):
+	rdf_type = DBPEDIA_NS.EthnicGroup
 	name = models.CharField(
 		max_length=255,
 		verbose_name=_('name'),

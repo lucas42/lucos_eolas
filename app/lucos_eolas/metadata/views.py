@@ -106,7 +106,11 @@ def thing_data(request, type, pk):
 		obj = model_class.objects.get(pk=pk)
 	except (ObjectDoesNotExist, LookupError):
 		return HttpResponse(status=404)
-	g = to_rdf_by_model[model_class](obj)
+	g = get_rdf_by_item(model_class, obj)
+
+	g.bind('dbpedia', DBPEDIA_NS)
+	g.bind('eolas', EOLAS_NS)
+	g.bind('loc', LOC_NS)
 
 	## For any types in the EOLAS_NS namespace, also return the type's prefLabel, to make it easier for lucos_arachne to add a type in its search index
 	if type == 'place':
@@ -130,17 +134,28 @@ def all_rdf(request):
 	# Serialize all items of every type into a single RDF graph
 	format, content_type = pick_best_rdf_format(request)
 	g = rdflib.Graph()
+	g.bind('dbpedia', DBPEDIA_NS)
 	g.bind('eolas', EOLAS_NS)
 	g.bind('loc', LOC_NS)
 	g += ontology_graph()
-	for model_class in to_rdf_by_model:
+	app_models = apps.get_app_config('metadata').get_models()
+	for model_class in app_models:
 		for obj in model_class.objects.all():
-			g += to_rdf_by_model[model_class](obj)
+			g += get_rdf_by_item(model_class, obj)
 	return HttpResponse(g.serialize(format=format), content_type=f'{content_type}; charset={settings.DEFAULT_CHARSET}')
+
+def get_rdf_by_item(model_class, item):
+	if model_class in custom_model_handlers:
+		return custom_model_handlers[model_class](item)
+	else:
+		(_, g) = object_to_rdf(item)
+		return g
 
 def object_to_rdf(item):
 	uri = rdflib.URIRef(item.get_absolute_url())
 	g = rdflib.Graph()
+	if (hasattr(item, 'rdf_type')):
+		g.add((uri, rdflib.RDF.type, item.rdf_type))
 	g.add((uri, rdflib.SKOS.prefLabel, rdflib.Literal(str(item))))
 	g.add((uri, rdflib.RDFS.label, rdflib.Literal(item.name)))
 	if hasattr(item, 'alternate_names'):
@@ -151,7 +166,6 @@ def object_to_rdf(item):
 def place_to_rdf(place):
 	(place_uri, g) = object_to_rdf(place)
 	type_uri = rdflib.URIRef(place.type.get_absolute_url())
-	g.bind('eolas', EOLAS_NS)
 	g.add((place_uri, rdflib.RDF.type, type_uri))
 	g.add((place_uri, EOLAS_NS.isFictional, rdflib.Literal(place.fictional)))
 	for container in place.located_in.all():
@@ -166,30 +180,18 @@ def placetype_to_rdf(placetype):
 
 def dayofweek_to_rdf(day):
 	(day_uri, g) = object_to_rdf(day)
-	g.bind('eolas', EOLAS_NS)
-	g.add((day_uri, rdflib.RDF.type, rdflib.TIME.DayOfWeek))
 	g.add((day_uri, EOLAS_NS.orderInWeek, rdflib.Literal(day.order)))
-	return g
-
-def calendar_to_rdf(calendar):
-	(calendar_uri, g) = object_to_rdf(calendar)
-	g.bind('eolas', EOLAS_NS)
-	g.add((calendar_uri, rdflib.RDF.type, EOLAS_NS.Calendar))
 	return g
 
 def month_to_rdf(month):
 	(month_uri, g) = object_to_rdf(month)
 	calendar_uri = rdflib.URIRef(month.calendar.get_absolute_url())
-	g.bind('eolas', EOLAS_NS)
-	g.add((month_uri, rdflib.RDF.type, rdflib.TIME.MonthOfYear))
 	g.add((month_uri, EOLAS_NS.calendar, calendar_uri))
 	g.add((month_uri, EOLAS_NS.orderInCalendar, rdflib.Literal(month.order_in_calendar)))
 	return g
 
 def festival_to_rdf(festival):
 	(festival_uri, g) = object_to_rdf(festival)
-	g.bind('eolas', EOLAS_NS)
-	g.add((festival_uri, rdflib.RDF.type, EOLAS_NS.Festival))
 	# Represent startDay as a blank node
 	if festival.day_of_month is not None or festival.month is not None:
 		start_day_bnode = rdflib.BNode()
@@ -203,8 +205,6 @@ def festival_to_rdf(festival):
 
 def memory_to_rdf(memory):
 	(memory_uri, g) = object_to_rdf(memory)
-	g.bind('eolas', EOLAS_NS)
-	g.add((memory_uri, rdflib.RDF.type, EOLAS_NS.Memory))
 	if memory.description:
 		g.add((memory_uri, rdflib.DC.description, rdflib.Literal(memory.description)))
 	if memory.year is not None:
@@ -215,37 +215,23 @@ def memory_to_rdf(memory):
 
 def number_to_rdf(number):
 	(number_uri, g) = object_to_rdf(number)
-	g.bind('eolas', EOLAS_NS)
-	g.add((number_uri, rdflib.RDF.type, EOLAS_NS.Number))
 	if number.value is not None:
 		g.add((number_uri, EOLAS_NS.numericValue, rdflib.Literal(number.value, datatype=rdflib.XSD.decimal)))
 	return g
 
-def transportmode_to_rdf(transportmode):
-	(transport_uri, g) = object_to_rdf(transportmode)
-	g.bind('dbpedia', DBPEDIA_NS)
-	g.add((transport_uri, rdflib.RDF.type, DBPEDIA_NS.MeanOfTransportation))
-	return g
-
 def languagefamily_to_rdf(languagefamily):
 	(languagefamily_uri, g) = object_to_rdf(languagefamily)
-	g.bind('loc', LOC_NS)
-	g.add((languagefamily_uri, rdflib.RDF.type, rdflib.URIRef("http://id.loc.gov/vocabulary/iso639-5/iso639-5_Language")))
 	if languagefamily.parent:
 		g.add((languagefamily_uri, LOC_NS.hasBroaderAuthority, rdflib.URIRef(f"http://id.loc.gov/vocabulary/iso639-5/{languagefamily.parent.pk}")))
 	return g
 
 def language_to_rdf(language):
 	(language_uri, g) = object_to_rdf(language)
-	g.bind('loc', LOC_NS)
-	g.add((language_uri, rdflib.RDF.type, LOC_NS.Language))
 	g.add((language_uri, LOC_NS.hasBroaderExternalAuthority, rdflib.URIRef(language.family.get_absolute_url())))
 	return g
 
 def historicalevent_to_rdf(historicalevent):
 	(historicalevent_uri, g) = object_to_rdf(historicalevent)
-	g.bind('eolas', EOLAS_NS)
-	g.add((historicalevent_uri, rdflib.RDF.type, EOLAS_NS.HistoricalEvent))
 	if historicalevent.wikipedia_slug:
 		g.add((historicalevent_uri, rdflib.OWL.sameAs, rdflib.URIRef(f"http://dbpedia.org/resource/{historicalevent.wikipedia_slug}")))
 	if historicalevent.year is not None:
@@ -254,31 +240,15 @@ def historicalevent_to_rdf(historicalevent):
 		g.add((datetime_bnode, rdflib.TIME.year, rdflib.Literal(historicalevent.year)))
 	return g
 
-def weather_to_rdf(weather):
-	(weather_uri, g) = object_to_rdf(weather)
-	g.bind('eolas', EOLAS_NS)
-	g.add((weather_uri, rdflib.RDF.type, EOLAS_NS.Weather))
-	return g
-
-def ethnicgroup_to_rdf(transportmode):
-	(ethnicgroup_uri, g) = object_to_rdf(transportmode)
-	g.bind('dbpedia', DBPEDIA_NS)
-	g.add((ethnicgroup_uri, rdflib.RDF.type, DBPEDIA_NS.EthnicGroup))
-	return g
-
-to_rdf_by_model = {
+custom_model_handlers = {
 	PlaceType: placetype_to_rdf,
 	Place: place_to_rdf,
 	DayOfWeek: dayofweek_to_rdf,
-	Calendar: calendar_to_rdf,
 	Month: month_to_rdf,
 	Festival: festival_to_rdf,
 	Memory: memory_to_rdf,
 	Number: number_to_rdf,
-	TransportMode: transportmode_to_rdf,
 	LanguageFamily: languagefamily_to_rdf,
 	Language: language_to_rdf,
 	HistoricalEvent: historicalevent_to_rdf,
-	Weather: weather_to_rdf,
-	EthnicGroup: ethnicgroup_to_rdf,
 }
