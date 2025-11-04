@@ -37,21 +37,19 @@ def ontology_graph():
 	g.bind('dbpedia', DBPEDIA_NS)
 	ontology_uri = rdflib.URIRef(f"{BASE_URL}ontology/")
 	g.add((ontology_uri, rdflib.RDF.type, rdflib.OWL.Ontology))
+
 	# Classes
-	for class_name, doc in [
-		('Calendar', 'A system for organizing dates.'),
-		('Festival', 'A recurring celebration or event.'),
-		('Memory', 'A remembered event or fact.'),
-		('Number', 'A numeric concept.'),
-		('Historical Event', 'A notable thing that happened in the past.'),
-		('Weather', 'A short term state of the atmosphere.'),
-	]:
-		class_uri = EOLAS_NS[class_name.replace(" ", "")]
-		g.add((class_uri, rdflib.RDF.type, rdflib.OWL.Class))
-		for lang, _ in settings.LANGUAGES:
-			with translation.override(lang):
-				g.add((class_uri, rdflib.SKOS.prefLabel, rdflib.Literal(translation.gettext(class_name), lang=lang)))
-		g.add((class_uri, rdflib.RDFS.comment, rdflib.Literal(doc, lang='en')))
+	app_models = apps.get_app_config('metadata').get_models()
+	for model_class in app_models:
+		if (hasattr(model_class, 'rdf_type')):
+			class_uri = model_class.rdf_type
+			g.add((class_uri, rdflib.RDF.type, rdflib.OWL.Class))
+			for lang, _ in settings.LANGUAGES:
+				with translation.override(lang):
+					g.add((class_uri, rdflib.SKOS.prefLabel, rdflib.Literal(translation.gettext(model_class._meta.verbose_name), lang=lang)))
+			if model_class._meta.db_table_comment:
+				g.add((class_uri, rdflib.RDFS.comment, rdflib.Literal(model_class._meta.db_table_comment, lang='en')))
+
 	# Properties: (name, property type, comment, domain, range)
 	props = [
 		('isFictional', rdflib.OWL.DatatypeProperty, 'Whether a place is fictional (boolean).', rdflib.SDO.Place, rdflib.XSD.boolean),
@@ -70,23 +68,16 @@ def ontology_graph():
 		g.add((prop_uri, rdflib.RDFS.domain, domain))
 		g.add((prop_uri, rdflib.RDFS.range, rng))
 
-	# Schema.org ontology is huge and importing it all slows down queries.  Instead just add the bits we use here.
+	# Place types are dynamic so handled by place_to_rdf / placetype_to_rdf below.  But add a top-level place type they're all a subclass of
 	g.add((rdflib.SDO.Place, rdflib.RDF.type, rdflib.RDFS.Class))
-	g.add((rdflib.SDO.Place, rdflib.RDFS.subClassOf, rdflib.SDO.Thing))
 	g.add((rdflib.SDO.Place, rdflib.RDFS.label, rdflib.Literal("Place")))
 	g.add((rdflib.SDO.Place, rdflib.RDFS.comment, rdflib.Literal("Entities that have a somewhat fixed, physical extension.")))
 
+	# TODO: Replace this with a model so creative works can be added
 	g.add((rdflib.SDO.CreativeWork, rdflib.RDF.type, rdflib.RDFS.Class))
-	g.add((rdflib.SDO.CreativeWork, rdflib.RDFS.subClassOf, rdflib.SDO.Thing))
 	g.add((rdflib.SDO.CreativeWork, rdflib.RDFS.label, rdflib.Literal("CreativeWork")))
 	g.add((rdflib.SDO.CreativeWork, rdflib.RDFS.comment, rdflib.Literal("The most generic kind of creative work, including books, movies, photographs, software programs, etc.")))
 
-	g.add((rdflib.SDO.Thing, rdflib.RDF.type, rdflib.RDFS.Class))
-	g.add((rdflib.SDO.Thing, rdflib.RDFS.label, rdflib.Literal("Thing")))
-	g.add((rdflib.SDO.Thing, rdflib.RDFS.comment, rdflib.Literal("The most generic type of item.")))
-
-	# Label missing from dbpedia ontology
-	g.add((DBPEDIA_NS.MeanOfTransportation, rdflib.RDFS.label, rdflib.Literal("Mode of Transport", lang='en')))
 	return g
 
 def thing_entrypoint(request, type, pk):

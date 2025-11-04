@@ -122,6 +122,7 @@ class Calendar(models.Model):
 		verbose_name = _('Calendar')
 		verbose_name_plural = _('Calendars')
 		ordering = ["name"]
+		db_table_comment = "A system for organizing dates."
 
 	def __str__(self):
 		return self.name
@@ -188,6 +189,7 @@ class Festival(models.Model):
 		verbose_name = _('Festival')
 		verbose_name_plural = _('Festivals')
 		ordering = ['name']
+		db_table_comment = "A recurring celebration or event."
 
 	def __str__(self):
 		return self.name
@@ -239,6 +241,7 @@ class Memory(models.Model):
 		verbose_name = _('Memory')
 		verbose_name_plural = _('Memories')
 		ordering = ["year", "name"]
+		db_table_comment = "A remembered event or fact."
 
 	def __str__(self):
 		return self.name
@@ -267,6 +270,7 @@ class Number(models.Model):
 		verbose_name = _('Number')
 		verbose_name_plural = _('Numbers')
 		ordering = ["value", "name"]
+		db_table_comment = "A numeric concept."
 
 	def __str__(self):
 		return self.name
@@ -389,6 +393,7 @@ class HistoricalEvent(models.Model):
 		verbose_name = _('Historical Event')
 		verbose_name_plural = _('Historical Events')
 		ordering = ["year", "name"]
+		db_table_comment = "A notable thing that happened in the past."
 
 	def __str__(self):
 		return self.name
@@ -409,6 +414,7 @@ class Weather(models.Model):
 		verbose_name = _('Weather')
 		verbose_name_plural = _('Weathers')
 		ordering = ["name"]
+		db_table_comment = "A short term state of the atmosphere."
 
 	def __str__(self):
 		return self.name
