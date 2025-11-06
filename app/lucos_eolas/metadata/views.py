@@ -7,6 +7,7 @@ from django.utils import translation
 from django.conf import settings
 from .utils_conneg import choose_rdf_over_html, pick_best_rdf_format
 from django.apps import apps
+from django.core.exceptions import ObjectDoesNotExist
 
 BASE_URL = os.environ.get("BASE_URL")
 EOLAS_NS = rdflib.Namespace(f"{BASE_URL}ontology/")
