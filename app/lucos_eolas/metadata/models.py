@@ -2,6 +2,7 @@ import os
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.utils.translation import gettext_lazy as _
+from .fields import *
 import rdflib
 
 BASE_URL = os.environ.get("BASE_URL")
@@ -10,14 +11,8 @@ DBPEDIA_NS = rdflib.Namespace("https://dbpedia.org/ontology/")
 LOC_NS = rdflib.Namespace("http://www.loc.gov/mads/rdf/v1#")
 
 class PlaceType(models.Model):
-	name = models.CharField(
-		max_length=255,
-		verbose_name=_('name'),
-		null=False,
-		blank=False,
-		unique=True,
-	)
-	plural = models.CharField(
+	name = RDFNameField()
+	plural = RDFCharField(
 		max_length=255,
 		verbose_name=_('plural'),
 		null=False,
@@ -36,11 +31,8 @@ class PlaceType(models.Model):
 		return f"{BASE_URL}metadata/placetype/{self.pk}/"
 
 class Place(models.Model):
-	name = models.CharField(
-		max_length=255,
-		verbose_name=_('name'),
-	)
-	type = models.ForeignKey(
+	name = RDFNameField(unique=False)
+	type = RDFForeignKey(
 		PlaceType,
 		on_delete=models.RESTRICT,
 		null=False,
@@ -85,18 +77,13 @@ class Place(models.Model):
 
 class DayOfWeek(models.Model):
 	rdf_type = rdflib.TIME.DayOfWeek
-	name = models.CharField(
-		max_length=255,
-		verbose_name=_('name'),
-		null=False,
-		blank=False,
-		unique=True,
-	)
-	order = models.IntegerField(
+	name = RDFNameField()
+	order = RDFIntegerField(
 		verbose_name=_('order'),
 		null=False,
 		blank=False,
 		unique=True,
+		rdf_predicate=EOLAS_NS.orderInWeek,
 	)
 	class Meta:
 		verbose_name = _('Day of the Week')
@@ -111,13 +98,7 @@ class DayOfWeek(models.Model):
 
 class Calendar(models.Model):
 	rdf_type = EOLAS_NS.Calendar
-	name = models.CharField(
-		max_length=255,
-		verbose_name=_('name'),
-		null=False,
-		blank=False,
-		unique=True,
-	)
+	name = RDFNameField()
 	class Meta:
 		verbose_name = _('Calendar')
 		verbose_name_plural = _('Calendars')
@@ -132,22 +113,19 @@ class Calendar(models.Model):
 
 class Month(models.Model):
 	rdf_type = rdflib.TIME.MonthOfYear
-	name = models.CharField(
-		max_length=255,
-		verbose_name=_('name'),
-		null=False,
-		blank=False,
-	)
-	calendar = models.ForeignKey(
+	name = RDFNameField(unique=False)
+	calendar = RDFForeignKey(
 		Calendar,
 		on_delete=models.RESTRICT,
 		null=False,
 		blank=False,
+		rdf_predicate=EOLAS_NS.calendar,
 	)
-	order_in_calendar = models.IntegerField(
+	order_in_calendar = RDFIntegerField(
 		verbose_name=_('order in calendar'),
 		null=False,
 		blank=False,
+		rdf_predicate=EOLAS_NS.orderInCalendar,
 	)
 	class Meta:
 		verbose_name = _('Month')
@@ -167,13 +145,7 @@ class Month(models.Model):
 
 class Festival(models.Model):
 	rdf_type = EOLAS_NS.Festival
-	name = models.CharField(
-		max_length=255,
-		verbose_name=_('name'),
-		null=False,
-		blank=False,
-		unique=True,
-	)
+	name = RDFNameField()
 	day_of_month = models.IntegerField(
 		verbose_name=_('day of month'),
 		null=True,
@@ -199,13 +171,7 @@ class Festival(models.Model):
 
 class Season(models.Model):
 	rdf_type = DBPEDIA_NS.Season
-	name = models.CharField(
-		max_length=255,
-		verbose_name=_('name'),
-		null=False,
-		blank=False,
-		unique=True,
-	)
+	name = RDFNameField()
 	class Meta:
 		verbose_name = _('Season')
 		verbose_name_plural = _('Seasons')
@@ -219,23 +185,19 @@ class Season(models.Model):
 
 class Memory(models.Model):
 	rdf_type = EOLAS_NS.Memory
-	name = models.CharField(
-		max_length=255,
-		verbose_name=_('name'),
-		null=False,
-		blank=False,
-		unique=True,
-	)
-	description = models.TextField(
+	name = RDFNameField()
+	description = RDFTextField(
 		verbose_name=_('description'),
 		null=False,
 		blank=True,
+		rdf_predicate=rdflib.DC.description,
 	)
-	year = models.IntegerField(
+	year = RDFYearField(
 		verbose_name=_('year'),
 		null=True,
 		blank=True,
-		help_text=_('Approximate year of the memory')
+		help_text=_('Approximate year of the memory'),
+		rdf_predicate=EOLAS_NS.occuredOn,
 	)
 	class Meta:
 		verbose_name = _('Memory')
@@ -251,20 +213,15 @@ class Memory(models.Model):
 
 class Number(models.Model):
 	rdf_type = EOLAS_NS.Number
-	name = models.CharField(
-		max_length=255,
-		verbose_name=_('name'),
-		null=False,
-		blank=False,
-		unique=True,
-	)
-	value = models.DecimalField(
+	name = RDFNameField()
+	value = RDFDecimalField(
 		max_digits=32,
 		decimal_places=2,
 		verbose_name=_('value'),
 		null=True,
 		blank=True,
-		help_text=_('Approximate value of this number, up to 2 decimal places')
+		help_text=_('Approximate value of this number, up to 2 decimal places'),
+		rdf_predicate=EOLAS_NS.numericValue,
 	)
 	class Meta:
 		verbose_name = _('Number')
@@ -280,13 +237,7 @@ class Number(models.Model):
 
 class TransportMode(models.Model):
 	rdf_type = DBPEDIA_NS.MeanOfTransportation
-	name = models.CharField(
-		max_length=255,
-		verbose_name=_('name'),
-		null=False,
-		blank=False,
-		unique=True,
-	)
+	name = RDFNameField()
 	class Meta:
 		verbose_name = _('Mode of Transport')
 		verbose_name_plural = _('Modes of Transport')
@@ -300,24 +251,19 @@ class TransportMode(models.Model):
 
 class LanguageFamily(models.Model):
 	rdf_type = rdflib.URIRef("http://id.loc.gov/vocabulary/iso639-5/iso639-5_Language")
-	code = models.CharField(
+	code = RDFCharField(
 		max_length=3,
 		primary_key=True,
 		verbose_name=_('code'),
 		help_text=_('A valid ISO 639-5 code')
-		)
-	name = models.CharField(
-		max_length=255,
-		verbose_name=_('name'),
-		null=False,
-		blank=False,
-		unique=True,
 	)
-	parent = models.ForeignKey(
+	name = RDFNameField()
+	parent = RDFForeignKey(
 		'self',
 		on_delete=models.RESTRICT,
 		null=True,
 		blank=True,
+		rdf_predicate=LOC_NS.hasBroaderAuthority,
 	)
 	class Meta:
 		verbose_name = _('Language Family')
@@ -337,24 +283,19 @@ class LanguageFamily(models.Model):
 
 class Language(models.Model):
 	rdf_type = LOC_NS.Language
-	code = models.CharField(
+	code = RDFCharField(
 		max_length=15,
 		primary_key=True,
 		verbose_name=_('code'),
 		help_text=_('A valid ISO 639 code')
-		)
-	name = models.CharField(
-		max_length=255,
-		verbose_name=_('name'),
-		null=False,
-		blank=False,
-		unique=True,
 	)
-	family = models.ForeignKey(
+	name = RDFNameField()
+	family = RDFForeignKey(
 		LanguageFamily,
 		on_delete=models.RESTRICT,
 		null=False,
 		blank=False,
+		rdf_predicate=LOC_NS.hasBroaderExternalAuthority,
 	)
 
 	class Meta:
@@ -370,24 +311,19 @@ class Language(models.Model):
 
 class HistoricalEvent(models.Model):
 	rdf_type = EOLAS_NS.HistoricalEvent
-	name = models.CharField(
-		max_length=255,
-		verbose_name=_('name'),
-		null=False,
-		blank=False,
-		unique=True,
-	)
-	wikipedia_slug = models.CharField(
+	name = RDFNameField()
+	wikipedia_slug = WikipediaField(
 		max_length=255,
 		verbose_name=_('Wikipedia URL Slug'),
 		help_text=_('The URL Slug used by the primary page regarding this event on the English Language instance of Wikipedia'),
 		unique=True,
 	)
-	year = models.IntegerField(
+	year = RDFYearField(
 		verbose_name=_('year'),
 		null=True,
 		blank=True,
-		help_text=_('Approximate year of the event, in the Gregorian Calendar')
+		help_text=_('Approximate year of the event, in the Gregorian Calendar'),
+		rdf_predicate=EOLAS_NS.occuredOn,
 	)
 	class Meta:
 		verbose_name = _('Historical Event')
@@ -403,13 +339,7 @@ class HistoricalEvent(models.Model):
 
 class Weather(models.Model):
 	rdf_type = EOLAS_NS.Weather
-	name = models.CharField(
-		max_length=255,
-		verbose_name=_('name'),
-		null=False,
-		blank=False,
-		unique=True,
-	)
+	name = RDFNameField()
 	class Meta:
 		verbose_name = _('Weather')
 		verbose_name_plural = _('Weathers')
@@ -424,13 +354,7 @@ class Weather(models.Model):
 
 class EthnicGroup(models.Model):
 	rdf_type = DBPEDIA_NS.EthnicGroup
-	name = models.CharField(
-		max_length=255,
-		verbose_name=_('name'),
-		null=False,
-		blank=False,
-		unique=True,
-	)
+	name = RDFNameField()
 	class Meta:
 		verbose_name = _('Ethnic Group')
 		verbose_name_plural = _('Ethnic Groups')

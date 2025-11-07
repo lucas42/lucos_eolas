@@ -135,15 +135,15 @@ def object_to_rdf(item, include_type_label):
 			for lang, _ in settings.LANGUAGES:
 				with translation.override(lang):
 					g.add((item.rdf_type, rdflib.SKOS.prefLabel, rdflib.Literal(translation.gettext(item._meta.verbose_name), lang=lang)))
-	g.add((uri, rdflib.SKOS.prefLabel, rdflib.Literal(str(item))))
-	g.add((uri, rdflib.RDFS.label, rdflib.Literal(item.name)))
-	if hasattr(item, 'alternate_names'):
-		for alt in item.alternate_names:
-			g.add((uri, rdflib.RDFS.label, rdflib.Literal(alt)))
+	for field in item._meta.get_fields():
+		if hasattr(field, 'get_rdf'):
+			g += field.get_rdf(item)
 	return (uri, g)
 
 def place_to_rdf(place, include_type_label):
 	(place_uri, g) = object_to_rdf(place, include_type_label)
+	for alt in place.alternate_names:
+		g.add((place_uri, rdflib.RDFS.label, rdflib.Literal(alt)))
 	type_uri = rdflib.URIRef(place.type.get_absolute_url())
 	g.add((place_uri, rdflib.RDF.type, type_uri))
 	if include_type_label:
@@ -159,18 +159,6 @@ def placetype_to_rdf(placetype, include_type_label):
 	g.add((type_uri, rdflib.RDFS.subClassOf, rdflib.SDO.Place))
 	return g
 
-def dayofweek_to_rdf(day, include_type_label):
-	(day_uri, g) = object_to_rdf(day, include_type_label)
-	g.add((day_uri, EOLAS_NS.orderInWeek, rdflib.Literal(day.order)))
-	return g
-
-def month_to_rdf(month, include_type_label):
-	(month_uri, g) = object_to_rdf(month, include_type_label)
-	calendar_uri = rdflib.URIRef(month.calendar.get_absolute_url())
-	g.add((month_uri, EOLAS_NS.calendar, calendar_uri))
-	g.add((month_uri, EOLAS_NS.orderInCalendar, rdflib.Literal(month.order_in_calendar)))
-	return g
-
 def festival_to_rdf(festival, include_type_label):
 	(festival_uri, g) = object_to_rdf(festival, include_type_label)
 	# Represent startDay as a blank node
@@ -184,52 +172,8 @@ def festival_to_rdf(festival, include_type_label):
 			g.add((start_day_bnode, rdflib.TIME.MonthOfYear, month_uri))
 	return g
 
-def memory_to_rdf(memory, include_type_label):
-	(memory_uri, g) = object_to_rdf(memory, include_type_label)
-	if memory.description:
-		g.add((memory_uri, rdflib.DC.description, rdflib.Literal(memory.description)))
-	if memory.year is not None:
-		datetime_bnode = rdflib.BNode()
-		g.add((memory_uri, EOLAS_NS.occuredOn, datetime_bnode))
-		g.add((datetime_bnode, rdflib.TIME.year, rdflib.Literal(memory.year)))
-	return g
-
-def number_to_rdf(number, include_type_label):
-	(number_uri, g) = object_to_rdf(number, include_type_label)
-	if number.value is not None:
-		g.add((number_uri, EOLAS_NS.numericValue, rdflib.Literal(number.value, datatype=rdflib.XSD.decimal)))
-	return g
-
-def languagefamily_to_rdf(languagefamily, include_type_label):
-	(languagefamily_uri, g) = object_to_rdf(languagefamily, include_type_label)
-	if languagefamily.parent:
-		g.add((languagefamily_uri, LOC_NS.hasBroaderAuthority, rdflib.URIRef(f"http://id.loc.gov/vocabulary/iso639-5/{languagefamily.parent.pk}")))
-	return g
-
-def language_to_rdf(language, include_type_label):
-	(language_uri, g) = object_to_rdf(language, include_type_label)
-	g.add((language_uri, LOC_NS.hasBroaderExternalAuthority, rdflib.URIRef(language.family.get_absolute_url())))
-	return g
-
-def historicalevent_to_rdf(historicalevent, include_type_label):
-	(historicalevent_uri, g) = object_to_rdf(historicalevent, include_type_label)
-	if historicalevent.wikipedia_slug:
-		g.add((historicalevent_uri, rdflib.OWL.sameAs, rdflib.URIRef(f"http://dbpedia.org/resource/{historicalevent.wikipedia_slug}")))
-	if historicalevent.year is not None:
-		datetime_bnode = rdflib.BNode()
-		g.add((historicalevent_uri, EOLAS_NS.occuredOn, datetime_bnode))
-		g.add((datetime_bnode, rdflib.TIME.year, rdflib.Literal(historicalevent.year)))
-	return g
-
 custom_model_handlers = {
 	PlaceType: placetype_to_rdf,
 	Place: place_to_rdf,
-	DayOfWeek: dayofweek_to_rdf,
-	Month: month_to_rdf,
 	Festival: festival_to_rdf,
-	Memory: memory_to_rdf,
-	Number: number_to_rdf,
-	LanguageFamily: languagefamily_to_rdf,
-	Language: language_to_rdf,
-	HistoricalEvent: historicalevent_to_rdf,
 }
