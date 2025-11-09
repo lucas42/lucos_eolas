@@ -31,6 +31,7 @@ class PlaceType(models.Model):
 		return f"{BASE_URL}metadata/placetype/{self.pk}/"
 
 class Place(models.Model):
+	rdf_type = rdflib.SDO.Place # Particular places have their own PlaceType, but all of those inherit from SDO.Place
 	name = RDFNameField(unique=False)
 	type = RDFForeignKey(
 		PlaceType,
@@ -45,9 +46,11 @@ class Place(models.Model):
 		verbose_name=_('also known as'),
 		help_text=_("Enter alternate names separated by commas."),
 	)
-	fictional = models.BooleanField(
+	fictional = RDFBooleanField(
 		default=False,
 		verbose_name=_('fictional'),
+		rdf_predicate=EOLAS_NS.isFictional,
+		db_comment='Whether or not a place is fictional.',
 	)
 	located_in = models.ManyToManyField(
 		'self',
@@ -61,6 +64,7 @@ class Place(models.Model):
 		verbose_name = _('Place')
 		verbose_name_plural = _('Places')
 		ordering = ["name"]
+		db_table_comment = "Entities that have a somewhat fixed, physical extension."
 
 	def __str__(self):
 		# Build a queryset matching either exact name or element in alternate_names
@@ -84,6 +88,7 @@ class DayOfWeek(models.Model):
 		blank=False,
 		unique=True,
 		rdf_predicate=EOLAS_NS.orderInWeek,
+		db_comment='Order of day in the week.',
 	)
 	class Meta:
 		verbose_name = _('Day of the Week')
@@ -120,12 +125,14 @@ class Month(models.Model):
 		null=False,
 		blank=False,
 		rdf_predicate=EOLAS_NS.calendar,
+		db_comment='Calendar this month belongs to.',
 	)
 	order_in_calendar = RDFIntegerField(
 		verbose_name=_('order in calendar'),
 		null=False,
 		blank=False,
 		rdf_predicate=EOLAS_NS.orderInCalendar,
+		db_comment='Order of month in calendar.',
 	)
 	class Meta:
 		verbose_name = _('Month')
@@ -150,12 +157,14 @@ class Festival(models.Model):
 		verbose_name=_('day of month'),
 		null=True,
 		blank=True,
+		db_comment='When a festival starts.',
 	)
 	month = models.ForeignKey(
 		Month,
 		on_delete=models.RESTRICT,
 		null=True,
 		blank=True,
+		db_comment='When a festival starts.',
 	)
 	class Meta:
 		verbose_name = _('Festival')
@@ -198,6 +207,8 @@ class Memory(models.Model):
 		blank=True,
 		help_text=_('Approximate year of the memory'),
 		rdf_predicate=EOLAS_NS.occuredOn,
+		rdf_label="Occured On",
+		db_comment='The point in time a memory is recalling.',
 	)
 	class Meta:
 		verbose_name = _('Memory')
@@ -222,6 +233,7 @@ class Number(models.Model):
 		blank=True,
 		help_text=_('Approximate value of this number, up to 2 decimal places'),
 		rdf_predicate=EOLAS_NS.numericValue,
+		db_comment='The (approximate) numeric value for a number.'
 	)
 	class Meta:
 		verbose_name = _('Number')
@@ -264,6 +276,7 @@ class LanguageFamily(models.Model):
 		null=True,
 		blank=True,
 		rdf_predicate=LOC_NS.hasBroaderAuthority,
+		rdf_label='Has Broader Authority',
 	)
 	class Meta:
 		verbose_name = _('Language Family')
@@ -296,6 +309,7 @@ class Language(models.Model):
 		null=False,
 		blank=False,
 		rdf_predicate=LOC_NS.hasBroaderExternalAuthority,
+		rdf_label='Has Broader External Authority',
 	)
 
 	class Meta:
@@ -324,6 +338,8 @@ class HistoricalEvent(models.Model):
 		blank=True,
 		help_text=_('Approximate year of the event, in the Gregorian Calendar'),
 		rdf_predicate=EOLAS_NS.occuredOn,
+		rdf_label="Occured On",
+		db_comment='The approximate point in time an event occured',
 	)
 	class Meta:
 		verbose_name = _('Historical Event')

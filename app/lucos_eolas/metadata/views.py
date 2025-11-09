@@ -36,13 +36,11 @@ def ontology_graph():
 	g = rdflib.Graph()
 	g.bind('eolas', EOLAS_NS)
 	g.bind('dbpedia', DBPEDIA_NS)
+	g.bind('loc', LOC_NS)
 	ontology_uri = rdflib.URIRef(f"{BASE_URL}ontology/")
 	g.add((ontology_uri, rdflib.RDF.type, rdflib.OWL.Ontology))
-
-	# Classes
-	app_models = apps.get_app_config('metadata').get_models()
-	for model_class in app_models:
-		if (hasattr(model_class, 'rdf_type')):
+	for model_class in apps.get_app_config('metadata').get_models():
+		if (getattr(model_class, 'rdf_type', None)):
 			class_uri = model_class.rdf_type
 			g.add((class_uri, rdflib.RDF.type, rdflib.OWL.Class))
 			for lang, _ in settings.LANGUAGES:
@@ -50,35 +48,17 @@ def ontology_graph():
 					g.add((class_uri, rdflib.SKOS.prefLabel, rdflib.Literal(translation.gettext(model_class._meta.verbose_name), lang=lang)))
 			if model_class._meta.db_table_comment:
 				g.add((class_uri, rdflib.RDFS.comment, rdflib.Literal(model_class._meta.db_table_comment, lang='en')))
-
-	# Properties: (name, property type, comment, domain, range)
-	props = [
-		('isFictional', rdflib.OWL.DatatypeProperty, 'Whether a place is fictional (boolean).', rdflib.SDO.Place, rdflib.XSD.boolean),
-		('orderInWeek', rdflib.OWL.DatatypeProperty, 'Order of day in the week (integer).', rdflib.TIME.DayOfWeek, rdflib.XSD.integer),
-		('calendar', rdflib.OWL.ObjectProperty, 'Calendar this month belongs to.', rdflib.TIME.MonthOfYear, EOLAS_NS.Calendar),
-		('orderInCalendar', rdflib.OWL.DatatypeProperty, 'Order of month in calendar (integer).', rdflib.TIME.MonthOfYear, rdflib.XSD.integer),
-		('festivalStartsOn', rdflib.OWL.ObjectProperty, 'When a festival starts.', EOLAS_NS.Festival, rdflib.TIME.DateTimeDescription),
-		('occuredOn', rdflib.OWL.ObjectProperty, 'The point in time a memory is recalling.', EOLAS_NS.Memory, rdflib.TIME.DateTimeDescription),
-		('numericValue', rdflib.OWL.DatatypeProperty, 'The (approximate) numeric value for a number (decimal).', EOLAS_NS.Number, rdflib.XSD.decimal),
-	]
-	for name, prop_type, comment, domain, rng in props:
-		prop_uri = EOLAS_NS[name]
-		g.add((prop_uri, rdflib.RDF.type, prop_type))
-		g.add((prop_uri, rdflib.SKOS.prefLabel, rdflib.Literal(name, lang='en')))
-		g.add((prop_uri, rdflib.RDFS.comment, rdflib.Literal(comment, lang='en')))
-		g.add((prop_uri, rdflib.RDFS.domain, domain))
-		g.add((prop_uri, rdflib.RDFS.range, rng))
-
-	# Place types are dynamic so handled by place_to_rdf / placetype_to_rdf below.  But add a top-level place type they're all a subclass of
-	g.add((rdflib.SDO.Place, rdflib.RDF.type, rdflib.RDFS.Class))
-	g.add((rdflib.SDO.Place, rdflib.RDFS.label, rdflib.Literal("Place")))
-	g.add((rdflib.SDO.Place, rdflib.RDFS.comment, rdflib.Literal("Entities that have a somewhat fixed, physical extension.")))
-
-	# TODO: Replace this with a model so creative works can be added
-	g.add((rdflib.SDO.CreativeWork, rdflib.RDF.type, rdflib.RDFS.Class))
-	g.add((rdflib.SDO.CreativeWork, rdflib.RDFS.label, rdflib.Literal("CreativeWork")))
-	g.add((rdflib.SDO.CreativeWork, rdflib.RDFS.comment, rdflib.Literal("The most generic kind of creative work, including books, movies, photographs, software programs, etc.")))
-
+			for field in model_class._meta.get_fields():
+				if getattr(field, 'rdf_predicate', None):
+					label = field.rdf_label if getattr(field, 'rdf_label', None) else field.name
+					g.add((field.rdf_predicate, rdflib.SKOS.prefLabel, rdflib.Literal(label, lang='en')))
+					if getattr(field, 'rdf_type', None):
+						g.add((field.rdf_predicate, rdflib.RDF.type, field.rdf_type))
+					g.add((field.rdf_predicate, rdflib.RDFS.domain, class_uri))
+					if getattr(field, 'rdf_range', None):
+						g.add((field.rdf_predicate, rdflib.RDFS.range, field.rdf_range))
+					if getattr(field, 'db_comment', None):
+						g.add((field.rdf_predicate, rdflib.RDFS.comment, rdflib.Literal(field.db_comment, lang='en')))
 	return g
 
 def thing_entrypoint(request, type, pk):

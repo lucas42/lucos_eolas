@@ -4,9 +4,11 @@ import rdflib
 from django.utils.translation import gettext_lazy as _
 
 class RDFCharField(models.CharField):
-	def __init__(self, *args, rdf_predicate=None, **kwargs):
+	rdf_type = rdflib.OWL.DatatypeProperty
+	def __init__(self, *args, rdf_predicate=None, rdf_label=None, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.rdf_predicate = rdf_predicate
+		self.rdf_label = rdf_label
 	def get_rdf(self, obj):
 		g = rdflib.Graph()
 		value = getattr(obj, self.name)
@@ -19,6 +21,7 @@ class RDFCharField(models.CharField):
 		return g
 
 class RDFNameField(models.CharField):
+	rdf_type = rdflib.OWL.DatatypeProperty
 	def __init__(self, unique=False, **kwargs):
 		super().__init__(
 			max_length=255,
@@ -36,9 +39,11 @@ class RDFNameField(models.CharField):
 		return g
 
 class RDFTextField(models.TextField):
-	def __init__(self, *args, rdf_predicate=None, **kwargs):
+	rdf_type = rdflib.OWL.DatatypeProperty
+	def __init__(self, *args, rdf_predicate=None, rdf_label=None, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.rdf_predicate = rdf_predicate
+		self.rdf_label = rdf_label
 	def get_rdf(self, obj):
 		g = rdflib.Graph()
 		value = getattr(obj, self.name)
@@ -51,9 +56,12 @@ class RDFTextField(models.TextField):
 		return g
 
 class RDFYearField(models.IntegerField):
-	def __init__(self, *args, rdf_predicate=None, **kwargs):
+	rdf_type = rdflib.OWL.DatatypeProperty
+	rdf_range = rdflib.TIME.DateTimeDescription
+	def __init__(self, *args, rdf_predicate=None, rdf_label=None, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.rdf_predicate = rdf_predicate
+		self.rdf_label = rdf_label
 	def get_rdf(self, obj):
 		g = rdflib.Graph()
 		value = getattr(obj, self.name)
@@ -72,9 +80,12 @@ class RDFYearField(models.IntegerField):
 		return g
 
 class RDFDecimalField(models.DecimalField):
-	def __init__(self, *args, rdf_predicate=None, **kwargs):
+	rdf_type = rdflib.OWL.DatatypeProperty
+	rdf_range = rdflib.XSD.decimal
+	def __init__(self, *args, rdf_predicate=None, rdf_label=None, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.rdf_predicate = rdf_predicate
+		self.rdf_label = rdf_label
 	def get_rdf(self, obj):
 		g = rdflib.Graph()
 		value = getattr(obj, self.name)
@@ -82,14 +93,17 @@ class RDFDecimalField(models.DecimalField):
 			g.add((
 				rdflib.URIRef(obj.get_absolute_url()),
 				self.rdf_predicate,
-				rdflib.Literal(value, datatype=rdflib.XSD.decimal),
+				rdflib.Literal(value, datatype=self.rdf_range),
 			))
 		return g
 
 class RDFIntegerField(models.IntegerField):
-	def __init__(self, *args, rdf_predicate=None, **kwargs):
+	rdf_type = rdflib.OWL.DatatypeProperty
+	rdf_range = rdflib.XSD.short
+	def __init__(self, *args, rdf_predicate=None, rdf_label=None, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.rdf_predicate = rdf_predicate
+		self.rdf_label = rdf_label
 	def get_rdf(self, obj):
 		g = rdflib.Graph()
 		value = getattr(obj, self.name)
@@ -97,7 +111,25 @@ class RDFIntegerField(models.IntegerField):
 			g.add((
 				rdflib.URIRef(obj.get_absolute_url()),
 				self.rdf_predicate,
-				rdflib.Literal(value, datatype=rdflib.XSD.short),
+				rdflib.Literal(value, datatype=self.rdf_range),
+			))
+		return g
+
+class RDFBooleanField(models.BooleanField):
+	rdf_type = rdflib.OWL.DatatypeProperty
+	rdf_range = rdflib.XSD.boolean
+	def __init__(self, *args, rdf_predicate=None, rdf_label=None, **kwargs):
+		super().__init__(*args, **kwargs)
+		self.rdf_predicate = rdf_predicate
+		self.rdf_label = rdf_label
+	def get_rdf(self, obj):
+		g = rdflib.Graph()
+		value = getattr(obj, self.name)
+		if value and self.rdf_predicate:
+			g.add((
+				rdflib.URIRef(obj.get_absolute_url()),
+				self.rdf_predicate,
+				rdflib.Literal(value, datatype=self.rdf_range),
 			))
 		return g
 
@@ -113,9 +145,11 @@ class WikipediaField(models.CharField):
 		return g
 
 class RDFForeignKey(models.ForeignKey):
-	def __init__(self, *args, rdf_predicate=None, **kwargs):
+	rdf_type = rdflib.OWL.ObjectProperty
+	def __init__(self, *args, rdf_predicate=None, rdf_label=None, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.rdf_predicate = rdf_predicate
+		self.rdf_label = rdf_label
 	def get_rdf(self, obj):
 		g = rdflib.Graph()
 		value = getattr(obj, self.name)
@@ -126,11 +160,15 @@ class RDFForeignKey(models.ForeignKey):
 				rdflib.URIRef(value.get_absolute_url()),
 			))
 		return g
+	@property
+	def rdf_range(self):
+		return self.remote_field.model.rdf_type
 
 class RDFArrayField(ArrayField):
-	def __init__(self, *args, rdf_predicate=None, **kwargs):
+	def __init__(self, *args, rdf_predicate=None, rdf_label=None, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.rdf_predicate = rdf_predicate
+		self.rdf_label = rdf_label
 	def get_rdf(self, obj):
 		g = rdflib.Graph()
 		value = getattr(obj, self.name)
