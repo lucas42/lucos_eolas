@@ -147,7 +147,7 @@ def place_to_rdf(place, include_type_label):
 	type_uri = rdflib.URIRef(place.type.get_absolute_url())
 	g.add((place_uri, rdflib.RDF.type, type_uri))
 	if include_type_label:
-		g += placetype_to_rdf(obj.type, include_type_label)
+		g += placetype_to_rdf(place.type, include_type_label)
 	g.add((place_uri, EOLAS_NS.isFictional, rdflib.Literal(place.fictional)))
 	for container in place.located_in.all():
 		container_uri = rdflib.URIRef(container.get_absolute_url())
