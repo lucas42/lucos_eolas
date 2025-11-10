@@ -123,6 +123,7 @@ def object_to_rdf(item, include_type_label):
 def place_to_rdf(place, include_type_label):
 	place_uri = rdflib.URIRef(place.get_absolute_url())
 	g = rdflib.Graph()
+	g.add((place_uri, rdflib.SKOS.prefLabel, rdflib.Literal(str(place))))
 	for alt in place.alternate_names:
 		g.add((place_uri, rdflib.RDFS.label, rdflib.Literal(alt)))
 	type_uri = rdflib.URIRef(place.type.get_absolute_url())
