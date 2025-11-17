@@ -10,8 +10,18 @@ EOLAS_NS = rdflib.Namespace(f"{BASE_URL}ontology/")
 DBPEDIA_NS = rdflib.Namespace("https://dbpedia.org/ontology/")
 LOC_NS = rdflib.Namespace("http://www.loc.gov/mads/rdf/v1#")
 
-class PlaceType(models.Model):
+class EolasModel(models.Model):
 	name = RDFNameField()
+	class Meta:
+		abstract = True
+
+	def __str__(self):
+		return self.name
+
+	def get_absolute_url(self):
+		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
+
+class PlaceType(EolasModel):
 	plural = RDFCharField(
 		max_length=255,
 		verbose_name=_('plural'),
@@ -27,10 +37,7 @@ class PlaceType(models.Model):
 	def __str__(self):
 		return self.name.title()
 
-	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
-
-class Place(models.Model):
+class Place(EolasModel):
 	rdf_type = rdflib.SDO.Place # Particular places have their own PlaceType, but all of those inherit from SDO.Place
 	name = RDFNameField(unique=False)
 	type = RDFForeignKey(
@@ -76,12 +83,8 @@ class Place(models.Model):
 			return f"{self.name} ({self.type})"
 		return self.name
 
-	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
-
-class DayOfWeek(models.Model):
+class DayOfWeek(EolasModel):
 	rdf_type = rdflib.TIME.DayOfWeek
-	name = RDFNameField()
 	order = RDFIntegerField(
 		verbose_name=_('order'),
 		null=False,
@@ -95,28 +98,15 @@ class DayOfWeek(models.Model):
 		verbose_name_plural = _('Days of the Week')
 		ordering = ['order']
 
-	def __str__(self):
-		return self.name
-
-	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
-
-class Calendar(models.Model):
+class Calendar(EolasModel):
 	rdf_type = EOLAS_NS.Calendar
-	name = RDFNameField()
 	class Meta:
 		verbose_name = _('Calendar')
 		verbose_name_plural = _('Calendars')
 		ordering = ["name"]
 		db_table_comment = "A system for organizing dates."
 
-	def __str__(self):
-		return self.name
-
-	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
-
-class Month(models.Model):
+class Month(EolasModel):
 	rdf_type = rdflib.TIME.MonthOfYear
 	name = RDFNameField(unique=False)
 	calendar = RDFForeignKey(
@@ -147,12 +137,8 @@ class Month(models.Model):
 			return f"{self.name} ({self.calendar})"
 		return self.name
 
-	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
-
-class Festival(models.Model):
+class Festival(EolasModel):
 	rdf_type = EOLAS_NS.Festival
-	name = RDFNameField()
 	day_of_month = models.IntegerField(
 		verbose_name=_('day of month'),
 		null=True,
@@ -172,29 +158,15 @@ class Festival(models.Model):
 		ordering = ['name']
 		db_table_comment = "A recurring celebration or event."
 
-	def __str__(self):
-		return self.name
-
-	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
-
-class Season(models.Model):
+class Season(EolasModel):
 	rdf_type = DBPEDIA_NS.Season
-	name = RDFNameField()
 	class Meta:
 		verbose_name = _('Season')
 		verbose_name_plural = _('Seasons')
 		ordering = ["pk"]
 
-	def __str__(self):
-		return self.name
-
-	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
-
-class Memory(models.Model):
+class Memory(EolasModel):
 	rdf_type = EOLAS_NS.Memory
-	name = RDFNameField()
 	description = RDFTextField(
 		verbose_name=_('description'),
 		null=False,
@@ -216,15 +188,8 @@ class Memory(models.Model):
 		ordering = ["year", "name"]
 		db_table_comment = "A remembered event or fact."
 
-	def __str__(self):
-		return self.name
-
-	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
-
-class Number(models.Model):
+class Number(EolasModel):
 	rdf_type = EOLAS_NS.Number
-	name = RDFNameField()
 	value = RDFDecimalField(
 		max_digits=32,
 		decimal_places=2,
@@ -241,27 +206,14 @@ class Number(models.Model):
 		ordering = ["value", "name"]
 		db_table_comment = "A numeric concept."
 
-	def __str__(self):
-		return self.name
-
-	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
-
-class TransportMode(models.Model):
+class TransportMode(EolasModel):
 	rdf_type = DBPEDIA_NS.MeanOfTransportation
-	name = RDFNameField()
 	class Meta:
 		verbose_name = _('Mode of Transport')
 		verbose_name_plural = _('Modes of Transport')
 		ordering = ["name"]
 
-	def __str__(self):
-		return self.name
-
-	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
-
-class LanguageFamily(models.Model):
+class LanguageFamily(EolasModel):
 	rdf_type = rdflib.URIRef("http://id.loc.gov/vocabulary/iso639-5/iso639-5_Language")
 	code = RDFCharField(
 		max_length=3,
@@ -269,7 +221,6 @@ class LanguageFamily(models.Model):
 		verbose_name=_('code'),
 		help_text=_('A valid ISO 639-5 code')
 	)
-	name = RDFNameField()
 	parent = RDFForeignKey(
 		'self',
 		on_delete=models.RESTRICT,
@@ -283,9 +234,6 @@ class LanguageFamily(models.Model):
 		verbose_name_plural = _('Language Families')
 		ordering = ["code"]
 
-	def __str__(self):
-		return self.name
-
 	def get_absolute_url(self):
 		# 'qli' is used here for language isolates, but dosen't appear in iso639-5, nor the library of congress list, so needs a local URI
 		if self.pk == "qli":
@@ -294,7 +242,7 @@ class LanguageFamily(models.Model):
 		else:
 			return f"http://id.loc.gov/vocabulary/iso639-5/{self.pk}"
 
-class Language(models.Model):
+class Language(EolasModel):
 	rdf_type = LOC_NS.Language
 	code = RDFCharField(
 		max_length=15,
@@ -302,7 +250,6 @@ class Language(models.Model):
 		verbose_name=_('code'),
 		help_text=_('A valid ISO 639 code')
 	)
-	name = RDFNameField()
 	family = RDFForeignKey(
 		LanguageFamily,
 		on_delete=models.RESTRICT,
@@ -317,15 +264,8 @@ class Language(models.Model):
 		verbose_name_plural = _('Languages')
 		ordering = ["code"]
 
-	def __str__(self):
-		return self.name
-
-	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
-
-class HistoricalEvent(models.Model):
+class HistoricalEvent(EolasModel):
 	rdf_type = EOLAS_NS.HistoricalEvent
-	name = RDFNameField()
 	wikipedia_slug = WikipediaField(
 		max_length=255,
 		verbose_name=_('Wikipedia URL Slug'),
@@ -347,52 +287,25 @@ class HistoricalEvent(models.Model):
 		ordering = ["year", "name"]
 		db_table_comment = "A notable thing that happened in the past."
 
-	def __str__(self):
-		return self.name
-
-	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
-
-class Weather(models.Model):
+class Weather(EolasModel):
 	rdf_type = EOLAS_NS.Weather
-	name = RDFNameField()
 	class Meta:
 		verbose_name = _('Weather')
 		verbose_name_plural = _('Weathers')
 		ordering = ["name"]
 		db_table_comment = "A short term state of the atmosphere."
 
-	def __str__(self):
-		return self.name
-
-	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
-
-class EthnicGroup(models.Model):
+class EthnicGroup(EolasModel):
 	rdf_type = DBPEDIA_NS.EthnicGroup
-	name = RDFNameField()
 	class Meta:
 		verbose_name = _('Ethnic Group')
 		verbose_name_plural = _('Ethnic Groups')
 		ordering = ["name"]
 
-	def __str__(self):
-		return self.name
-
-	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
-
-class Direction(models.Model):
+class Direction(EolasModel):
 	rdf_type = EOLAS_NS.Direction
-	name = RDFNameField()
 	class Meta:
 		verbose_name = _('Direction')
 		verbose_name_plural = _('Directions')
 		ordering = ["name"]
 		db_table_comment = "The geographic location of a place relative to others"
-
-	def __str__(self):
-		return self.name
-
-	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
