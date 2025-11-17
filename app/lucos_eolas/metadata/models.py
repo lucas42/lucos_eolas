@@ -381,3 +381,18 @@ class EthnicGroup(models.Model):
 
 	def get_absolute_url(self):
 		return f"{BASE_URL}metadata/ethnicgroup/{self.pk}/"
+
+class Direction(models.Model):
+	rdf_type = EOLAS_NS.Direction
+	name = RDFNameField()
+	class Meta:
+		verbose_name = _('Direction')
+		verbose_name_plural = _('Directions')
+		ordering = ["name"]
+		db_table_comment = "The geographic location of a place relative to others"
+
+	def __str__(self):
+		return self.name
+
+	def get_absolute_url(self):
+		return f"{BASE_URL}metadata/direction/{self.pk}/"
