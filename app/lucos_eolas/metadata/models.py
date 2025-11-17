@@ -28,7 +28,7 @@ class PlaceType(models.Model):
 		return self.name.title()
 
 	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/placetype/{self.pk}/"
+		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
 
 class Place(models.Model):
 	rdf_type = rdflib.SDO.Place # Particular places have their own PlaceType, but all of those inherit from SDO.Place
@@ -77,7 +77,7 @@ class Place(models.Model):
 		return self.name
 
 	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/place/{self.pk}/"
+		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
 
 class DayOfWeek(models.Model):
 	rdf_type = rdflib.TIME.DayOfWeek
@@ -99,7 +99,7 @@ class DayOfWeek(models.Model):
 		return self.name
 
 	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/dayofweek/{self.pk}/"
+		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
 
 class Calendar(models.Model):
 	rdf_type = EOLAS_NS.Calendar
@@ -114,7 +114,7 @@ class Calendar(models.Model):
 		return self.name
 
 	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/calendar/{self.pk}/"
+		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
 
 class Month(models.Model):
 	rdf_type = rdflib.TIME.MonthOfYear
@@ -148,7 +148,7 @@ class Month(models.Model):
 		return self.name
 
 	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/month/{self.pk}/"
+		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
 
 class Festival(models.Model):
 	rdf_type = EOLAS_NS.Festival
@@ -176,7 +176,7 @@ class Festival(models.Model):
 		return self.name
 
 	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/festival/{self.pk}/"
+		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
 
 class Season(models.Model):
 	rdf_type = DBPEDIA_NS.Season
@@ -190,7 +190,7 @@ class Season(models.Model):
 		return self.name
 
 	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/season/{self.pk}/"
+		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
 
 class Memory(models.Model):
 	rdf_type = EOLAS_NS.Memory
@@ -220,7 +220,7 @@ class Memory(models.Model):
 		return self.name
 
 	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/memory/{self.pk}/"
+		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
 
 class Number(models.Model):
 	rdf_type = EOLAS_NS.Number
@@ -245,7 +245,7 @@ class Number(models.Model):
 		return self.name
 
 	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/number/{self.pk}/"
+		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
 
 class TransportMode(models.Model):
 	rdf_type = DBPEDIA_NS.MeanOfTransportation
@@ -259,7 +259,7 @@ class TransportMode(models.Model):
 		return self.name
 
 	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/transportmode/{self.pk}/"
+		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
 
 class LanguageFamily(models.Model):
 	rdf_type = rdflib.URIRef("http://id.loc.gov/vocabulary/iso639-5/iso639-5_Language")
@@ -289,7 +289,7 @@ class LanguageFamily(models.Model):
 	def get_absolute_url(self):
 		# 'qli' is used here for language isolates, but dosen't appear in iso639-5, nor the library of congress list, so needs a local URI
 		if self.pk == "qli":
-			return f"{BASE_URL}metadata/languagefamily/{self.pk}/"
+			return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
 		# For other language families, use the library of congress URI
 		else:
 			return f"http://id.loc.gov/vocabulary/iso639-5/{self.pk}"
@@ -321,7 +321,7 @@ class Language(models.Model):
 		return self.name
 
 	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/language/{self.pk}/"
+		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
 
 class HistoricalEvent(models.Model):
 	rdf_type = EOLAS_NS.HistoricalEvent
@@ -351,7 +351,7 @@ class HistoricalEvent(models.Model):
 		return self.name
 
 	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/historicalevent/{self.pk}/"
+		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
 
 class Weather(models.Model):
 	rdf_type = EOLAS_NS.Weather
@@ -366,7 +366,7 @@ class Weather(models.Model):
 		return self.name
 
 	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/weather/{self.pk}/"
+		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
 
 class EthnicGroup(models.Model):
 	rdf_type = DBPEDIA_NS.EthnicGroup
@@ -380,7 +380,7 @@ class EthnicGroup(models.Model):
 		return self.name
 
 	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/ethnicgroup/{self.pk}/"
+		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
 
 class Direction(models.Model):
 	rdf_type = EOLAS_NS.Direction
@@ -395,4 +395,4 @@ class Direction(models.Model):
 		return self.name
 
 	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/direction/{self.pk}/"
+		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
