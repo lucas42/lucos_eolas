@@ -78,7 +78,7 @@ def thing_data(request, type, pk):
 		obj = model_class.objects.get(pk=pk)
 	except (ObjectDoesNotExist, LookupError):
 		return HttpResponse(status=404)
-	g = get_rdf_by_item(model_class, obj, include_type_label=True)
+	g = obj.get_rdf(include_type_label=True)
 	g.bind('dbpedia', DBPEDIA_NS)
 	g.bind('eolas', EOLAS_NS)
 	g.bind('loc', LOC_NS)
@@ -96,66 +96,5 @@ def all_rdf(request):
 	app_models = apps.get_app_config('metadata').get_models()
 	for model_class in app_models:
 		for obj in model_class.objects.all():
-			g += get_rdf_by_item(model_class, obj, include_type_label=False) # Don't include type label for each item, as that'll be covered by ontology_graph()
+			g += obj.get_rdf(include_type_label=False) # Don't include type label for each item, as that'll be covered by ontology_graph()
 	return HttpResponse(g.serialize(format=format), content_type=f'{content_type}; charset={settings.DEFAULT_CHARSET}')
-
-def get_rdf_by_item(model_class, item, include_type_label):
-	if model_class in custom_model_handlers:
-		return custom_model_handlers[model_class](item, include_type_label)
-	else:
-		(_, g) = object_to_rdf(item, include_type_label)
-		return g
-
-def object_to_rdf(item, include_type_label):
-	uri = rdflib.URIRef(item.get_absolute_url())
-	g = rdflib.Graph()
-	if (hasattr(item, 'rdf_type')):
-		g.add((uri, rdflib.RDF.type, item.rdf_type))
-		if include_type_label:
-			for lang, _ in settings.LANGUAGES:
-				with translation.override(lang):
-					g.add((item.rdf_type, rdflib.SKOS.prefLabel, rdflib.Literal(translation.gettext(item._meta.verbose_name), lang=lang)))
-	for field in item._meta.get_fields():
-		if hasattr(field, 'get_rdf'):
-			g += field.get_rdf(item)
-	return (uri, g)
-
-def place_to_rdf(place, include_type_label):
-	place_uri = rdflib.URIRef(place.get_absolute_url())
-	g = rdflib.Graph()
-	g.add((place_uri, rdflib.SKOS.prefLabel, rdflib.Literal(str(place))))
-	for alt in place.alternate_names:
-		g.add((place_uri, rdflib.RDFS.label, rdflib.Literal(alt)))
-	type_uri = rdflib.URIRef(place.type.get_absolute_url())
-	g.add((place_uri, rdflib.RDF.type, type_uri))
-	if include_type_label:
-		g += placetype_to_rdf(place.type, include_type_label)
-	g.add((place_uri, EOLAS_NS.isFictional, rdflib.Literal(place.fictional)))
-	for container in place.located_in.all():
-		container_uri = rdflib.URIRef(container.get_absolute_url())
-		g.add((place_uri, rdflib.SDO.containedInPlace, container_uri))
-	return g
-
-def placetype_to_rdf(placetype, include_type_label):
-	(type_uri, g) = object_to_rdf(placetype, include_type_label)
-	g.add((type_uri, rdflib.RDFS.subClassOf, rdflib.SDO.Place))
-	return g
-
-def festival_to_rdf(festival, include_type_label):
-	(festival_uri, g) = object_to_rdf(festival, include_type_label)
-	# Represent startDay as a blank node
-	if festival.day_of_month is not None or festival.month is not None:
-		start_day_bnode = rdflib.BNode()
-		g.add((festival_uri, EOLAS_NS.festivalStartsOn, start_day_bnode))
-		if festival.day_of_month is not None:
-			g.add((start_day_bnode, rdflib.TIME.day, rdflib.Literal(festival.day_of_month)))
-		if festival.month is not None:
-			month_uri = rdflib.URIRef(festival.month.get_absolute_url())
-			g.add((start_day_bnode, rdflib.TIME.MonthOfYear, month_uri))
-	return g
-
-custom_model_handlers = {
-	PlaceType: placetype_to_rdf,
-	Place: place_to_rdf,
-	Festival: festival_to_rdf,
-}

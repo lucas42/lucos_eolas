@@ -2,6 +2,8 @@ import os
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
 from django.utils.translation import gettext_lazy as _
+from django.utils import translation
+from django.conf import settings
 from .fields import *
 import rdflib
 
@@ -21,6 +23,20 @@ class EolasModel(models.Model):
 	def get_absolute_url(self):
 		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
 
+	def get_rdf(self, include_type_label):
+		uri = rdflib.URIRef(self.get_absolute_url())
+		g = rdflib.Graph()
+		if (hasattr(self, 'rdf_type')):
+			g.add((uri, rdflib.RDF.type, self.rdf_type))
+			if include_type_label:
+				for lang, _ in settings.LANGUAGES:
+					with translation.override(lang):
+						g.add((self.rdf_type, rdflib.SKOS.prefLabel, rdflib.Literal(translation.gettext(self._meta.verbose_name), lang=lang)))
+		for field in self._meta.get_fields():
+			if hasattr(field, 'get_rdf'):
+				g += field.get_rdf(self)
+		return g
+
 class PlaceType(EolasModel):
 	plural = RDFCharField(
 		max_length=255,
@@ -36,6 +52,12 @@ class PlaceType(EolasModel):
 
 	def __str__(self):
 		return self.name.title()
+
+	def get_rdf(self, include_type_label):
+		uri = rdflib.URIRef(self.get_absolute_url())
+		g = super().get_rdf(include_type_label)
+		g.add((uri, rdflib.RDFS.subClassOf, rdflib.SDO.Place))
+		return g
 
 class Place(EolasModel):
 	rdf_type = rdflib.SDO.Place # Particular places have their own PlaceType, but all of those inherit from SDO.Place
@@ -57,7 +79,7 @@ class Place(EolasModel):
 		default=False,
 		verbose_name=_('fictional'),
 		rdf_predicate=EOLAS_NS.isFictional,
-		db_comment='Whether or not a place is fictional.',
+		db_comment='Whether or not a self is fictional.',
 	)
 	located_in = models.ManyToManyField(
 		'self',
@@ -82,6 +104,22 @@ class Place(EolasModel):
 		if qs.count() > 1:
 			return f"{self.name} ({self.type})"
 		return self.name
+
+	def get_rdf(self, include_type_label):
+		uri = rdflib.URIRef(self.get_absolute_url())
+		g = rdflib.Graph()
+		g.add((uri, rdflib.SKOS.prefLabel, rdflib.Literal(str(self))))
+		for alt in self.alternate_names:
+			g.add((uri, rdflib.RDFS.label, rdflib.Literal(alt)))
+		type_uri = rdflib.URIRef(self.type.get_absolute_url())
+		g.add((uri, rdflib.RDF.type, type_uri))
+		if include_type_label:
+			g += self.type.get_rdf(include_type_label)
+		g.add((uri, EOLAS_NS.isFictional, rdflib.Literal(self.fictional)))
+		for container in self.located_in.all():
+			container_uri = rdflib.URIRef(container.get_absolute_url())
+			g.add((uri, rdflib.SDO.containedInPlace, container_uri))
+		return g
 
 class DayOfWeek(EolasModel):
 	rdf_type = rdflib.TIME.DayOfWeek
@@ -143,20 +181,34 @@ class Festival(EolasModel):
 		verbose_name=_('day of month'),
 		null=True,
 		blank=True,
-		db_comment='When a festival starts.',
+		db_comment='When a self starts.',
 	)
 	month = models.ForeignKey(
 		Month,
 		on_delete=models.RESTRICT,
 		null=True,
 		blank=True,
-		db_comment='When a festival starts.',
+		db_comment='When a self starts.',
 	)
 	class Meta:
 		verbose_name = _('Festival')
 		verbose_name_plural = _('Festivals')
 		ordering = ['name']
 		db_table_comment = "A recurring celebration or event."
+
+	def get_rdf(self, include_type_label):
+		uri = rdflib.URIRef(self.get_absolute_url())
+		g = super().get_rdf(include_type_label)
+		# Represent startDay as a blank node
+		if self.day_of_month is not None or self.month is not None:
+			start_day_bnode = rdflib.BNode()
+			g.add((uri, EOLAS_NS.festivalStartsOn, start_day_bnode))
+			if self.day_of_month is not None:
+				g.add((start_day_bnode, rdflib.TIME.day, rdflib.Literal(self.day_of_month)))
+			if self.month is not None:
+				month_uri = rdflib.URIRef(self.month.get_absolute_url())
+				g.add((start_day_bnode, rdflib.TIME.MonthOfYear, month_uri))
+		return g
 
 class Season(EolasModel):
 	rdf_type = DBPEDIA_NS.Season
@@ -308,4 +360,4 @@ class Direction(EolasModel):
 		verbose_name = _('Direction')
 		verbose_name_plural = _('Directions')
 		ordering = ["name"]
-		db_table_comment = "The geographic location of a place relative to others"
+		db_table_comment = "The geographic location of a self relative to others"
