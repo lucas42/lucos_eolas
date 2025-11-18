@@ -88,7 +88,12 @@ class Place(EolasModel):
 		related_name='contains',
 		verbose_name=_('located in'),
 	)
-
+	metonym = models.CharField(
+		blank=True,
+		verbose_name=_('metonym'),
+		max_length=255,
+		help_text=_("Something this place is often used as a substitue for")
+	)
 	class Meta:
 		verbose_name = _('Place')
 		verbose_name_plural = _('Places')
@@ -119,6 +124,11 @@ class Place(EolasModel):
 		for container in self.located_in.all():
 			container_uri = rdflib.URIRef(container.get_absolute_url())
 			g.add((uri, rdflib.SDO.containedInPlace, container_uri))
+		if self.metonym:
+			# The metonym field is actually a label for the thing, so create a bnode for the thing itself
+			metonym_bnode = rdflib.BNode()
+			g.add((uri, EOLAS_NS.metonym, metonym_bnode))
+			g.add((metonym_bnode, rdflib.SKOS.prefLabel, rdflib.Literal(self.metonym)))
 		return g
 
 class DayOfWeek(EolasModel):
