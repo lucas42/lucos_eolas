@@ -366,3 +366,11 @@ class Direction(EolasModel):
 		verbose_name_plural = _('Directions')
 		ordering = ["name"]
 		db_table_comment = "The geographic location of a self relative to others"
+
+class Organisation(EolasModel):
+	rdf_type = rdflib.ORG.Organization
+	class Meta:
+		verbose_name = _('Organisation')
+		verbose_name_plural = _('Organisations')
+		ordering = ["name"]
+		db_table_comment = "A group of people with a particular shared purpose"

@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2025-11-19 21:01+0000\n"
+"POT-Creation-Date: 2025-11-19 21:07+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -14,7 +14,7 @@ msgstr ""
 "Plural-Forms: nplurals=5; plural=(n==1 ? 0 : n==2 ? 1 : n<7 ? 2 : n<11 ? 3 : "
 "4);\n"
 
-#: lucos_eolas/metadata/admin.py:105
+#: lucos_eolas/metadata/admin.py:112
 msgid "contains"
 msgstr "comhdhéanta"
 
@@ -241,6 +241,14 @@ msgstr "Treo"
 #: lucos_eolas/metadata/models.py:366
 msgid "Directions"
 msgstr "Treonna"
+
+#: lucos_eolas/metadata/models.py:373
+msgid "Organisation"
+msgstr "Eagraíocht"
+
+#: lucos_eolas/metadata/models.py:374
+msgid "Organisations"
+msgstr "Eagraíochtaí"
 
 #: lucos_eolas/settings.py:116
 msgid "Irish"
