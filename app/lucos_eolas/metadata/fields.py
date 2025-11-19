@@ -134,14 +134,23 @@ class RDFBooleanField(models.BooleanField):
 		return g
 
 class WikipediaField(models.CharField):
+	def __init__(self, **kwargs):
+		super().__init__(
+			max_length=255,
+			verbose_name=_('Wikipedia URL Slug'),
+			help_text=_('The URL Slug used by the primary page regarding this item on the English Language instance of Wikipedia'),
+			unique=True,
+			blank=True,
+		)
 	def get_rdf(self, obj):
 		g = rdflib.Graph()
 		value = getattr(obj, self.name)
-		g.add((
-			rdflib.URIRef(obj.get_absolute_url()),
-			rdflib.OWL.sameAs,
-			rdflib.URIRef(f"http://dbpedia.org/resource/{value}")
-		))
+		if value:
+			g.add((
+				rdflib.URIRef(obj.get_absolute_url()),
+				rdflib.OWL.sameAs,
+				rdflib.URIRef(f"http://dbpedia.org/resource/{value}")
+			))
 		return g
 
 class RDFForeignKey(models.ForeignKey):

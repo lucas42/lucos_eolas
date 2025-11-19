@@ -328,12 +328,7 @@ class Language(EolasModel):
 
 class HistoricalEvent(EolasModel):
 	rdf_type = EOLAS_NS.HistoricalEvent
-	wikipedia_slug = WikipediaField(
-		max_length=255,
-		verbose_name=_('Wikipedia URL Slug'),
-		help_text=_('The URL Slug used by the primary page regarding this event on the English Language instance of Wikipedia'),
-		unique=True,
-	)
+	wikipedia_slug = WikipediaField()
 	year = RDFYearField(
 		verbose_name=_('year'),
 		null=True,
