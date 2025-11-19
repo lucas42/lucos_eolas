@@ -45,6 +45,13 @@ class EolasModelAdmin(admin.ModelAdmin):
 			"humanReadable": f'{item_type} "{item_name}" deleted',
 			"url": item_url,
 		})
+	def get_fields(self, request, obj=None):
+		all_fields = [
+			f.name for f in self.model._meta.get_fields()
+			if f.editable and not f.auto_created and f.name != "wikipedia_slug"
+		]
+		all_fields.append("wikipedia_slug") # Move wiki slug to the end of the list
+		return all_fields
 
 class PlaceAdmin(EolasModelAdmin):
 	filter_horizontal = ('located_in',)

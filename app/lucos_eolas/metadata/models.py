@@ -14,6 +14,7 @@ LOC_NS = rdflib.Namespace("http://www.loc.gov/mads/rdf/v1#")
 
 class EolasModel(models.Model):
 	name = RDFNameField()
+	wikipedia_slug = WikipediaField()
 	class Meta:
 		abstract = True
 
@@ -328,7 +329,6 @@ class Language(EolasModel):
 
 class HistoricalEvent(EolasModel):
 	rdf_type = EOLAS_NS.HistoricalEvent
-	wikipedia_slug = WikipediaField()
 	year = RDFYearField(
 		verbose_name=_('year'),
 		null=True,

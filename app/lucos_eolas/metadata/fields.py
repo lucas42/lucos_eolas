@@ -139,7 +139,6 @@ class WikipediaField(models.CharField):
 			max_length=255,
 			verbose_name=_('Wikipedia URL Slug'),
 			help_text=_('The URL Slug used by the primary page regarding this item on the English Language instance of Wikipedia'),
-			unique=True,
 			blank=True,
 		)
 	def get_rdf(self, obj):
