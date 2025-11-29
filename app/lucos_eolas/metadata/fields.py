@@ -174,6 +174,28 @@ class RDFForeignKey(models.ForeignKey):
 	def rdf_range(self):
 		return self.remote_field.model.rdf_type
 
+class RDFManyToManyField(models.ManyToManyField):
+	rdf_type = rdflib.OWL.ObjectProperty
+	def __init__(self, *args, rdf_predicate=None, rdf_label=None, rdf_inverse_predicate=None, rdf_inverse_label=None, **kwargs):
+		super().__init__(*args, **kwargs)
+		self.rdf_predicate = rdf_predicate
+		self.rdf_label = rdf_label
+		self.rdf_inverse_predicate = rdf_inverse_predicate
+		self.rdf_inverse_label = rdf_inverse_label
+	def get_rdf(self, obj):
+		g = rdflib.Graph()
+		if self.rdf_predicate:
+			for subject in getattr(obj, self.name).all():
+				g.add((
+					rdflib.URIRef(obj.get_absolute_url()),
+					self.rdf_predicate,
+					rdflib.URIRef(subject.get_absolute_url()),
+				))
+		return g
+	@property
+	def rdf_range(self):
+		return self.remote_field.model.rdf_type
+
 class RDFArrayField(ArrayField):
 	def __init__(self, *args, rdf_predicate=None, rdf_label=None, **kwargs):
 		super().__init__(*args, **kwargs)

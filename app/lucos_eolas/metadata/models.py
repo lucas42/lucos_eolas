@@ -80,14 +80,18 @@ class Place(EolasModel):
 		default=False,
 		verbose_name=_('fictional'),
 		rdf_predicate=EOLAS_NS.isFictional,
-		db_comment='Whether or not a self is fictional.',
+		db_comment='Whether or not a place is fictional.',
 	)
-	located_in = models.ManyToManyField(
+	located_in = RDFManyToManyField(
 		'self',
 		symmetrical=False,
 		blank=True,
 		related_name='contains',
 		verbose_name=_('located in'),
+		rdf_predicate=rdflib.SDO.containedInPlace,
+		rdf_label="Contained In Place",
+		rdf_inverse_predicate=rdflib.SDO.containsPlace,
+		rdf_inverse_label="Contains Place",
 	)
 	metonym = models.CharField(
 		blank=True,
@@ -121,10 +125,8 @@ class Place(EolasModel):
 		g.add((uri, rdflib.RDF.type, type_uri))
 		if include_type_label:
 			g += self.type.get_rdf(include_type_label)
-		g.add((uri, EOLAS_NS.isFictional, rdflib.Literal(self.fictional)))
-		for container in self.located_in.all():
-			container_uri = rdflib.URIRef(container.get_absolute_url())
-			g.add((uri, rdflib.SDO.containedInPlace, container_uri))
+		g += self._meta.get_field('fictional').get_rdf(self)
+		g += self._meta.get_field('located_in').get_rdf(self)
 		if self.metonym:
 			# The metonym field is actually a label for the thing, so create a bnode for the thing itself
 			metonym_bnode = rdflib.BNode()
