@@ -50,8 +50,9 @@ def ontology_graph():
 				g.add((class_uri, rdflib.RDFS.comment, rdflib.Literal(model_class._meta.db_table_comment, lang='en')))
 			for field in model_class._meta.get_fields():
 				if getattr(field, 'rdf_predicate', None):
-					label = field.rdf_label if getattr(field, 'rdf_label', None) else field.name
-					g.add((field.rdf_predicate, rdflib.SKOS.prefLabel, rdflib.Literal(label, lang='en')))
+					with translation.override('en'):
+						label = field.rdf_label if getattr(field, 'rdf_label', None) else field.verbose_name
+						g.add((field.rdf_predicate, rdflib.SKOS.prefLabel, rdflib.Literal(label, lang='en')))
 					if getattr(field, 'rdf_type', None):
 						g.add((field.rdf_predicate, rdflib.RDF.type, field.rdf_type))
 					g.add((field.rdf_predicate, rdflib.RDFS.domain, class_uri))
