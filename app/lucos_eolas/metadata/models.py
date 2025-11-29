@@ -164,6 +164,8 @@ class Month(EolasModel):
 		null=False,
 		blank=False,
 		rdf_predicate=EOLAS_NS.calendar,
+		rdf_inverse_predicate=EOLAS_NS.containsMonth,
+		rdf_inverse_label="Contains Month",
 		db_comment='Calendar this month belongs to.',
 	)
 	order_in_calendar = RDFIntegerField(
@@ -291,6 +293,8 @@ class LanguageFamily(EolasModel):
 		blank=True,
 		rdf_predicate=LOC_NS.hasBroaderAuthority,
 		rdf_label='Has Broader Authority',
+		rdf_inverse_predicate=LOC_NS.hasNarrowerAuthority,
+		rdf_inverse_label='Has Narrower Authority',
 	)
 	class Meta:
 		verbose_name = _('Language Family')
@@ -320,6 +324,8 @@ class Language(EolasModel):
 		blank=False,
 		rdf_predicate=LOC_NS.hasBroaderExternalAuthority,
 		rdf_label='Has Broader External Authority',
+		rdf_inverse_predicate=LOC_NS.hasNarrowerExternalAuthority,
+		rdf_inverse_label='Has Narrower External Authority',
 	)
 
 	class Meta:

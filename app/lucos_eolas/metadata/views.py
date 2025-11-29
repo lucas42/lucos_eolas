@@ -59,6 +59,14 @@ def ontology_graph():
 						g.add((field.rdf_predicate, rdflib.RDFS.range, field.rdf_range))
 					if getattr(field, 'db_comment', None):
 						g.add((field.rdf_predicate, rdflib.RDFS.comment, rdflib.Literal(field.db_comment, lang='en')))
+					if getattr(field, 'rdf_inverse_predicate', None):
+						g.add((field.rdf_predicate, rdflib.OWL.inverseOf, field.rdf_inverse_predicate))
+						g.add((field.rdf_inverse_predicate, rdflib.RDF.type, rdflib.OWL.ObjectProperty)) # Only Object Properities can have an inverse
+						inverse_label = field.rdf_inverse_label if getattr(field, 'rdf_inverse_label', None) else field.related_query_name()
+						g.add((field.rdf_inverse_predicate, rdflib.SKOS.prefLabel, rdflib.Literal(inverse_label, lang='en')))
+						g.add((field.rdf_inverse_predicate, rdflib.RDFS.range, class_uri))
+						if getattr(field, 'rdf_range', None):
+							g.add((field.rdf_inverse_predicate, rdflib.RDFS.domain, field.rdf_range))
 	return g
 
 def thing_entrypoint(request, type, pk):

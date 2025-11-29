@@ -154,10 +154,12 @@ class WikipediaField(models.CharField):
 
 class RDFForeignKey(models.ForeignKey):
 	rdf_type = rdflib.OWL.ObjectProperty
-	def __init__(self, *args, rdf_predicate=None, rdf_label=None, **kwargs):
+	def __init__(self, *args, rdf_predicate=None, rdf_label=None, rdf_inverse_predicate=None, rdf_inverse_label=None, **kwargs):
 		super().__init__(*args, **kwargs)
 		self.rdf_predicate = rdf_predicate
 		self.rdf_label = rdf_label
+		self.rdf_inverse_predicate = rdf_inverse_predicate
+		self.rdf_inverse_label = rdf_inverse_label
 	def get_rdf(self, obj):
 		g = rdflib.Graph()
 		value = getattr(obj, self.name)
