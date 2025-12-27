@@ -13,6 +13,7 @@ BASE_URL = os.environ.get("BASE_URL")
 EOLAS_NS = rdflib.Namespace(f"{BASE_URL}ontology/")
 DBPEDIA_NS = rdflib.Namespace("https://dbpedia.org/ontology/")
 LOC_NS = rdflib.Namespace("http://www.loc.gov/mads/rdf/v1#")
+WDT_NS = rdflib.Namespace("http://www.wikidata.org/prop/direct/")
 
 def info(request):
 	output = {
@@ -37,6 +38,7 @@ def ontology_graph():
 	g.bind('eolas', EOLAS_NS)
 	g.bind('dbpedia', DBPEDIA_NS)
 	g.bind('loc', LOC_NS)
+	g.bind('wdt', WDT_NS)
 	ontology_uri = rdflib.URIRef(f"{BASE_URL}ontology/")
 	g.add((ontology_uri, rdflib.RDF.type, rdflib.OWL.Ontology))
 	for model_class in apps.get_app_config('metadata').get_models():
@@ -91,6 +93,7 @@ def thing_data(request, type, pk):
 	g.bind('dbpedia', DBPEDIA_NS)
 	g.bind('eolas', EOLAS_NS)
 	g.bind('loc', LOC_NS)
+	g.bind('wdt', WDT_NS)
 	return HttpResponse(g.serialize(format=format), content_type=f'{content_type}; charset={settings.DEFAULT_CHARSET}')
 
 @api_auth
@@ -101,6 +104,7 @@ def all_rdf(request):
 	g.bind('dbpedia', DBPEDIA_NS)
 	g.bind('eolas', EOLAS_NS)
 	g.bind('loc', LOC_NS)
+	g.bind('wdt', WDT_NS)
 	g += ontology_graph()
 	app_models = apps.get_app_config('metadata').get_models()
 	for model_class in app_models:

@@ -11,6 +11,7 @@ BASE_URL = os.environ.get("BASE_URL")
 EOLAS_NS = rdflib.Namespace(f"{BASE_URL}ontology/")
 DBPEDIA_NS = rdflib.Namespace("https://dbpedia.org/ontology/")
 LOC_NS = rdflib.Namespace("http://www.loc.gov/mads/rdf/v1#")
+WDT_NS = rdflib.Namespace("http://www.wikidata.org/prop/direct/")
 
 class EolasModel(models.Model):
 	name = RDFNameField()
@@ -190,6 +191,23 @@ class Month(EolasModel):
 			return f"{self.name} ({self.calendar})"
 		return self.name
 
+class HistoricalEvent(EolasModel):
+	rdf_type = EOLAS_NS.HistoricalEvent
+	year = RDFYearField(
+		verbose_name=_('year'),
+		null=True,
+		blank=True,
+		help_text=_('Approximate year of the event, in the Gregorian Calendar'),
+		rdf_predicate=EOLAS_NS.occuredOn,
+		rdf_label="Occured On",
+		db_comment='The approximate point in time an event occured',
+	)
+	class Meta:
+		verbose_name = _('Historical Event')
+		verbose_name_plural = _('Historical Events')
+		ordering = ["year", "name"]
+		db_table_comment = "A notable thing that happened in the past."
+
 class Festival(EolasModel):
 	rdf_type = EOLAS_NS.Festival
 	day_of_month = models.IntegerField(
@@ -204,6 +222,17 @@ class Festival(EolasModel):
 		null=True,
 		blank=True,
 		db_comment='When a self starts.',
+	)
+	commemorates = RDFForeignKey(
+		HistoricalEvent,
+		on_delete=models.SET_NULL,
+		null=True,
+		blank=True,
+		rdf_predicate=WDT_NS.P547,
+		rdf_label="Commemorates",
+		rdf_inverse_predicate=EOLAS_NS.commemoratedBy,
+		rdf_inverse_label="Commemorated by",
+		db_comment='Historical event this festival commemorates',
 	)
 	class Meta:
 		verbose_name = _('Festival')
@@ -334,23 +363,6 @@ class Language(EolasModel):
 		verbose_name = _('Language')
 		verbose_name_plural = _('Languages')
 		ordering = ["code"]
-
-class HistoricalEvent(EolasModel):
-	rdf_type = EOLAS_NS.HistoricalEvent
-	year = RDFYearField(
-		verbose_name=_('year'),
-		null=True,
-		blank=True,
-		help_text=_('Approximate year of the event, in the Gregorian Calendar'),
-		rdf_predicate=EOLAS_NS.occuredOn,
-		rdf_label="Occured On",
-		db_comment='The approximate point in time an event occured',
-	)
-	class Meta:
-		verbose_name = _('Historical Event')
-		verbose_name_plural = _('Historical Events')
-		ordering = ["year", "name"]
-		db_table_comment = "A notable thing that happened in the past."
 
 class Weather(EolasModel):
 	rdf_type = EOLAS_NS.Weather
