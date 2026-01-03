@@ -41,6 +41,12 @@ def ontology_graph():
 	g.bind('wdt', WDT_NS)
 	ontology_uri = rdflib.URIRef(f"{BASE_URL}ontology/")
 	g.add((ontology_uri, rdflib.RDF.type, rdflib.OWL.Ontology))
+	g.add((EOLAS_NS.Category, rdflib.RDF.type, rdflib.OWL.Class))
+	g.add((EOLAS_NS.Category, rdflib.SKOS.prefLabel, rdflib.Literal("Category", lang='en')))
+	g.add((EOLAS_NS.hasCategory, rdflib.RDF.type, rdflib.OWL.ObjectProperty))
+	g.add((EOLAS_NS.hasCategory, rdflib.SKOS.prefLabel, rdflib.Literal("has category", lang='en')))
+	g.add((EOLAS_NS.hasCategory, rdflib.RDFS.domain, rdflib.OWL.Class))
+	g.add((EOLAS_NS.hasCategory, rdflib.RDFS.range, EOLAS_NS.Category))
 	for category in Category:
 		category_uri = EOLAS_NS[category.value]
 		g.add((category_uri, rdflib.RDF.type, EOLAS_NS.Category))
