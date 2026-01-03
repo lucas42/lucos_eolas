@@ -53,6 +53,7 @@ class Category(models.TextChoices):
 	MATHEMATICAL = "Mathematical", _("Mathematical")
 	TECHNOLOGICAL = "Technological", _("Technological")
 	METEOROLOGICAL = "Meteorological", _("Meteorological")
+	META = "Meta", _("Meta")
 
 class PlaceType(EolasModel):
 	plural = RDFCharField(

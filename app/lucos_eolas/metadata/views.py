@@ -43,6 +43,7 @@ def ontology_graph():
 	g.add((ontology_uri, rdflib.RDF.type, rdflib.OWL.Ontology))
 	g.add((EOLAS_NS.Category, rdflib.RDF.type, rdflib.OWL.Class))
 	g.add((EOLAS_NS.Category, rdflib.SKOS.prefLabel, rdflib.Literal("Category", lang='en')))
+	g.add((EOLAS_NS.Category, EOLAS_NS.hasCategory, EOLAS_NS[Category.META]))
 	g.add((EOLAS_NS.hasCategory, rdflib.RDF.type, rdflib.OWL.ObjectProperty))
 	g.add((EOLAS_NS.hasCategory, rdflib.SKOS.prefLabel, rdflib.Literal("has category", lang='en')))
 	g.add((EOLAS_NS.hasCategory, rdflib.RDFS.domain, rdflib.OWL.Class))
