@@ -41,6 +41,12 @@ def ontology_graph():
 	g.bind('wdt', WDT_NS)
 	ontology_uri = rdflib.URIRef(f"{BASE_URL}ontology/")
 	g.add((ontology_uri, rdflib.RDF.type, rdflib.OWL.Ontology))
+	for category in Category:
+		category_uri = EOLAS_NS[category.value]
+		g.add((category_uri, rdflib.RDF.type, EOLAS_NS.Category))
+		for lang, _ in settings.LANGUAGES:
+			with translation.override(lang):
+				g.add((category_uri, rdflib.SKOS.prefLabel, rdflib.Literal(category.label, lang=lang)))
 	for model_class in apps.get_app_config('metadata').get_models():
 		if (getattr(model_class, 'rdf_type', None)):
 			class_uri = model_class.rdf_type
@@ -50,6 +56,8 @@ def ontology_graph():
 					g.add((class_uri, rdflib.SKOS.prefLabel, rdflib.Literal(translation.gettext(model_class._meta.verbose_name), lang=lang)))
 			if model_class._meta.db_table_comment:
 				g.add((class_uri, rdflib.RDFS.comment, rdflib.Literal(model_class._meta.db_table_comment, lang='en')))
+			if (getattr(model_class, 'category', None)):
+				g.add((class_uri, EOLAS_NS.hasCategory, EOLAS_NS[getattr(model_class, 'category', None)]))
 			for field in model_class._meta.get_fields():
 				if getattr(field, 'rdf_predicate', None):
 					with translation.override('en'):

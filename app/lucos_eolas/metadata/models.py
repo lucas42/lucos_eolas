@@ -39,6 +39,21 @@ class EolasModel(models.Model):
 				g += field.get_rdf(self)
 		return g
 
+class Category(models.TextChoices):
+	PEOPLE = "People", _("People")
+	ANTHROPOLOGICAL = "Anthropological", _("Anthropological")
+	ANTHROPOGEOGRAPHICAL = "Anthropogeographical", _("Anthropogeographical")
+	MUSICAL = "Musical", _("Musical")
+	AQUATIC = "Aquatic", _("Aquatic")
+	TERRESTRIAL = "Terrestrial", _("Terrestrial")
+	COSMIC = "Cosmic", _("Cosmic")
+	SUPERNATURAL = "Supernatural", _("Supernatural")
+	HISTORICAL = "Historical", _("Historical")
+	TEMPORAL = "Temporal", _("Temporal")
+	MATHEMATICAL = "Mathematical", _("Mathematical")
+	TECHNOLOGICAL = "Technological", _("Technological")
+	METEOROLOGICAL = "Meteorological", _("Meteorological")
+
 class PlaceType(EolasModel):
 	plural = RDFCharField(
 		max_length=255,
@@ -46,6 +61,12 @@ class PlaceType(EolasModel):
 		null=False,
 		blank=False,
 		unique=True,
+	)
+	category = models.CharField(
+		choices=Category,
+		verbose_name=_('category'),
+		null=False,
+		blank=False,
 	)
 	class Meta:
 		verbose_name = _('Place Type')
@@ -59,6 +80,7 @@ class PlaceType(EolasModel):
 		uri = rdflib.URIRef(self.get_absolute_url())
 		g = super().get_rdf(include_type_label)
 		g.add((uri, rdflib.RDFS.subClassOf, rdflib.SDO.Place))
+		g.add((uri, EOLAS_NS.hasCategory, EOLAS_NS[self.category]))
 		return g
 
 class Place(EolasModel):
@@ -137,6 +159,7 @@ class Place(EolasModel):
 
 class DayOfWeek(EolasModel):
 	rdf_type = rdflib.TIME.DayOfWeek
+	category = Category.TEMPORAL
 	order = RDFIntegerField(
 		verbose_name=_('order'),
 		null=False,
@@ -152,6 +175,7 @@ class DayOfWeek(EolasModel):
 
 class Calendar(EolasModel):
 	rdf_type = EOLAS_NS.Calendar
+	category = Category.TEMPORAL
 	class Meta:
 		verbose_name = _('Calendar')
 		verbose_name_plural = _('Calendars')
@@ -160,6 +184,7 @@ class Calendar(EolasModel):
 
 class Month(EolasModel):
 	rdf_type = rdflib.TIME.MonthOfYear
+	category = Category.TEMPORAL
 	name = RDFNameField(unique=False)
 	calendar = RDFForeignKey(
 		Calendar,
@@ -193,6 +218,7 @@ class Month(EolasModel):
 
 class HistoricalEvent(EolasModel):
 	rdf_type = EOLAS_NS.HistoricalEvent
+	category = Category.HISTORICAL
 	year = RDFYearField(
 		verbose_name=_('year'),
 		null=True,
@@ -210,6 +236,7 @@ class HistoricalEvent(EolasModel):
 
 class Festival(EolasModel):
 	rdf_type = EOLAS_NS.Festival
+	category = Category.TEMPORAL
 	day_of_month = models.IntegerField(
 		verbose_name=_('day of month'),
 		null=True,
@@ -256,6 +283,7 @@ class Festival(EolasModel):
 
 class Season(EolasModel):
 	rdf_type = DBPEDIA_NS.Season
+	category = Category.TEMPORAL
 	class Meta:
 		verbose_name = _('Season')
 		verbose_name_plural = _('Seasons')
@@ -263,6 +291,7 @@ class Season(EolasModel):
 
 class Memory(EolasModel):
 	rdf_type = EOLAS_NS.Memory
+	category = Category.HISTORICAL
 	description = RDFTextField(
 		verbose_name=_('description'),
 		null=False,
@@ -286,6 +315,7 @@ class Memory(EolasModel):
 
 class Number(EolasModel):
 	rdf_type = EOLAS_NS.Number
+	category = Category.MATHEMATICAL
 	value = RDFDecimalField(
 		max_digits=32,
 		decimal_places=2,
@@ -304,6 +334,7 @@ class Number(EolasModel):
 
 class TransportMode(EolasModel):
 	rdf_type = DBPEDIA_NS.MeanOfTransportation
+	category = Category.TECHNOLOGICAL
 	class Meta:
 		verbose_name = _('Mode of Transport')
 		verbose_name_plural = _('Modes of Transport')
@@ -311,6 +342,7 @@ class TransportMode(EolasModel):
 
 class LanguageFamily(EolasModel):
 	rdf_type = rdflib.URIRef("http://id.loc.gov/vocabulary/iso639-5/iso639-5_Language")
+	category = Category.ANTHROPOLOGICAL
 	code = RDFCharField(
 		max_length=3,
 		primary_key=True,
@@ -342,6 +374,7 @@ class LanguageFamily(EolasModel):
 
 class Language(EolasModel):
 	rdf_type = LOC_NS.Language
+	category = Category.ANTHROPOLOGICAL
 	code = RDFCharField(
 		max_length=15,
 		primary_key=True,
@@ -366,6 +399,7 @@ class Language(EolasModel):
 
 class Weather(EolasModel):
 	rdf_type = EOLAS_NS.Weather
+	category = Category.METEOROLOGICAL
 	class Meta:
 		verbose_name = _('Weather')
 		verbose_name_plural = _('Weathers')
@@ -374,6 +408,7 @@ class Weather(EolasModel):
 
 class EthnicGroup(EolasModel):
 	rdf_type = DBPEDIA_NS.EthnicGroup
+	category = Category.ANTHROPOLOGICAL
 	class Meta:
 		verbose_name = _('Ethnic Group')
 		verbose_name_plural = _('Ethnic Groups')
@@ -381,6 +416,7 @@ class EthnicGroup(EolasModel):
 
 class Direction(EolasModel):
 	rdf_type = EOLAS_NS.Direction
+	category = Category.MATHEMATICAL
 	class Meta:
 		verbose_name = _('Direction')
 		verbose_name_plural = _('Directions')
@@ -389,6 +425,7 @@ class Direction(EolasModel):
 
 class Organisation(EolasModel):
 	rdf_type = rdflib.ORG.Organization
+	category = Category.ANTHROPOLOGICAL
 	class Meta:
 		verbose_name = _('Organisation')
 		verbose_name_plural = _('Organisations')
