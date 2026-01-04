@@ -34,6 +34,11 @@ class EolasModel(models.Model):
 				for lang, _ in settings.LANGUAGES:
 					with translation.override(lang):
 						g.add((self.rdf_type, rdflib.SKOS.prefLabel, rdflib.Literal(translation.gettext(self._meta.verbose_name), lang=lang)))
+				if (hasattr(self, 'category')):
+					g.add((self.rdf_type, EOLAS_NS.hasCategory, EOLAS_NS[self.category]))
+					for lang, _ in settings.LANGUAGES:
+						with translation.override(lang):
+							g.add((EOLAS_NS[self.category], rdflib.SKOS.prefLabel, rdflib.Literal(translation.gettext(self.category), lang=lang)))
 		for field in self._meta.get_fields():
 			if hasattr(field, 'get_rdf'):
 				g += field.get_rdf(self)
@@ -82,6 +87,10 @@ class PlaceType(EolasModel):
 		g = super().get_rdf(include_type_label)
 		g.add((uri, rdflib.RDFS.subClassOf, rdflib.SDO.Place))
 		g.add((uri, EOLAS_NS.hasCategory, EOLAS_NS[self.category]))
+		if include_type_label:
+			for lang, _ in settings.LANGUAGES:
+				with translation.override(lang):
+					g.add((EOLAS_NS[self.category], rdflib.SKOS.prefLabel, rdflib.Literal(translation.gettext(self.category), lang=lang)))
 		return g
 
 class Place(EolasModel):
