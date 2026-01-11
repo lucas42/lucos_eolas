@@ -8,7 +8,7 @@ from .fields import *
 import rdflib
 
 BASE_URL = os.environ.get("APP_ORIGIN")
-EOLAS_NS = rdflib.Namespace(f"{BASE_URL}ontology/")
+EOLAS_NS = rdflib.Namespace(f"{BASE_URL}/ontology/")
 DBPEDIA_NS = rdflib.Namespace("https://dbpedia.org/ontology/")
 LOC_NS = rdflib.Namespace("http://www.loc.gov/mads/rdf/v1#")
 WDT_NS = rdflib.Namespace("http://www.wikidata.org/prop/direct/")
