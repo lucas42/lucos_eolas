@@ -3,7 +3,7 @@ services:
     build: ./web
     container_name: lucos_eolas_web
     ports:
-      - "8032:80"
+      - $PORT:80
     image: lucas42/lucos_eolas_web
     volumes:
       - "staticfiles:/usr/share/nginx/html/resources"
