@@ -9,8 +9,8 @@ from .utils_conneg import choose_rdf_over_html, pick_best_rdf_format
 from django.apps import apps
 from django.core.exceptions import ObjectDoesNotExist
 
-BASE_URL = os.environ.get("BASE_URL")
-EOLAS_NS = rdflib.Namespace(f"{BASE_URL}ontology/")
+BASE_URL = os.environ.get("APP_ORIGIN")
+EOLAS_NS = rdflib.Namespace(f"{BASE_URL}/ontology/")
 DBPEDIA_NS = rdflib.Namespace("https://dbpedia.org/ontology/")
 LOC_NS = rdflib.Namespace("http://www.loc.gov/mads/rdf/v1#")
 WDT_NS = rdflib.Namespace("http://www.wikidata.org/prop/direct/")
@@ -39,7 +39,7 @@ def ontology_graph():
 	g.bind('dbpedia', DBPEDIA_NS)
 	g.bind('loc', LOC_NS)
 	g.bind('wdt', WDT_NS)
-	ontology_uri = rdflib.URIRef(f"{BASE_URL}ontology/")
+	ontology_uri = rdflib.URIRef(f"{BASE_URL}/ontology/")
 	g.add((ontology_uri, rdflib.RDF.type, rdflib.OWL.Ontology))
 	g.add((EOLAS_NS.Category, rdflib.RDF.type, rdflib.OWL.Class))
 	g.add((EOLAS_NS.Category, rdflib.SKOS.prefLabel, rdflib.Literal("Category", lang='en')))

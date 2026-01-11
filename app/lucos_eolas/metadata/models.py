@@ -7,7 +7,7 @@ from django.conf import settings
 from .fields import *
 import rdflib
 
-BASE_URL = os.environ.get("BASE_URL")
+BASE_URL = os.environ.get("APP_ORIGIN")
 EOLAS_NS = rdflib.Namespace(f"{BASE_URL}ontology/")
 DBPEDIA_NS = rdflib.Namespace("https://dbpedia.org/ontology/")
 LOC_NS = rdflib.Namespace("http://www.loc.gov/mads/rdf/v1#")
@@ -23,7 +23,7 @@ class EolasModel(models.Model):
 		return self.name
 
 	def get_absolute_url(self):
-		return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
+		return f"{BASE_URL}/metadata/{self._meta.model_name}/{self.pk}/"
 
 	def get_rdf(self, include_type_label):
 		uri = rdflib.URIRef(self.get_absolute_url())
@@ -377,7 +377,7 @@ class LanguageFamily(EolasModel):
 	def get_absolute_url(self):
 		# 'qli' is used here for language isolates, but dosen't appear in iso639-5, nor the library of congress list, so needs a local URI
 		if self.pk == "qli":
-			return f"{BASE_URL}metadata/{self._meta.model_name}/{self.pk}/"
+			return f"{BASE_URL}/metadata/{self._meta.model_name}/{self.pk}/"
 		# For other language families, use the library of congress URI
 		else:
 			return f"http://id.loc.gov/vocabulary/iso639-5/{self.pk}"
