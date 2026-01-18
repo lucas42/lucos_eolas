@@ -160,6 +160,7 @@ class Place(EolasModel):
 			g += self.type.get_rdf(include_type_label)
 		g += self._meta.get_field('fictional').get_rdf(self)
 		g += self._meta.get_field('located_in').get_rdf(self)
+		g += self._meta.get_field('wikipedia_slug').get_rdf(self)
 		if self.metonym:
 			# The metonym field is actually a label for the thing, so create a bnode for the thing itself
 			metonym_bnode = rdflib.BNode()
