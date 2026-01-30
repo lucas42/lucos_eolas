@@ -22,7 +22,7 @@ class RDFCharField(models.CharField):
 
 class RDFNameField(models.CharField):
 	rdf_type = rdflib.OWL.DatatypeProperty
-	def __init__(self, unique=False, **kwargs):
+	def __init__(self, unique=True, **kwargs):
 		super().__init__(
 			max_length=255,
 			verbose_name=_('name'),
