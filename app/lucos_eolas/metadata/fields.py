@@ -30,10 +30,11 @@ class RDFNameField(models.CharField):
 			blank=False,
 			unique=unique,
 		)
-	def get_rdf(self, obj):
+	def get_rdf(self, obj, value=None):
 		g = rdflib.Graph()
 		uri = rdflib.URIRef(obj.get_absolute_url())
-		value = getattr(obj, self.name)
+		if value is None:
+			value = getattr(obj, self.name)
 		g.add((uri, rdflib.SKOS.prefLabel, rdflib.Literal(str(obj))))
 		g.add((uri, rdflib.RDFS.label, rdflib.Literal(value)))
 		return g
@@ -203,7 +204,7 @@ class RDFArrayField(ArrayField):
 		self.rdf_label = rdf_label
 	def get_rdf(self, obj):
 		g = rdflib.Graph()
-		value = getattr(obj, self.name)
-		for base_field in value:
-			g.add(base_field.get_rdf(obj))
+		values = getattr(obj, self.name) or []
+		for value in values:
+			g += self.base_field.get_rdf(obj, value=value)
 		return g

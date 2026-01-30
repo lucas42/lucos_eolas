@@ -1,6 +1,5 @@
 import os
 from django.db import models
-from django.contrib.postgres.fields import ArrayField
 from django.utils.translation import gettext_lazy as _
 from django.utils import translation
 from django.conf import settings
@@ -102,8 +101,8 @@ class Place(EolasModel):
 		null=False,
 		blank=False,
 	)
-	alternate_names = ArrayField(
-		models.CharField(max_length=255),
+	alternate_names = RDFArrayField(
+		RDFNameField(max_length=255),
 		blank=True,
 		default=list,
 		verbose_name=_('also known as'),
@@ -152,8 +151,7 @@ class Place(EolasModel):
 		uri = rdflib.URIRef(self.get_absolute_url())
 		g = rdflib.Graph()
 		g.add((uri, rdflib.SKOS.prefLabel, rdflib.Literal(str(self))))
-		for alt in self.alternate_names:
-			g.add((uri, rdflib.RDFS.label, rdflib.Literal(alt)))
+		g += self._meta.get_field("alternate_names").get_rdf(self)
 		type_uri = rdflib.URIRef(self.type.get_absolute_url())
 		g.add((uri, rdflib.RDF.type, type_uri))
 		if include_type_label:
