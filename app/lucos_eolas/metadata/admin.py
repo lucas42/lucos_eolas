@@ -48,8 +48,9 @@ class EolasModelAdmin(admin.ModelAdmin):
 	def get_fields(self, request, obj=None):
 		all_fields = [
 			f.name for f in self.model._meta.get_fields()
-			if f.editable and not f.auto_created and f.name != "wikipedia_slug"
+			if f.editable and not f.auto_created and f.name not in ["name", "wikipedia_slug"]
 		]
+		all_fields.insert(0, "name") # Make sure name is always first, regardless of where it is defined
 		all_fields.append("wikipedia_slug") # Move wiki slug to the end of the list
 		return all_fields
 
