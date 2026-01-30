@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-01-30 20:12+0000\n"
+"POT-Creation-Date: 2026-01-30 20:20+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -38,85 +38,85 @@ msgstr ""
 "An sluga URL a úsáideann an príomhleathanach maidir leis an mír seo ar an "
 "Vicipéid Béarla"
 
-#: lucos_eolas/metadata/models.py:47
-msgid "People"
-msgstr "Daoine"
-
-#: lucos_eolas/metadata/models.py:48
-msgid "Anthropological"
-msgstr "Antraipeolaíoch"
-
-#: lucos_eolas/metadata/models.py:49
-msgid "Anthropogeographical"
-msgstr "Antrapaigeografach"
-
-#: lucos_eolas/metadata/models.py:50
-msgid "Musical"
-msgstr "Ceolmhar"
-
-#: lucos_eolas/metadata/models.py:51
-msgid "Aquatic"
-msgstr "Uisceach"
-
-#: lucos_eolas/metadata/models.py:52
-msgid "Terrestrial"
-msgstr "Domhanda"
-
-#: lucos_eolas/metadata/models.py:53
-msgid "Cosmic"
-msgstr "Cosmach"
-
-#: lucos_eolas/metadata/models.py:54
-msgid "Supernatural"
-msgstr "Osnádúrtha"
-
-#: lucos_eolas/metadata/models.py:55
-msgid "Historical"
-msgstr "Stairiúil"
-
-#: lucos_eolas/metadata/models.py:56
-msgid "Temporal"
-msgstr "Teamparálta"
-
-#: lucos_eolas/metadata/models.py:57
-msgid "Mathematical"
-msgstr "Matamaiticiúil"
-
-#: lucos_eolas/metadata/models.py:58
-msgid "Technological"
-msgstr "Teicneolaíochta"
-
-#: lucos_eolas/metadata/models.py:59
-msgid "Meteorological"
-msgstr "Meitéareolaíochta"
-
-#: lucos_eolas/metadata/models.py:60
-msgid "Meta"
-msgstr "Meit"
-
-#: lucos_eolas/metadata/models.py:65
-msgid "plural"
-msgstr "iolra"
-
-#: lucos_eolas/metadata/models.py:72
-msgid "category"
-msgstr "Catagóir"
-
-#: lucos_eolas/metadata/models.py:77
-msgid "Place Type"
-msgstr "Cineál Áite"
-
-#: lucos_eolas/metadata/models.py:78
-msgid "Place Types"
-msgstr "Cineálacha Áiteanna"
-
-#: lucos_eolas/metadata/models.py:108
+#: lucos_eolas/metadata/models.py:21
 msgid "also known as"
 msgstr "nó mar is fearr aithne"
 
-#: lucos_eolas/metadata/models.py:109
+#: lucos_eolas/metadata/models.py:22
 msgid "Enter alternate names separated by commas."
 msgstr "Cuir isteach ainmneacha eile scartha le camóga."
+
+#: lucos_eolas/metadata/models.py:54
+msgid "People"
+msgstr "Daoine"
+
+#: lucos_eolas/metadata/models.py:55
+msgid "Anthropological"
+msgstr "Antraipeolaíoch"
+
+#: lucos_eolas/metadata/models.py:56
+msgid "Anthropogeographical"
+msgstr "Antrapaigeografach"
+
+#: lucos_eolas/metadata/models.py:57
+msgid "Musical"
+msgstr "Ceolmhar"
+
+#: lucos_eolas/metadata/models.py:58
+msgid "Aquatic"
+msgstr "Uisceach"
+
+#: lucos_eolas/metadata/models.py:59
+msgid "Terrestrial"
+msgstr "Domhanda"
+
+#: lucos_eolas/metadata/models.py:60
+msgid "Cosmic"
+msgstr "Cosmach"
+
+#: lucos_eolas/metadata/models.py:61
+msgid "Supernatural"
+msgstr "Osnádúrtha"
+
+#: lucos_eolas/metadata/models.py:62
+msgid "Historical"
+msgstr "Stairiúil"
+
+#: lucos_eolas/metadata/models.py:63
+msgid "Temporal"
+msgstr "Teamparálta"
+
+#: lucos_eolas/metadata/models.py:64
+msgid "Mathematical"
+msgstr "Matamaiticiúil"
+
+#: lucos_eolas/metadata/models.py:65
+msgid "Technological"
+msgstr "Teicneolaíochta"
+
+#: lucos_eolas/metadata/models.py:66
+msgid "Meteorological"
+msgstr "Meitéareolaíochta"
+
+#: lucos_eolas/metadata/models.py:67
+msgid "Meta"
+msgstr "Meit"
+
+#: lucos_eolas/metadata/models.py:72
+msgid "plural"
+msgstr "iolra"
+
+#: lucos_eolas/metadata/models.py:79
+msgid "category"
+msgstr "Catagóir"
+
+#: lucos_eolas/metadata/models.py:84
+msgid "Place Type"
+msgstr "Cineál Áite"
+
+#: lucos_eolas/metadata/models.py:85
+msgid "Place Types"
+msgstr "Cineálacha Áiteanna"
 
 #: lucos_eolas/metadata/models.py:113
 msgid "fictional"

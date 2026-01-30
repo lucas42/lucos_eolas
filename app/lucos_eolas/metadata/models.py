@@ -14,6 +14,13 @@ WDT_NS = rdflib.Namespace("http://www.wikidata.org/prop/direct/")
 
 class EolasModel(models.Model):
 	name = RDFNameField()
+	alternate_names = RDFArrayField(
+		RDFNameField(max_length=255),
+		blank=True,
+		default=list,
+		verbose_name=_('also known as'),
+		help_text=_("Enter alternate names separated by commas."),
+	)
 	wikipedia_slug = WikipediaField()
 	class Meta:
 		abstract = True
@@ -100,13 +107,6 @@ class Place(EolasModel):
 		on_delete=models.RESTRICT,
 		null=False,
 		blank=False,
-	)
-	alternate_names = RDFArrayField(
-		RDFNameField(max_length=255),
-		blank=True,
-		default=list,
-		verbose_name=_('also known as'),
-		help_text=_("Enter alternate names separated by commas."),
 	)
 	fictional = RDFBooleanField(
 		default=False,
