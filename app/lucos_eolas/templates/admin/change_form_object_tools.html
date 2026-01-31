@@ -1,0 +1,8 @@
+{% load i18n admin_urls %}
+{% block object-tools-items %}
+<li>
+    {% url opts|admin_urlname:'history' original.pk|admin_urlquote as history_url %}
+    <a href="{% add_preserved_filters history_url %}" class="historylink">{% translate "History" %}</a>
+</li>
+{% if arachne_url %}<li><a href="{{ arachne_url }}" class="viewsitelink" target="_blank">{% translate "View on Arachne" %}</a></li>{% endif %}
+{% endblock %}

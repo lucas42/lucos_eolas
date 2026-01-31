@@ -7,6 +7,7 @@ from ..lucosauth import views as auth_views
 from .loganne import loganneRequest
 from django.apps import apps
 from django.contrib.admin.sites import AlreadyRegistered
+from urllib.parse import urlencode
 
 class EolasAdminSite(admin.AdminSite):
 	site_title = 'LucOS Eolas'
@@ -53,6 +54,20 @@ class EolasModelAdmin(admin.ModelAdmin):
 		all_fields.insert(0, "name") # Make sure name is always first, regardless of where it is defined
 		all_fields.append("wikipedia_slug") # Move wiki slug to the end of the list
 		return all_fields
+	def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
+		extra_context = extra_context or {}
+		obj = self.get_object(request, object_id)
+		if obj and hasattr(obj, "get_absolute_url"):
+			absolute_object_url = request.build_absolute_uri(
+				obj.get_absolute_url()
+			)
+			extra_context["arachne_url"] = (
+				"https://arachne.l42.eu/explore/item?"
+				+ urlencode({"uri": absolute_object_url})
+			)
+		return super().changeform_view(
+			request, object_id, form_url, extra_context=extra_context
+		)
 
 class PlaceAdmin(EolasModelAdmin):
 	filter_horizontal = ('located_in',)
