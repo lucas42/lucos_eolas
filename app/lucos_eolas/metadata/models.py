@@ -228,19 +228,28 @@ class Month(EolasModel):
 class HistoricalEvent(EolasModel):
 	rdf_type = EOLAS_NS.HistoricalEvent
 	category = Category.HISTORICAL
-	year = RDFYearField(
-		verbose_name=_('year'),
+	start_year = RDFYearField(
+		verbose_name=_('start year'),
 		null=True,
 		blank=True,
-		help_text=_('Approximate year of the event, in the Gregorian Calendar'),
-		rdf_predicate=EOLAS_NS.occuredOn,
+		help_text=_('Approximate year the event started, in the Gregorian Calendar'),
+		rdf_predicate=EOLAS_NS.startYear,
 		rdf_label="Occured On",
-		db_comment='The approximate point in time an event occured',
+		db_comment='The approximate point in time an event began',
+	)
+	end_year = RDFYearField(
+		verbose_name=_('end year'),
+		null=True,
+		blank=True,
+		help_text=_('Approximate year the event ended, in the Gregorian Calendar'),
+		rdf_predicate=EOLAS_NS.endYear,
+		rdf_label="Occured On",
+		db_comment='The approximate point in time an event finished',
 	)
 	class Meta:
 		verbose_name = _('Historical Event')
 		verbose_name_plural = _('Historical Events')
-		ordering = ["year", "name"]
+		ordering = ["start_year", "name"]
 		db_table_comment = "A notable thing that happened in the past."
 
 class Festival(EolasModel):
