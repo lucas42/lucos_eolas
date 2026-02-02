@@ -1,4 +1,5 @@
 FROM lucas42/lucos_navbar:latest AS navbar
+FROM lucas42/lucos_scheduled_scripts:latest AS scheduled_scripts
 FROM python:3.15.0a5-alpine
 
 # set working directory
@@ -15,6 +16,7 @@ RUN apk add gettext # Needed for translations
 
 # Install pip dependencies
 RUN apk add --virtual build-deps gcc python3-dev musl-dev # These are needed to install pyscopg, but can be removed after
+COPY --from=scheduled_scripts /opt/lucos_scheduled_scripts /opt/lucos_scheduled_scripts
 COPY Pipfile* .
 RUN pip install --upgrade pip pipenv
 RUN pipenv install --system

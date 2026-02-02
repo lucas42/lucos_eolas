@@ -4,7 +4,6 @@ from django.utils.html import format_html, format_html_join
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from ..lucosauth import views as auth_views
-from .loganne import loganneRequest
 from django.apps import apps
 from django.contrib.admin.sites import AlreadyRegistered
 from urllib.parse import urlencode
