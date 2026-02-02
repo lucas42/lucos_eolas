@@ -17,35 +17,6 @@ class EolasAdminSite(admin.AdminSite):
 eolasadmin = EolasAdminSite()
 
 class EolasModelAdmin(admin.ModelAdmin):
-	def response_add(self, request, item):
-		loganneRequest({
-			"type": "itemCreated",
-			"humanReadable": f'{str(item._meta.verbose_name).title()} "{item}" created',
-			"url": item.get_absolute_url(),
-		})
-		return super().response_add(request, item)
-
-	def response_change(self, request, item):
-		loganneRequest({
-			"type": "itemUpdated",
-			"humanReadable": f'{str(item._meta.verbose_name).title()} "{item}" updated',
-			"url": item.get_absolute_url(),
-		})
-		return super().response_change(request, item)
-
-	def delete_model(self, request, item):
-		# Get details from object before delete
-		item_name = str(item)
-		item_url = item.get_absolute_url()
-		item_type = str(item._meta.verbose_name).title()
-
-		super().delete_model(request, item)
-
-		loganneRequest({
-			"type": "itemDeleted",
-			"humanReadable": f'{item_type} "{item_name}" deleted',
-			"url": item_url,
-		})
 	def get_fields(self, request, obj=None):
 		all_fields = [
 			f.name for f in self.model._meta.get_fields()
