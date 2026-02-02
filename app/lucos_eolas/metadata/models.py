@@ -34,7 +34,12 @@ class EolasModel(models.Model):
 	def get_rdf(self, include_type_label):
 		uri = rdflib.URIRef(self.get_absolute_url())
 		g = rdflib.Graph()
-		if (hasattr(self, 'rdf_type')):
+		if (hasattr(self, 'type')):
+			type_uri = rdflib.URIRef(self.type.get_absolute_url())
+			g.add((uri, rdflib.RDF.type, type_uri))
+			if include_type_label:
+				g += self.type.get_rdf(include_type_label)
+		elif (hasattr(self, 'rdf_type')):
 			g.add((uri, rdflib.RDF.type, self.rdf_type))
 			if include_type_label:
 				for lang, _ in settings.LANGUAGES:
@@ -149,16 +154,7 @@ class Place(EolasModel):
 
 	def get_rdf(self, include_type_label):
 		uri = rdflib.URIRef(self.get_absolute_url())
-		g = rdflib.Graph()
-		g.add((uri, rdflib.SKOS.prefLabel, rdflib.Literal(str(self))))
-		g += self._meta.get_field("alternate_names").get_rdf(self)
-		type_uri = rdflib.URIRef(self.type.get_absolute_url())
-		g.add((uri, rdflib.RDF.type, type_uri))
-		if include_type_label:
-			g += self.type.get_rdf(include_type_label)
-		g += self._meta.get_field('fictional').get_rdf(self)
-		g += self._meta.get_field('located_in').get_rdf(self)
-		g += self._meta.get_field('wikipedia_slug').get_rdf(self)
+		g = super().get_rdf(include_type_label)
 		if self.metonym:
 			# The metonym field is actually a label for the thing, so create a bnode for the thing itself
 			metonym_bnode = rdflib.BNode()
