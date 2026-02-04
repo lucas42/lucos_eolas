@@ -9,7 +9,7 @@ gunicorn = "*"
 psycopg = "*"
 rdflib = "*"
 requests = "*"
-lucos-scheduled-scripts = {file = "/opt/lucos_scheduled_scripts"}
+lucos_loganne_pythonclient = "*"
 
 [dev-packages]
 
