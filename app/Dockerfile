@@ -1,5 +1,5 @@
 FROM lucas42/lucos_navbar:2.1.2 AS navbar
-FROM lucas42/lucos_scheduled_scripts:1.0.0 AS scheduled_scripts
+FROM lucas42/lucos_scheduled_scripts:1.0.1 AS scheduled_scripts
 FROM python:3.15.0a5-alpine
 
 # set working directory
