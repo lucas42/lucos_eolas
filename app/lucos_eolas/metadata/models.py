@@ -70,6 +70,8 @@ class Category(models.TextChoices):
 	TECHNOLOGICAL = "Technological", _("Technological")
 	METEOROLOGICAL = "Meteorological", _("Meteorological")
 	META = "Meta", _("Meta")
+	DRAMATURGICAL = "Dramaturgical", _("Dramaturgical")
+	LITERARY = "Literary", _("Literary")
 
 class PlaceType(EolasModel):
 	plural = RDFCharField(
@@ -445,3 +447,50 @@ class Organisation(EolasModel):
 		verbose_name_plural = _('Organisations')
 		ordering = ["name"]
 		db_table_comment = "A group of people with a particular shared purpose"
+
+class CreativeWorkType(EolasModel):
+	plural = RDFCharField(
+		max_length=255,
+		verbose_name=_('plural'),
+		null=False,
+		blank=False,
+		unique=True,
+	)
+	category = models.CharField(
+		choices=Category,
+		verbose_name=_('category'),
+		null=False,
+		blank=False,
+	)
+	class Meta:
+		verbose_name = _('Creative Work Type')
+		verbose_name_plural = _('Creative Work Types')
+		ordering = ["name"]
+
+	def __str__(self):
+		return self.name.title()
+
+	def get_rdf(self, include_type_label):
+		uri = rdflib.URIRef(self.get_absolute_url())
+		g = super().get_rdf(include_type_label)
+		g.add((uri, rdflib.RDFS.subClassOf, rdflib.SDO.CreativeWork))
+		g.add((uri, EOLAS_NS.hasCategory, EOLAS_NS[self.category]))
+		if include_type_label:
+			for lang, _ in settings.LANGUAGES:
+				with translation.override(lang):
+					g.add((EOLAS_NS[self.category], rdflib.SKOS.prefLabel, rdflib.Literal(translation.gettext(self.category), lang=lang)))
+		return g
+
+class CreativeWork(EolasModel):
+	rdf_type = rdflib.SDO.CreativeWork
+	name = RDFNameField(unique=False)
+	type = RDFForeignKey(
+		CreativeWorkType,
+		on_delete=models.RESTRICT,
+		null=False,
+		blank=False,
+	)
+	class Meta:
+		verbose_name = _('Creative Work')
+		verbose_name_plural = _('Creative Works')
+		ordering = ["name"]

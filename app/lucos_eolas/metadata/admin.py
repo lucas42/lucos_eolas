@@ -124,6 +124,13 @@ class LanguageAdmin(EolasModelAdmin):
 		super().save_model(request, obj, form, change)
 eolasadmin.register(Language, LanguageAdmin)
 
+class CreativeWorkTypeAdmin(EolasModelAdmin):
+	def save_model(self, request, obj, form, change):
+		obj.name = obj.name.lower()
+		obj.plural = obj.plural.lower()
+		super().save_model(request, obj, form, change)
+eolasadmin.register(CreativeWorkType, CreativeWorkTypeAdmin)
+
 ## Register all the other models without any bespoke config
 app_models = apps.get_app_config('metadata').get_models()
 for model in app_models:
