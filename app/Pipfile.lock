@@ -212,12 +212,12 @@
         },
         "rdflib": {
             "hashes": [
-                "sha256:663083443908b1830e567350d72e74d9948b310f827966358d76eebdc92bf592",
-                "sha256:b011dfc40d0fc8a44252e906dcd8fc806a7859bc231be190c37e9568a31ac572"
+                "sha256:30c0a3ebf4c0e09215f066be7246794b6492e054e782d7ac2a34c9f70a15e0dd",
+                "sha256:6c831288d5e4a5a7ece85d0ccde9877d512a3d0f02d7c06455d00d6d0ea379df"
             ],
             "index": "pypi",
             "markers": "python_full_version >= '3.8.1'",
-            "version": "==7.5.0"
+            "version": "==7.6.0"
         },
         "requests": {
             "hashes": [
