@@ -119,10 +119,17 @@ eolasadmin.register(LanguageFamily, LanguageFamilyAdmin)
 class LanguageAdmin(EolasModelAdmin):
 	list_filter = ['family']
 	show_facets = admin.ShowFacets.ALWAYS
+	search_fields = ['name', 'alternate_names']
+	autocomplete_fields = ['indigenous_to', 'widely_spoken_in']
 	def save_model(self, request, obj, form, change):
 		obj.code = obj.code.lower()
 		super().save_model(request, obj, form, change)
 eolasadmin.register(Language, LanguageAdmin)
+
+class EthnicGroupAdmin(EolasModelAdmin):
+	search_fields = ['name', 'alternate_names']
+	autocomplete_fields = ['heritage_language', 'indigenous_to']
+eolasadmin.register(EthnicGroup, EthnicGroupAdmin)
 
 class CreativeWorkTypeAdmin(EolasModelAdmin):
 	def save_model(self, request, obj, form, change):
