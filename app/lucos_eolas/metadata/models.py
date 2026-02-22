@@ -413,6 +413,27 @@ class Language(EolasModel):
 		verbose_name_plural = _('Languages')
 		ordering = ["code"]
 
+	indigenous_to = RDFManyToManyField(
+		'Place',
+		blank=True,
+		related_name='indigenous_languages',
+		verbose_name=_('indigenous to'),
+		rdf_predicate=WDT_NS.P2341, # indigenous to
+		rdf_label="Indigenous To",
+		rdf_inverse_predicate=EOLAS_NS.indigenousLanguage,
+		rdf_inverse_label="Indigenous Language",
+	)
+	widely_spoken_in = RDFManyToManyField(
+		'Place',
+		blank=True,
+		related_name='widely_spoken_languages',
+		verbose_name=_('widely spoken in'),
+		rdf_predicate=EOLAS_NS.widelySpokenIn,
+		rdf_label="Widely Spoken In",
+		rdf_inverse_predicate=WDT_NS.P2936, # language used
+		rdf_inverse_label="Language Used",
+	)
+
 class Weather(EolasModel):
 	rdf_type = EOLAS_NS.Weather
 	category = Category.METEOROLOGICAL
@@ -429,6 +450,27 @@ class EthnicGroup(EolasModel):
 		verbose_name = _('Ethnic Group')
 		verbose_name_plural = _('Ethnic Groups')
 		ordering = ["name"]
+
+	heritage_language = RDFManyToManyField(
+		'Language',
+		blank=True,
+		related_name='heritage_groups',
+		verbose_name=_('heritage language'),
+		rdf_predicate=WDT_NS.P103, # native language
+		rdf_label="Native Language",
+		rdf_inverse_predicate=EOLAS_NS.heritageGroup,
+		rdf_inverse_label="Heritage Group",
+	)
+	indigenous_to = RDFManyToManyField(
+		'Place',
+		blank=True,
+		related_name='indigenous_groups',
+		verbose_name=_('indigenous to'),
+		rdf_predicate=WDT_NS.P2341, # indigenous to
+		rdf_label="Indigenous To",
+		rdf_inverse_predicate=EOLAS_NS.indigenousGroup,
+		rdf_inverse_label="Indigenous Group",
+	)
 
 class Direction(EolasModel):
 	rdf_type = EOLAS_NS.Direction

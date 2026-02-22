@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-02-06 15:12+0000\n"
+"POT-Creation-Date: 2026-02-22 00:58+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -110,11 +110,11 @@ msgstr "Drámaturgach"
 msgid "Literary"
 msgstr "Litríocht"
 
-#: lucos_eolas/metadata/models.py:79 lucos_eolas/metadata/models.py:454
+#: lucos_eolas/metadata/models.py:79 lucos_eolas/metadata/models.py:496
 msgid "plural"
 msgstr "iolra"
 
-#: lucos_eolas/metadata/models.py:86 lucos_eolas/metadata/models.py:461
+#: lucos_eolas/metadata/models.py:86 lucos_eolas/metadata/models.py:503
 msgid "category"
 msgstr "Catagóir"
 
@@ -298,51 +298,63 @@ msgstr "Teanga"
 msgid "Languages"
 msgstr "Teangacha"
 
-#: lucos_eolas/metadata/models.py:420
+#: lucos_eolas/metadata/models.py:420 lucos_eolas/metadata/models.py:468
+msgid "indigenous to"
+msgstr "dúchasach do"
+
+#: lucos_eolas/metadata/models.py:430
+msgid "widely spoken in"
+msgstr "go forleathan labhartha i"
+
+#: lucos_eolas/metadata/models.py:441
 msgid "Weather"
 msgstr "Aimsir"
 
-#: lucos_eolas/metadata/models.py:421
+#: lucos_eolas/metadata/models.py:442
 msgid "Weathers"
 msgstr "Aimsirí"
 
-#: lucos_eolas/metadata/models.py:429
+#: lucos_eolas/metadata/models.py:450
 msgid "Ethnic Group"
 msgstr "Grúpa Eitneach"
 
-#: lucos_eolas/metadata/models.py:430
+#: lucos_eolas/metadata/models.py:451
 msgid "Ethnic Groups"
 msgstr "Grúpaí Eitneacha"
 
-#: lucos_eolas/metadata/models.py:437
+#: lucos_eolas/metadata/models.py:458
+msgid "heritage language"
+msgstr "teanga oidhreachta"
+
+#: lucos_eolas/metadata/models.py:479
 msgid "Direction"
 msgstr "Treo"
 
-#: lucos_eolas/metadata/models.py:438
+#: lucos_eolas/metadata/models.py:480
 msgid "Directions"
 msgstr "Treonna"
 
-#: lucos_eolas/metadata/models.py:446
+#: lucos_eolas/metadata/models.py:488
 msgid "Organisation"
 msgstr "Eagraíocht"
 
-#: lucos_eolas/metadata/models.py:447
+#: lucos_eolas/metadata/models.py:489
 msgid "Organisations"
 msgstr "Eagraíochtaí"
 
-#: lucos_eolas/metadata/models.py:466
+#: lucos_eolas/metadata/models.py:508
 msgid "Creative Work Type"
 msgstr "Cineál Saothair Chruthaitheach"
 
-#: lucos_eolas/metadata/models.py:467
+#: lucos_eolas/metadata/models.py:509
 msgid "Creative Work Types"
 msgstr "Cineálacha Saothair Chruthaitheacha"
 
-#: lucos_eolas/metadata/models.py:494
+#: lucos_eolas/metadata/models.py:536
 msgid "Creative Work"
 msgstr "Saothar Cruthaitheach"
 
-#: lucos_eolas/metadata/models.py:495
+#: lucos_eolas/metadata/models.py:537
 msgid "Creative Works"
 msgstr "Saothair Chruthaitheacha"
 
