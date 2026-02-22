@@ -121,16 +121,49 @@ class Place(EolasModel):
 		rdf_predicate=EOLAS_NS.isFictional,
 		db_comment='Whether or not a place is fictional.',
 	)
-	located_in = RDFManyToManyField(
+	contained_in = RDFManyToManyField(
 		'self',
 		symmetrical=False,
 		blank=True,
 		related_name='contains',
-		verbose_name=_('located in'),
+		verbose_name=_('contained in'),
 		rdf_predicate=rdflib.SDO.containedInPlace,
 		rdf_label="Contained In Place",
 		rdf_inverse_predicate=rdflib.SDO.containsPlace,
 		rdf_inverse_label="Contains Place",
+	)
+	partially_contained_in = RDFManyToManyField(
+		'self',
+		symmetrical=False,
+		blank=True,
+		related_name='partially_contains',
+		verbose_name=_('partially contained in'),
+		rdf_predicate=EOLAS_NS.partiallyContainedIn,
+		rdf_label="Partially Contained In",
+		rdf_inverse_predicate=EOLAS_NS.partiallyContains,
+		rdf_inverse_label="Partially Contains",
+	)
+	territory_of = RDFManyToManyField(
+		'self',
+		symmetrical=False,
+		blank=True,
+		related_name='has_territory',
+		verbose_name=_('territory of'),
+		rdf_predicate=EOLAS_NS.territoryOf,
+		rdf_label="Territory Of",
+		rdf_inverse_predicate=EOLAS_NS.hasTerritory,
+		rdf_inverse_label="Has Territory",
+	)
+	bounds = RDFManyToManyField(
+		'self',
+		symmetrical=False,
+		blank=True,
+		related_name='bounded_by',
+		verbose_name=_('bounds'),
+		rdf_predicate=EOLAS_NS.bounds,
+		rdf_label="Bounds",
+		rdf_inverse_predicate=EOLAS_NS.boundedBy,
+		rdf_inverse_label="Bounded By",
 	)
 	metonym = models.CharField(
 		blank=True,

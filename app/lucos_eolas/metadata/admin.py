@@ -40,10 +40,10 @@ class EolasModelAdmin(admin.ModelAdmin):
 		)
 
 class PlaceAdmin(EolasModelAdmin):
-	filter_horizontal = ('located_in',)
+	filter_horizontal = ('contained_in', 'partially_contained_in', 'territory_of', 'bounds',)
 	readonly_fields = ('contained_places',)
 	search_fields = ['name','alternate_names']
-	autocomplete_fields =  ['located_in']
+	autocomplete_fields =  ['contained_in', 'partially_contained_in', 'territory_of', 'bounds']
 	list_filter = ['type','fictional']
 	show_facets = admin.ShowFacets.ALWAYS
 
