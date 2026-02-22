@@ -23,12 +23,12 @@ Has three components:
 * `docker exec lucos_eolas_db pg_dump --user postgres postgres > /tmp/eolas.sql`
 
 ### Wiping database clean so restore doesn't cause any conflicts
-(on machine with docker & docker-compose installed)
+(on machine with docker & docker compose installed)
 * `docker compose exec db dropdb --user postgres postgres`
 * `docker compose exec db createdb --user postgres postgres`
 
 ### Restoring from backup
-(on machine with docker & docker-compose installed)
+(on machine with docker & docker compose installed)
 Assuming the backup file is available on the current machine's /tmp directory, run the following commands:
 
 * `docker compose cp /tmp/eolas.sql db:/tmp/`
