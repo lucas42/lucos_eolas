@@ -451,7 +451,7 @@ class Language(EolasModel):
 		blank=True,
 		related_name='indigenous_languages',
 		verbose_name=_('indigenous to'),
-		rdf_predicate=WDT_NS.P2341, # indigenous to
+		rdf_predicate=EOLAS_NS.languageIndigenousTo, # indigenous to
 		rdf_label="Indigenous To",
 		rdf_inverse_predicate=EOLAS_NS.indigenousLanguage,
 		rdf_inverse_label="Indigenous Language",
@@ -466,6 +466,11 @@ class Language(EolasModel):
 		rdf_inverse_predicate=WDT_NS.P2936, # language used
 		rdf_inverse_label="Language Used",
 	)
+	@classmethod
+	def get_ontology_rdf(cls):
+		g = rdflib.Graph()
+		g.add((EOLAS_NS.languageIndigenousTo, rdflib.RDFS.subPropertyOf, WDT_NS.P2341))
+		return g
 
 class Weather(EolasModel):
 	rdf_type = EOLAS_NS.Weather
@@ -499,11 +504,16 @@ class EthnicGroup(EolasModel):
 		blank=True,
 		related_name='indigenous_groups',
 		verbose_name=_('indigenous to'),
-		rdf_predicate=WDT_NS.P2341, # indigenous to
+		rdf_predicate=EOLAS_NS.ethnicGroupIndigenousTo,
 		rdf_label="Indigenous To",
 		rdf_inverse_predicate=EOLAS_NS.indigenousGroup,
 		rdf_inverse_label="Indigenous Group",
 	)
+	@classmethod
+	def get_ontology_rdf(cls):
+		g = rdflib.Graph()
+		g.add((EOLAS_NS.ethnicGroupIndigenousTo, rdflib.RDFS.subPropertyOf, WDT_NS.P2341))
+		return g
 
 class Direction(EolasModel):
 	rdf_type = EOLAS_NS.Direction

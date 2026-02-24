@@ -85,6 +85,8 @@ def ontology_graph():
 						g.add((field.rdf_inverse_predicate, rdflib.RDFS.range, class_uri))
 						if getattr(field, 'rdf_range', None):
 							g.add((field.rdf_inverse_predicate, rdflib.RDFS.domain, field.rdf_range))
+			if (getattr(model_class, 'get_ontology_rdf', None)):
+				g += model_class.get_ontology_rdf()
 	return g
 
 def thing_entrypoint(request, type, pk):
