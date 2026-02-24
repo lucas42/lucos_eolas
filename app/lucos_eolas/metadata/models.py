@@ -398,7 +398,6 @@ class TransportMode(EolasModel):
 		ordering = ["name"]
 
 class LanguageFamily(EolasModel):
-	rdf_type = rdflib.URIRef("http://id.loc.gov/vocabulary/iso639-5/iso639-5_Language")
 	category = Category.ANTHROPOLOGICAL
 	code = RDFCharField(
 		max_length=3,
@@ -411,15 +410,26 @@ class LanguageFamily(EolasModel):
 		on_delete=models.RESTRICT,
 		null=True,
 		blank=True,
-		rdf_predicate=LOC_NS.hasBroaderAuthority,
-		rdf_label='Has Broader Authority',
-		rdf_inverse_predicate=LOC_NS.hasNarrowerAuthority,
-		rdf_inverse_label='Has Narrower Authority',
 	)
 	class Meta:
 		verbose_name = _('Language Family')
 		verbose_name_plural = _('Language Families')
 		ordering = ["code"]
+
+	def get_rdf(self, include_type_label):
+		uri = rdflib.URIRef(self.get_absolute_url())
+		g = super().get_rdf(include_type_label)
+		if self.parent:
+			parent_uri = rdflib.URIRef(self.parent.get_absolute_url())
+		else:
+			parent_uri = LOC_NS.Language
+		g.add((uri, rdflib.RDFS.subClassOf, parent_uri))
+		g.add((uri, EOLAS_NS.hasCategory, EOLAS_NS[self.category]))
+		if include_type_label:
+			for lang, _ in settings.LANGUAGES:
+				with translation.override(lang):
+					g.add((EOLAS_NS[self.category], rdflib.SKOS.prefLabel, rdflib.Literal(translation.gettext(self.category), lang=lang)))
+		return g
 
 	def get_absolute_url(self):
 		# 'qli' is used here for language isolates, but dosen't appear in iso639-5, nor the library of congress list, so needs a local URI
@@ -443,11 +453,11 @@ class Language(EolasModel):
 		on_delete=models.RESTRICT,
 		null=False,
 		blank=False,
-		rdf_predicate=LOC_NS.hasBroaderExternalAuthority,
-		rdf_label='Has Broader External Authority',
-		rdf_inverse_predicate=LOC_NS.hasNarrowerExternalAuthority,
-		rdf_inverse_label='Has Narrower External Authority',
 	)
+
+	@property
+	def type(self):
+		return self.family
 
 	class Meta:
 		verbose_name = _('Language')
