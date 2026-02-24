@@ -127,9 +127,9 @@ class Place(EolasModel):
 		blank=True,
 		related_name='contains',
 		verbose_name=_('contained in'),
-		rdf_predicate=rdflib.SDO.containedInPlace,
+		rdf_predicate=EOLAS_NS.containedIn,
 		rdf_label="Contained In Place",
-		rdf_inverse_predicate=rdflib.SDO.containsPlace,
+		rdf_inverse_predicate=EOLAS_NS.contains,
 		rdf_inverse_label="Contains Place",
 	)
 	partially_contained_in = RDFManyToManyField(
@@ -195,6 +195,14 @@ class Place(EolasModel):
 			metonym_bnode = rdflib.BNode()
 			g.add((uri, EOLAS_NS.metonym, metonym_bnode))
 			g.add((metonym_bnode, rdflib.SKOS.prefLabel, rdflib.Literal(self.metonym)))
+		return g
+
+	@classmethod
+	def get_ontology_rdf(cls):
+		g = rdflib.Graph()
+		g.add((EOLAS_NS.containedIn, rdflib.RDFS.subPropertyOf, rdflib.SDO.containedInPlace))
+		g.add((EOLAS_NS.contains, rdflib.RDFS.subPropertyOf, rdflib.SDO.containsPlace))
+		g.add((EOLAS_NS.containedIn, rdflib.RDF.type, rdflib.OWL.TransitiveProperty))
 		return g
 
 class DayOfWeek(EolasModel):
