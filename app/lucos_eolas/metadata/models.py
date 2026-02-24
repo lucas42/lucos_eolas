@@ -203,6 +203,7 @@ class Place(EolasModel):
 		g.add((EOLAS_NS.containedIn, rdflib.RDFS.subPropertyOf, rdflib.SDO.containedInPlace))
 		g.add((EOLAS_NS.contains, rdflib.RDFS.subPropertyOf, rdflib.SDO.containsPlace))
 		g.add((EOLAS_NS.containedIn, rdflib.RDF.type, rdflib.OWL.TransitiveProperty))
+		g.add((rdflib.OWL.TransitiveProperty, rdflib.SKOS.prefLabel, rdflib.Literal("Transitive Property", lang='en')))
 		return g
 
 class DayOfWeek(EolasModel):
