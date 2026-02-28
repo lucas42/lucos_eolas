@@ -398,6 +398,7 @@ class TransportMode(EolasModel):
 		ordering = ["name"]
 
 class LanguageFamily(EolasModel):
+	rdf_type = EOLAS_NS.LanguageFamily
 	category = Category.ANTHROPOLOGICAL
 	code = RDFCharField(
 		max_length=3,
