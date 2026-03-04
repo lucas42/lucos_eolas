@@ -1,4 +1,4 @@
-FROM lucas42/lucos_navbar:2.1.2 AS navbar
+FROM lucas42/lucos_navbar:2.1.3 AS navbar
 FROM python:3.15.0a6-alpine
 
 # set working directory
