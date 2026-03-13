@@ -8,6 +8,12 @@ services:
     volumes:
       - "staticfiles:/usr/share/nginx/html/resources"
     restart: always
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:80/_info"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     depends_on:
       - app
   app:
@@ -26,6 +32,12 @@ services:
     volumes:
       - "staticfiles:/usr/src/app/lucos_eolas/static"
     restart: always
+    healthcheck:
+      test: ["CMD", "wget", "-qO-", "http://127.0.0.1:8000/_info"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+      start_period: 15s
     depends_on:
       - db
   db:
