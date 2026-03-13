@@ -19,7 +19,7 @@ BASE_DIR = Path(__file__).resolve().parent
 
 SECRET_KEY = os.environ["SECRET_KEY"]
 
-ALLOWED_HOSTS = ["eolas.l42.eu", "localhost", "host.docker.internal"]
+ALLOWED_HOSTS = ["eolas.l42.eu", "localhost", "host.docker.internal", "127.0.0.1"]
 
 SECURE_PROXY_SSL_HEADER = (
     'HTTP_X_FORWARDED_PROTO', 'https'
