@@ -15,7 +15,8 @@ services:
       retries: 3
       start_period: 15s
     depends_on:
-      - app
+      app:
+        condition: service_healthy
   app:
     build: ./app
     container_name: lucos_eolas_app
