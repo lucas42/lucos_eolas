@@ -27,4 +27,9 @@ COPY --from=navbar lucos_navbar.js lucos_eolas/templates/resources/
 # Compile Translations
 RUN django-admin compilemessages
 
+# Collect static files at build time so startup.sh doesn't need to.
+# Uses a minimal settings file that only declares what collectstatic needs,
+# avoiding the env var requirements of the full settings module.
+RUN python manage.py collectstatic --noinput --settings=lucos_eolas.settings_collectstatic
+
 CMD ["./startup.sh"]
