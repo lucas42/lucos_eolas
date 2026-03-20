@@ -30,6 +30,6 @@ RUN django-admin compilemessages
 # Collect static files at build time so startup.sh doesn't need to.
 # Dummy values are used for env vars required at settings/model import time;
 # none of these affect what collectstatic actually does.
-RUN SECRET_KEY=build-time-placeholder ENVIRONMENT=production POSTGRES_PASSWORD=unused AUTH_ORIGIN=http://unused CLIENT_KEYS= python manage.py collectstatic --noinput
+RUN SECRET_KEY=build-time-placeholder ENVIRONMENT=production POSTGRES_PASSWORD=unused AUTH_ORIGIN=http://unused CLIENT_KEYS= SYSTEM=lucos_eolas LOGANNE_ENDPOINT=http://unused python manage.py collectstatic --noinput
 
 CMD ["./startup.sh"]
