@@ -28,8 +28,8 @@ COPY --from=navbar lucos_navbar.js lucos_eolas/templates/resources/
 RUN django-admin compilemessages
 
 # Collect static files at build time so startup.sh doesn't need to.
-# A dummy SECRET_KEY is used here — collectstatic doesn't use it for anything
-# security-sensitive; the real value is injected at runtime via the environment.
-RUN SECRET_KEY=build-time-placeholder ENVIRONMENT=production POSTGRES_PASSWORD=unused python manage.py collectstatic --noinput
+# Dummy values are used for env vars required at settings/model import time;
+# none of these affect what collectstatic actually does.
+RUN SECRET_KEY=build-time-placeholder ENVIRONMENT=production POSTGRES_PASSWORD=unused AUTH_ORIGIN=http://unused CLIENT_KEYS= python manage.py collectstatic --noinput
 
 CMD ["./startup.sh"]
