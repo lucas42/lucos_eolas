@@ -1,14 +1,38 @@
 version: 2.1
 orbs:
   lucos: lucos/deploy@0
+jobs:
+  test:
+    docker:
+      - image: cimg/base:current
+    steps:
+      - checkout
+      - setup_remote_docker
+      - run:
+          name: Run tests
+          command: |
+            docker build -t lucos_eolas_test app/
+            docker run --rm \
+              -e APP_ORIGIN=http://localhost \
+              -e SECRET_KEY=testsecret \
+              -e ENVIRONMENT=test \
+              -e AUTH_ORIGIN=http://localhost \
+              -e SYSTEM=lucos_eolas \
+              -e LOGANNE_ENDPOINT=http://localhost \
+              -e CLIENT_KEYS=test=key \
+              -e DJANGO_SETTINGS_MODULE=lucos_eolas.settings_test \
+              lucos_eolas_test \
+              python3 manage.py test lucos_eolas.metadata.tests --no-input
 workflows:
   version: 2
   build-deploy:
     jobs:
+      - test
       - lucos/build-amd64
       - lucos/deploy-avalon:
           serial-group: << pipeline.project.slug >>/deploy-avalon
           requires:
+            - test
             - lucos/build-amd64
           filters:
             branches:

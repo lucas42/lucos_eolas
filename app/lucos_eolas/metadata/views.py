@@ -2,6 +2,7 @@ import os
 import rdflib
 from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from .models import *
+from .checks import get_place_consistency_checks
 from ..lucosauth.decorators import api_auth
 from django.utils import translation
 from django.conf import settings
@@ -16,8 +17,20 @@ LOC_NS = rdflib.Namespace("http://www.loc.gov/mads/rdf/v1#")
 WDT_NS = rdflib.Namespace("http://www.wikidata.org/prop/direct/")
 
 def info(request):
+	try:
+		checks = get_place_consistency_checks()
+	except Exception as e:
+		checks = {
+			'place-consistency': {
+				'ok': False,
+				'techDetail': 'Place consistency checks failed to run',
+				'debug': str(e),
+			}
+		}
 	output = {
 		'system': "lucos_eolas",
+		'checks': checks,
+		'metrics': {},
 		'ci': {
 			'circle': "gh/lucas42/lucos_eolas",
 		},
