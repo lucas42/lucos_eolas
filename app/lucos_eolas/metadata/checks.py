@@ -5,33 +5,19 @@ Data consistency checks for the /_info endpoint.
 UNIVERSE_PLACE_ID = 373
 
 
-def get_place_consistency_checks():
-	"""
-	Returns a dict of check results suitable for the /_info `checks` field.
-
-	Runs three checks:
-	  - places-in-universe: every non-fictional real place is reachable from
-	    Universe (id=373) via transitive contained_in links
-	  - no-real-place-in-fictional: no real place has a contained_in link to
-	    a fictional place
-	  - no-circular-containment: the contained_in graph has no cycles
-	"""
+def _load_graph():
+	"""Load all places and build the containment adjacency map in two queries."""
 	from .models import Place
-
-	# Load all places and their contained_in links in two queries
 	all_places = {p.pk: p for p in Place.objects.all()}
-
-	# Build adjacency map: place_id -> set of contained_in place_ids
-	# Using prefetch to avoid per-place queries
 	containment = {pk: set() for pk in all_places}
 	for place in Place.objects.prefetch_related('contained_in'):
 		for parent in place.contained_in.all():
 			containment[place.pk].add(parent.pk)
+	return all_places, containment
 
-	checks = {}
 
-	# --- Check 1: no circular contained_in hierarchies ---
-	# DFS with visited (fully processed) and in_stack (currently being explored)
+def _check_no_circular_containment(all_places, containment):
+	"""Detect cycles in the contained_in graph using DFS."""
 	visited = set()
 	in_stack = set()
 	cycle_found = False
@@ -55,22 +41,24 @@ def get_place_consistency_checks():
 
 	for place_id in all_places:
 		if place_id not in visited:
-			has_cycle(place_id)
+			if has_cycle(place_id):
+				break  # cycle found — no need to check further
 
 	if cycle_found:
 		example_name = all_places[cycle_example].name if cycle_example in all_places else str(cycle_example)
-		checks['no-circular-containment'] = {
+		return {
 			'ok': False,
 			'techDetail': 'Checks that the contained_in hierarchy has no circular references',
 			'debug': f'Cycle detected involving place: {example_name} (id={cycle_example})',
 		}
-	else:
-		checks['no-circular-containment'] = {
-			'ok': True,
-			'techDetail': 'Checks that the contained_in hierarchy has no circular references',
-		}
+	return {
+		'ok': True,
+		'techDetail': 'Checks that the contained_in hierarchy has no circular references',
+	}
 
-	# --- Check 2: no real place contained_in a fictional place ---
+
+def _check_no_real_place_in_fictional(all_places, containment):
+	"""Check that no real place is directly contained_in a fictional place."""
 	real_in_fictional = []
 	for place in all_places.values():
 		if not place.fictional:
@@ -84,75 +72,115 @@ def get_place_consistency_checks():
 			f'{p.name} (id={p.pk}) contained_in {fp.name} (id={fp.pk})'
 			for p, fp in real_in_fictional[:3]
 		)
-		checks['no-real-place-in-fictional'] = {
+		return {
 			'ok': False,
 			'techDetail': 'Checks that no real place is directly contained_in a fictional place',
 			'debug': f'Violations: {examples}',
 		}
-	else:
-		checks['no-real-place-in-fictional'] = {
-			'ok': True,
-			'techDetail': 'Checks that no real place is directly contained_in a fictional place',
-		}
+	return {
+		'ok': True,
+		'techDetail': 'Checks that no real place is directly contained_in a fictional place',
+	}
 
-	# --- Check 3: all non-fictional places are reachable from Universe ---
-	# Only meaningful if no cycles (cycles would cause infinite traversal otherwise)
-	if not cycle_found:
-		# Build reverse map: place_id -> set of places it contains (i.e. contained_in links pointing to it)
-		# We want to find all places reachable FROM universe going downward (contains direction)
-		# Equivalently: find all places that can reach Universe going upward (contained_in direction)
-		# BFS upward from each non-fictional place would be O(n^2); instead do a single BFS/DFS
-		# downward from Universe using the reverse (contains) edges.
-		reverse_containment = {pk: set() for pk in all_places}
-		for place_id, parents in containment.items():
-			for parent_id in parents:
-				if parent_id in reverse_containment:
-					reverse_containment[parent_id].add(place_id)
 
-		# BFS from Universe downward through contains edges
-		if UNIVERSE_PLACE_ID in all_places:
-			reachable = set()
-			queue = [UNIVERSE_PLACE_ID]
-			while queue:
-				current = queue.pop()
-				if current in reachable:
-					continue
-				reachable.add(current)
-				for child_id in reverse_containment.get(current, set()):
-					if child_id not in reachable:
-						queue.append(child_id)
-
-			# Find non-fictional places not reachable from Universe (excluding Universe itself)
-			unreachable = [
-				p for pk, p in all_places.items()
-				if not p.fictional and pk != UNIVERSE_PLACE_ID and pk not in reachable
-			]
-
-			if unreachable:
-				examples = ', '.join(
-					f'{p.name} (id={p.pk})' for p in unreachable[:5]
-				)
-				checks['places-in-universe'] = {
-					'ok': False,
-					'techDetail': 'Checks that all non-fictional places are reachable from Universe via transitive contained_in links',
-					'debug': f'Not reachable from Universe: {examples}',
-				}
-			else:
-				checks['places-in-universe'] = {
-					'ok': True,
-					'techDetail': 'Checks that all non-fictional places are reachable from Universe via transitive contained_in links',
-				}
-		else:
-			checks['places-in-universe'] = {
-				'ok': False,
-				'techDetail': 'Checks that all non-fictional places are reachable from Universe via transitive contained_in links',
-				'debug': f'Universe (id={UNIVERSE_PLACE_ID}) not found in database',
-			}
-	else:
-		checks['places-in-universe'] = {
+def _check_places_in_universe(all_places, containment, cycle_found):
+	"""Verify all non-fictional places are reachable from Universe via transitive contained_in."""
+	if cycle_found:
+		return {
 			'ok': False,
 			'techDetail': 'Checks that all non-fictional places are reachable from Universe via transitive contained_in links',
 			'debug': 'Skipped due to circular containment — fix cycles first',
+		}
+
+	if UNIVERSE_PLACE_ID not in all_places:
+		return {
+			'ok': False,
+			'techDetail': 'Checks that all non-fictional places are reachable from Universe via transitive contained_in links',
+			'debug': f'Universe (id={UNIVERSE_PLACE_ID}) not found in database',
+		}
+
+	# Build reverse map (contains direction) for a single BFS downward from Universe
+	reverse_containment = {pk: set() for pk in all_places}
+	for place_id, parents in containment.items():
+		for parent_id in parents:
+			if parent_id in reverse_containment:
+				reverse_containment[parent_id].add(place_id)
+
+	reachable = set()
+	queue = [UNIVERSE_PLACE_ID]
+	while queue:
+		current = queue.pop()
+		if current in reachable:
+			continue
+		reachable.add(current)
+		for child_id in reverse_containment.get(current, set()):
+			if child_id not in reachable:
+				queue.append(child_id)
+
+	unreachable = [
+		p for pk, p in all_places.items()
+		if not p.fictional and pk != UNIVERSE_PLACE_ID and pk not in reachable
+	]
+
+	if unreachable:
+		examples = ', '.join(f'{p.name} (id={p.pk})' for p in unreachable[:5])
+		return {
+			'ok': False,
+			'techDetail': 'Checks that all non-fictional places are reachable from Universe via transitive contained_in links',
+			'debug': f'Not reachable from Universe: {examples}',
+		}
+	return {
+		'ok': True,
+		'techDetail': 'Checks that all non-fictional places are reachable from Universe via transitive contained_in links',
+	}
+
+
+def get_place_consistency_checks():
+	"""
+	Returns a dict of check results suitable for the /_info `checks` field.
+
+	Each check handles its own exceptions so a failure in one doesn't
+	prevent the others from running.
+	"""
+	try:
+		all_places, containment = _load_graph()
+	except Exception as e:
+		error_result = {'ok': False, 'techDetail': 'Could not load place data', 'debug': str(e)}
+		return {
+			'no-circular-containment': error_result,
+			'no-real-place-in-fictional': error_result,
+			'places-in-universe': error_result,
+		}
+
+	checks = {}
+
+	try:
+		checks['no-circular-containment'] = _check_no_circular_containment(all_places, containment)
+	except Exception as e:
+		checks['no-circular-containment'] = {
+			'ok': False,
+			'techDetail': 'Checks that the contained_in hierarchy has no circular references',
+			'debug': str(e),
+		}
+
+	cycle_found = not checks['no-circular-containment']['ok']
+
+	try:
+		checks['no-real-place-in-fictional'] = _check_no_real_place_in_fictional(all_places, containment)
+	except Exception as e:
+		checks['no-real-place-in-fictional'] = {
+			'ok': False,
+			'techDetail': 'Checks that no real place is directly contained_in a fictional place',
+			'debug': str(e),
+		}
+
+	try:
+		checks['places-in-universe'] = _check_places_in_universe(all_places, containment, cycle_found)
+	except Exception as e:
+		checks['places-in-universe'] = {
+			'ok': False,
+			'techDetail': 'Checks that all non-fictional places are reachable from Universe via transitive contained_in links',
+			'debug': str(e),
 		}
 
 	return checks

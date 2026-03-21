@@ -17,19 +17,9 @@ LOC_NS = rdflib.Namespace("http://www.loc.gov/mads/rdf/v1#")
 WDT_NS = rdflib.Namespace("http://www.wikidata.org/prop/direct/")
 
 def info(request):
-	try:
-		checks = get_place_consistency_checks()
-	except Exception as e:
-		checks = {
-			'place-consistency': {
-				'ok': False,
-				'techDetail': 'Place consistency checks failed to run',
-				'debug': str(e),
-			}
-		}
 	output = {
 		'system': "lucos_eolas",
-		'checks': checks,
+		'checks': get_place_consistency_checks(),
 		'metrics': {},
 		'ci': {
 			'circle': "gh/lucas42/lucos_eolas",
