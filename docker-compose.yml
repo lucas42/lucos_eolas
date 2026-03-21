@@ -49,6 +49,15 @@ services:
     environment:
       - POSTGRES_PASSWORD
     restart: always
+  test:
+    build: ./app
+    container_name: lucos_eolas_test
+    image: lucas42/lucos_eolas_app
+    environment:
+      - DJANGO_SETTINGS_MODULE=lucos_eolas.settings_test
+    command: python3 manage.py test lucos_eolas.metadata.tests --no-input
+    profiles:
+      - test
 volumes:
   staticfiles:
   db_data:

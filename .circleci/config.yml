@@ -10,12 +10,7 @@ jobs:
       - setup_remote_docker
       - run:
           name: Run tests
-          command: |
-            docker build -t lucos_eolas_test app/
-            docker run --rm \
-              -e DJANGO_SETTINGS_MODULE=lucos_eolas.settings_test \
-              lucos_eolas_test \
-              python3 manage.py test lucos_eolas.metadata.tests --no-input
+          command: docker compose --profile test up test --build --exit-code-from test
 workflows:
   version: 2
   build-deploy:
