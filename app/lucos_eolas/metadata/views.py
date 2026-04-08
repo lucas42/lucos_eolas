@@ -2,7 +2,7 @@ import os
 import rdflib
 from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from .models import *
-from .checks import get_place_consistency_checks
+from .checks import get_place_consistency_checks, get_wikipedia_slug_check
 from ..lucosauth.decorators import api_auth
 from django.utils import translation
 from django.conf import settings
@@ -19,7 +19,10 @@ WDT_NS = rdflib.Namespace("http://www.wikidata.org/prop/direct/")
 def info(request):
 	output = {
 		'system': "lucos_eolas",
-		'checks': get_place_consistency_checks(),
+		'checks': {
+			**get_place_consistency_checks(),
+			'no-invalid-wikipedia-slugs': get_wikipedia_slug_check(),
+		},
 		'metrics': {},
 		'ci': {
 			'circle': "gh/lucas42/lucos_eolas",

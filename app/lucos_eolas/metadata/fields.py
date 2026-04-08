@@ -1,7 +1,14 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
+import re
+import logging
 import rdflib
 from django.utils.translation import gettext_lazy as _
+
+logger = logging.getLogger(__name__)
+
+# Characters that are not valid in a URI and would cause RDF serialisation to fail
+INVALID_URI_RE = re.compile(r'[\s<>"{}|\\^`\[\]]')
 
 class RDFCharField(models.CharField):
 	rdf_type = rdflib.OWL.DatatypeProperty
@@ -146,6 +153,12 @@ class WikipediaField(models.CharField):
 		g = rdflib.Graph()
 		value = getattr(obj, self.name)
 		if value:
+			if INVALID_URI_RE.search(value):
+				logger.warning(
+					"Invalid Wikipedia slug '%s' on %s id=%s — skipping from RDF output",
+					value, obj.__class__.__name__, obj.pk,
+				)
+				return g
 			g.add((
 				rdflib.URIRef(obj.get_absolute_url()),
 				rdflib.OWL.sameAs,

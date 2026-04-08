@@ -1,6 +1,6 @@
 from django.test import SimpleTestCase
 from unittest.mock import patch, MagicMock
-from .checks import get_place_consistency_checks, UNIVERSE_PLACE_ID
+from .checks import get_place_consistency_checks, get_wikipedia_slug_check, _check_no_invalid_wikipedia_slugs, UNIVERSE_PLACE_ID
 
 
 def make_place(pk, name, fictional=False, contained_in_ids=None):
@@ -154,3 +154,41 @@ class PlaceConsistencyChecksTest(SimpleTestCase):
 		)
 		self.assertFalse(checks['places-in-universe']['ok'])
 		self.assertIn('Skipped', checks['places-in-universe']['debug'])
+
+
+class WikipediaSlugChecksTest(SimpleTestCase):
+
+	def test_all_valid_slugs_passes(self):
+		models_with_slugs = [
+			('Place', 1, 'London'),
+			('Person', 2, 'Isles_of_Scilly'),
+		]
+		result = _check_no_invalid_wikipedia_slugs(models_with_slugs)
+		self.assertTrue(result['ok'])
+
+	def test_empty_list_passes(self):
+		result = _check_no_invalid_wikipedia_slugs([])
+		self.assertTrue(result['ok'])
+
+	def test_slug_with_space_fails(self):
+		models_with_slugs = [
+			('Place', 42, 'Isles of Scilly'),
+		]
+		result = _check_no_invalid_wikipedia_slugs(models_with_slugs)
+		self.assertFalse(result['ok'])
+		self.assertIn('Isles of Scilly', result['debug'])
+		self.assertIn('id=42', result['debug'])
+
+	def test_slug_with_other_invalid_chars_fails(self):
+		models_with_slugs = [
+			('Place', 1, 'Valid_Slug'),
+			('Person', 2, 'Bad<Slug>'),
+		]
+		result = _check_no_invalid_wikipedia_slugs(models_with_slugs)
+		self.assertFalse(result['ok'])
+		self.assertIn('Bad<Slug>', result['debug'])
+
+	def test_get_wikipedia_slug_check_returns_valid_structure(self):
+		result = get_wikipedia_slug_check()
+		self.assertIn('ok', result)
+		self.assertIn('techDetail', result)
