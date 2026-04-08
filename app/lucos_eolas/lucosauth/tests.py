@@ -76,7 +76,7 @@ class ApiAuthDecoratorTest(SimpleTestCase):
         response, _ = self._call_bad_key(f'Bearer badkey')
         self.assertEqual(response.status_code, 403)
 
-    def test_unknown_scheme_returns_403(self):
+    def test_unknown_scheme_passes_through_to_view(self):
         # Unknown scheme falls through without setting user — view proceeds but user is unset
         # (existing behaviour: only key/bearer set request.user; other schemes pass through)
         view = _make_view()
