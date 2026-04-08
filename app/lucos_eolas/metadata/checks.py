@@ -1,6 +1,7 @@
 """
 Data consistency checks for the /_info endpoint.
 """
+from .fields import INVALID_URI_RE
 
 UNIVERSE_PLACE_ID = 373
 
@@ -184,3 +185,52 @@ def get_place_consistency_checks():
 		}
 
 	return checks
+
+
+def _check_no_invalid_wikipedia_slugs(models_with_slugs):
+	"""
+	Check that no EolasModel instance has a Wikipedia slug that would produce an invalid URI.
+
+	models_with_slugs: list of (model_name, pk, slug) tuples for items with non-empty slugs
+	"""
+	invalid = [
+		(model_name, pk, slug)
+		for model_name, pk, slug in models_with_slugs
+		if INVALID_URI_RE.search(slug)
+	]
+	if invalid:
+		examples = ', '.join(
+			f"{model_name} id={pk} slug='{slug}'"
+			for model_name, pk, slug in invalid[:5]
+		)
+		return {
+			'ok': False,
+			'techDetail': 'Checks that all Wikipedia slugs produce valid URIs for RDF export',
+			'debug': f'Invalid slugs: {examples}',
+		}
+	return {
+		'ok': True,
+		'techDetail': 'Checks that all Wikipedia slugs produce valid URIs for RDF export',
+	}
+
+
+def get_wikipedia_slug_check():
+	"""
+	Returns a check result for the no-invalid-wikipedia-slugs check, suitable for /_info.
+	"""
+	try:
+		from django.apps import apps
+		from .models import EolasModel
+		models_with_slugs = []
+		for model in apps.get_models():
+			if not issubclass(model, EolasModel):
+				continue
+			for obj in model.objects.exclude(wikipedia_slug=''):
+				models_with_slugs.append((model.__name__, obj.pk, obj.wikipedia_slug))
+		return _check_no_invalid_wikipedia_slugs(models_with_slugs)
+	except Exception as e:
+		return {
+			'ok': False,
+			'techDetail': 'Checks that all Wikipedia slugs produce valid URIs for RDF export',
+			'debug': str(e),
+		}
