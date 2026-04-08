@@ -11,7 +11,7 @@ def api_auth(func):
 			authmeth, auth = request.META['HTTP_AUTHORIZATION'].split(' ', 1)
 		except ValueError:
 			return HttpResponse(status=400)
-		if authmeth.lower() == 'key':
+		if authmeth.lower() in ('key', 'bearer'):
 			user = getUserByKey(apikey=auth)
 			if user:
 				request.user = user
