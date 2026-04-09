@@ -12,7 +12,8 @@ class LucosAuthBackend(BaseBackend):
 		print("LucosAuthBackend token:"+str(token))
 		url = os.environ["AUTH_ORIGIN"]+'/data?' + utils.http.urlencode({'token': token})
 		try:
-			data = json.load(urllib.request.urlopen(url, timeout=5))
+			req = urllib.request.Request(url, headers={"User-Agent": os.environ.get("SYSTEM")})
+			data = json.load(urllib.request.urlopen(req, timeout=5))
 		except urllib.error.HTTPError:
 			return None
 		except urllib.error.URLError as e:
