@@ -41,7 +41,9 @@ def merge_entities(modeladmin, request, queryset):
 			updateLoganne(
 				type="entityMerged",
 				humanReadable=f'{item_type} "{source}" merged into "{target}"',
-				url=source.get_absolute_url(),
+				url=target.get_absolute_url(),
+				sourceUri=source.get_absolute_url(),
+				targetUri=target.get_absolute_url(),
 			)
 			post_delete.disconnect(metadata_post_delete, sender=queryset.model)
 			try:

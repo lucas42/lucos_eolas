@@ -127,6 +127,7 @@ class MergeEntitiesActionTest(TestCase):
 		source = self._make_event('Swearing')
 		target = self._make_event('Profanity')
 		source_url = source.get_absolute_url()
+		target_url = target.get_absolute_url()
 
 		self.client.post(
 			'/metadata/historicalevent/',
@@ -144,7 +145,9 @@ class MergeEntitiesActionTest(TestCase):
 		mock_loganne.assert_called_once_with(
 			type='entityMerged',
 			humanReadable=f'{item_type} "Swearing" merged into "Profanity"',
-			url=source_url,
+			url=target_url,
+			sourceUri=source_url,
+			targetUri=target_url,
 		)
 
 	@patch('lucos_eolas.metadata.admin.updateLoganne')
