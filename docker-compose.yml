@@ -54,18 +54,29 @@ services:
       interval: 5s
       timeout: 5s
       retries: 5
+  db_test:
+    container_name: lucos_eolas_db_test
+    image: postgres:17-alpine
+    environment:
+      - POSTGRES_PASSWORD=testpassword
+    profiles:
+      - test
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
   test:
     build: ./app
     container_name: lucos_eolas_test
     image: lucas42/lucos_eolas_app
     environment:
       - DJANGO_SETTINGS_MODULE=lucos_eolas.settings_test
-      - POSTGRES_PASSWORD
     command: python3 manage.py test lucos_eolas.metadata.tests --no-input
     profiles:
       - test
     depends_on:
-      db:
+      db_test:
         condition: service_healthy
 volumes:
   staticfiles:
