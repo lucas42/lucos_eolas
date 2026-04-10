@@ -85,8 +85,7 @@ DATABASES = {
         'NAME': 'postgres',
         'USER': 'postgres',
         'HOST': 'db',
-        'PASSWORD': os.environ['POSTGRES_PASSWORD'],
-        'PORT': '',    
+        'PORT': '',
     }
 }
 
