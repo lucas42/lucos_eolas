@@ -28,9 +28,8 @@ def merge_entities(modeladmin, request, queryset):
 
 	if 'apply_merge' in request.POST:
 		target_id = request.POST.get('target_id')
-		try:
-			target = queryset.model.objects.get(pk=target_id)
-		except (queryset.model.DoesNotExist, ValueError, TypeError):
+		target = queryset.filter(pk=target_id).first()
+		if target is None:
 			modeladmin.message_user(request, _("Please select a valid merge target."), level=messages.ERROR)
 			return
 
