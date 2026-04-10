@@ -47,17 +47,25 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data/
     environment:
-      - POSTGRES_PASSWORD
+      - POSTGRES_HOST_AUTH_METHOD=trust
     restart: always
   test:
     build: ./app
     container_name: lucos_eolas_test
     image: lucas42/lucos_eolas_app
     environment:
-      - DJANGO_SETTINGS_MODULE=lucos_eolas.settings_test
+      - SECRET_KEY=test
+      - CLIENT_KEYS=test=key
+      - APP_ORIGIN=http://localhost
+      - AUTH_ORIGIN=http://localhost
+      - LOGANNE_ENDPOINT=http://localhost
+      - SYSTEM=lucos_eolas
+      - ENVIRONMENT=test
     command: python3 manage.py test lucos_eolas.metadata.tests --no-input
     profiles:
       - test
+    depends_on:
+      - db
 volumes:
   staticfiles:
   db_data:
