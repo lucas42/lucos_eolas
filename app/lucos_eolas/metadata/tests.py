@@ -1,6 +1,95 @@
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, TestCase
 from unittest.mock import patch, MagicMock
 from .checks import get_place_consistency_checks, get_wikipedia_slug_check, _check_no_invalid_wikipedia_slugs, UNIVERSE_PLACE_ID
+
+
+# ─── HTTP Endpoint Tests ───────────────────────────────────────────────────────
+
+class InfoEndpointTest(TestCase):
+	"""/_info endpoint returns correct JSON structure."""
+
+	def test_returns_200(self):
+		response = self.client.get('/_info')
+		self.assertEqual(response.status_code, 200)
+
+	def test_returns_expected_fields(self):
+		response = self.client.get('/_info')
+		data = response.json()
+		self.assertEqual(data['system'], 'lucos_eolas')
+		self.assertIn('checks', data)
+		self.assertIn('ci', data)
+
+
+class OntologyEndpointTest(SimpleTestCase):
+	"""ontology endpoint returns RDF content without auth."""
+
+	def test_returns_200(self):
+		response = self.client.get('/ontology')
+		self.assertEqual(response.status_code, 200)
+
+	def test_returns_turtle_by_default(self):
+		response = self.client.get('/ontology')
+		self.assertIn('text/turtle', response['Content-Type'])
+
+	def test_returns_json_ld_when_requested(self):
+		response = self.client.get('/ontology', HTTP_ACCEPT='application/ld+json')
+		self.assertIn('application/ld+json', response['Content-Type'])
+
+
+class ApiAuthDecoratorTest(TestCase):
+	"""api_auth decorator enforces key authentication."""
+
+	def test_no_auth_header_returns_401(self):
+		response = self.client.get('/metadata/all/data/')
+		self.assertEqual(response.status_code, 401)
+
+	def test_invalid_key_returns_403(self):
+		response = self.client.get('/metadata/all/data/', HTTP_AUTHORIZATION='key wrongkey')
+		self.assertEqual(response.status_code, 403)
+
+	def test_valid_key_returns_200(self):
+		response = self.client.get('/metadata/all/data/', HTTP_AUTHORIZATION='key key')
+		self.assertEqual(response.status_code, 200)
+
+	def test_bearer_token_also_accepted(self):
+		response = self.client.get('/metadata/all/data/', HTTP_AUTHORIZATION='bearer key')
+		self.assertEqual(response.status_code, 200)
+
+
+class AllRdfEndpointTest(TestCase):
+	"""all_rdf endpoint returns valid RDF."""
+
+	def test_returns_turtle_by_default(self):
+		response = self.client.get('/metadata/all/data/', HTTP_AUTHORIZATION='key key')
+		self.assertEqual(response.status_code, 200)
+		self.assertIn('text/turtle', response['Content-Type'])
+
+	def test_returns_json_ld_when_requested(self):
+		response = self.client.get('/metadata/all/data/', HTTP_AUTHORIZATION='key key', HTTP_ACCEPT='application/ld+json')
+		self.assertEqual(response.status_code, 200)
+		self.assertIn('application/ld+json', response['Content-Type'])
+
+
+class ContentNegotiationTest(SimpleTestCase):
+	"""thing_entrypoint redirects to /data/ for RDF and /change/ for HTML."""
+
+	def test_html_accept_redirects_to_change(self):
+		response = self.client.get('/metadata/placetype/1/', HTTP_ACCEPT='text/html')
+		self.assertEqual(response.status_code, 303)
+		self.assertIn('/change/', response['Location'])
+
+	def test_rdf_accept_redirects_to_data(self):
+		response = self.client.get('/metadata/placetype/1/', HTTP_ACCEPT='text/turtle')
+		self.assertEqual(response.status_code, 303)
+		self.assertIn('/data/', response['Location'])
+
+	def test_no_accept_header_redirects_to_change(self):
+		response = self.client.get('/metadata/placetype/1/')
+		self.assertEqual(response.status_code, 303)
+		self.assertIn('/change/', response['Location'])
+
+
+# ─── Existing Unit Tests ───────────────────────────────────────────────────────
 
 
 def make_place(pk, name, fictional=False, contained_in_ids=None):
