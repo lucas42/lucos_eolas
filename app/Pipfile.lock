@@ -1,7 +1,7 @@
 {
     "_meta": {
         "hash": {
-            "sha256": "207e7ed8d71fa86923f633162848e9bfb13b83f708139512392fc86e5691f79e"
+            "sha256": "66967e7076510203a96e87fad79432d3da3a27400c150ba11e7302d9de2315c8"
         },
         "pipfile-spec": 6,
         "requires": {},
@@ -162,7 +162,6 @@
                 "sha256:fbccdc05410c9ee21bbf16a35f4c1d16123dcdeb8a1d38f33654fa21d0234f79",
                 "sha256:fea24543955a6a729c45a73fe90e08c743f0b3334bbf3201e6c4bc1b0c7fa464"
             ],
-            "index": "pypi",
             "markers": "python_version >= '3.7'",
             "version": "==3.4.7"
         },
@@ -194,12 +193,12 @@
         },
         "lucos-loganne-pythonclient": {
             "hashes": [
-                "sha256:4958b661da5e001b7adb342a278f03f945a0506c2ba7383bb7fe8384eb6929f1",
-                "sha256:76736d9d6120148cfea89a08880cf677c65c87d62d7461d15c15532558803ffa"
+                "sha256:124a0ba7f712bb478932879c8c8f38f352058783842032254d9fb442647567f3",
+                "sha256:aabd009f72bea761b633b576457c4e4723a1fa8373068e7c41063269754875d7"
             ],
             "index": "pypi",
             "markers": "python_version >= '3.8'",
-            "version": "==1.0.3"
+            "version": "==1.0.26"
         },
         "packaging": {
             "hashes": [

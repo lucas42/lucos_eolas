@@ -1,6 +1,8 @@
-from django.test import SimpleTestCase, TestCase
-from unittest.mock import patch, MagicMock
+from django.test import SimpleTestCase, TestCase, override_settings
+from django.contrib.auth.models import User
+from unittest.mock import patch, MagicMock, call
 from .checks import get_place_consistency_checks, get_wikipedia_slug_check, _check_no_invalid_wikipedia_slugs, UNIVERSE_PLACE_ID
+from .models import HistoricalEvent
 
 
 # ─── HTTP Endpoint Tests ───────────────────────────────────────────────────────
@@ -87,6 +89,96 @@ class ContentNegotiationTest(SimpleTestCase):
 		response = self.client.get('/metadata/placetype/1/')
 		self.assertEqual(response.status_code, 303)
 		self.assertIn('/change/', response['Location'])
+
+
+# ─── Merge Action Tests ───────────────────────────────────────────────────────
+
+@override_settings(AUTHENTICATION_BACKENDS=['django.contrib.auth.backends.ModelBackend'])
+class MergeEntitiesActionTest(TestCase):
+	"""merge_entities admin action fires Loganne events and deletes the source."""
+
+	def setUp(self):
+		user = User.objects.create_superuser('testadmin', 'admin@test.com', 'password')
+		self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
+
+	def _make_event(self, name):
+		return HistoricalEvent.objects.create(name=name)
+
+	@patch('lucos_eolas.metadata.admin.updateLoganne')
+	def test_confirmation_page_shown_on_first_post(self, mock_loganne):
+		source = self._make_event('Alpha')
+		target = self._make_event('Beta')
+		response = self.client.post(
+			'/metadata/historicalevent/',
+			{
+				'action': 'merge_entities',
+				'_selected_action': [str(source.pk), str(target.pk)],
+			},
+			follow=False,
+		)
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, 'Confirm merge')
+		self.assertContains(response, 'Alpha')
+		self.assertContains(response, 'Beta')
+		mock_loganne.assert_not_called()
+
+	@patch('lucos_eolas.metadata.admin.updateLoganne')
+	def test_merge_deletes_source_and_fires_loganne(self, mock_loganne):
+		source = self._make_event('Swearing')
+		target = self._make_event('Profanity')
+		source_url = source.get_absolute_url()
+		target_url = target.get_absolute_url()
+
+		self.client.post(
+			'/metadata/historicalevent/',
+			{
+				'action': 'merge_entities',
+				'_selected_action': [str(source.pk), str(target.pk)],
+				'apply_merge': '1',
+				'target_id': str(target.pk),
+			},
+		)
+
+		self.assertFalse(HistoricalEvent.objects.filter(pk=source.pk).exists(), 'Source should be deleted')
+		self.assertTrue(HistoricalEvent.objects.filter(pk=target.pk).exists(), 'Target should survive')
+		item_type = HistoricalEvent._meta.verbose_name.title()
+		mock_loganne.assert_called_once_with(
+			type='entityMerged',
+			humanReadable=f'{item_type} "Swearing" merged into "Profanity"',
+			url=target_url,
+			sourceUri=source_url,
+			targetUri=target_url,
+		)
+
+	@patch('lucos_eolas.metadata.admin.updateLoganne')
+	def test_merge_does_not_fire_itemDeleted(self, mock_loganne):
+		source = self._make_event('Old Name')
+		target = self._make_event('New Name')
+		self.client.post(
+			'/metadata/historicalevent/',
+			{
+				'action': 'merge_entities',
+				'_selected_action': [str(source.pk), str(target.pk)],
+				'apply_merge': '1',
+				'target_id': str(target.pk),
+			},
+		)
+		called_types = [c.kwargs['type'] for c in mock_loganne.call_args_list]
+		self.assertNotIn('itemDeleted', called_types, 'itemDeleted should not fire during a merge')
+
+	@patch('lucos_eolas.metadata.admin.updateLoganne')
+	def test_fewer_than_two_selected_shows_error(self, mock_loganne):
+		entity = self._make_event('Solo')
+		response = self.client.post(
+			'/metadata/historicalevent/',
+			{
+				'action': 'merge_entities',
+				'_selected_action': [str(entity.pk)],
+			},
+			follow=True,
+		)
+		self.assertContains(response, 'Select at least 2')
+		mock_loganne.assert_not_called()
 
 
 # ─── Existing Unit Tests ───────────────────────────────────────────────────────

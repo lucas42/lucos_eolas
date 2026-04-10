@@ -1,0 +1,47 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+
+{% block content %}
+<h1>{% trans "Merge entities" %}</h1>
+
+<p>{% blocktrans count count=queryset|length %}
+Select the entity to keep. The other entity will be merged into it and deleted.
+{% plural %}
+Select which of the {{ count }} selected entities to keep. The others will be merged into it and deleted.
+{% endblocktrans %}</p>
+
+<form method="post">
+  {% csrf_token %}
+
+  {% for entity in queryset %}
+    <input type="hidden" name="{{ action_checkbox_name }}" value="{{ entity.pk }}">
+  {% endfor %}
+  <input type="hidden" name="action" value="merge_entities">
+
+  <table>
+    <thead>
+      <tr>
+        <th>{% trans "Keep (merge target)" %}</th>
+        <th>{% trans "Name" %}</th>
+      </tr>
+    </thead>
+    <tbody>
+      {% for entity in queryset %}
+      <tr>
+        <td style="text-align:center;">
+          <input type="radio" name="target_id" value="{{ entity.pk }}" {% if forloop.first %}checked{% endif %} required>
+        </td>
+        <td>{{ entity }}</td>
+      </tr>
+      {% endfor %}
+    </tbody>
+  </table>
+
+  <p>
+    <button type="submit" name="apply_merge" class="default" style="margin-top:1em;">
+      {% trans "Confirm merge" %}
+    </button>
+    <a href="{% url opts|admin_urlname:'changelist' %}" style="margin-left:1em;">{% trans "Cancel" %}</a>
+  </p>
+</form>
+{% endblock %}

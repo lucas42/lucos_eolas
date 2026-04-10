@@ -1,11 +1,16 @@
 from django.contrib import admin
 from .models import *
+from .signals import metadata_post_delete
 from django.utils.html import format_html, format_html_join
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
 from ..lucosauth import views as auth_views
 from django.apps import apps
 from django.contrib.admin.sites import AlreadyRegistered
+from django.contrib import messages
+from django.db.models.signals import post_delete
+from django.shortcuts import render
+from loganne import updateLoganne
 from urllib.parse import urlencode
 
 class EolasAdminSite(admin.AdminSite):
@@ -15,7 +20,57 @@ class EolasAdminSite(admin.AdminSite):
 		return auth_views.loginview(request)
 eolasadmin = EolasAdminSite()
 
+def merge_entities(modeladmin, request, queryset):
+	"""Admin action: merge selected entities, firing a Loganne event per source."""
+	if queryset.count() < 2:
+		modeladmin.message_user(request, _("Select at least 2 entities to merge."), level=messages.ERROR)
+		return
+
+	if 'apply_merge' in request.POST:
+		target_id = request.POST.get('target_id')
+		target = queryset.filter(pk=target_id).first()
+		if target is None:
+			modeladmin.message_user(request, _("Please select a valid merge target."), level=messages.ERROR)
+			return
+
+		sources = queryset.exclude(pk=target.pk)
+		merged_count = sources.count()
+		item_type = queryset.model._meta.verbose_name.title()
+
+		for source in sources:
+			updateLoganne(
+				type="entityMerged",
+				humanReadable=f'{item_type} "{source}" merged into "{target}"',
+				url=target.get_absolute_url(),
+				sourceUri=source.get_absolute_url(),
+				targetUri=target.get_absolute_url(),
+			)
+			post_delete.disconnect(metadata_post_delete, sender=queryset.model)
+			try:
+				source.delete()
+			finally:
+				post_delete.connect(metadata_post_delete, sender=queryset.model)
+
+		modeladmin.message_user(
+			request,
+			_(f'Merged {merged_count} {"entity" if merged_count == 1 else "entities"} into "{target}".'),
+		)
+		return
+
+	return render(request, 'admin/metadata/merge_entities.html', {
+		'title': _('Select merge target'),
+		'queryset': queryset,
+		'opts': modeladmin.model._meta,
+		'action_checkbox_name': admin.helpers.ACTION_CHECKBOX_NAME,
+	})
+
+merge_entities.short_description = _('Merge selected entities')
+
+
 class EolasModelAdmin(admin.ModelAdmin):
+	actions = ['merge_entities']
+	merge_entities = staticmethod(merge_entities)
+
 	def get_fields(self, request, obj=None):
 		all_fields = [
 			f.name for f in self.model._meta.get_fields()
