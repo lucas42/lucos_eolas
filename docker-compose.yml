@@ -47,7 +47,7 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data/
     environment:
-      - POSTGRES_HOST_AUTH_METHOD=trust
+      - POSTGRES_PASSWORD=testpassword
     restart: always
   test:
     build: ./app
@@ -59,6 +59,7 @@ services:
       - APP_ORIGIN=http://localhost
       - AUTH_ORIGIN=http://localhost
       - LOGANNE_ENDPOINT=http://localhost
+      - POSTGRES_PASSWORD=testpassword
       - SYSTEM=lucos_eolas
       - ENVIRONMENT=test
     command: python3 manage.py test lucos_eolas.metadata.tests --no-input
