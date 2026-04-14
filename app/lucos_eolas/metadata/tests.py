@@ -1,8 +1,26 @@
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.contrib.auth.models import User
+from django.conf import settings
 from unittest.mock import patch, MagicMock, call
 from .checks import get_place_consistency_checks, get_wikipedia_slug_check, _check_no_invalid_wikipedia_slugs, UNIVERSE_PLACE_ID
 from .models import HistoricalEvent
+
+
+# ─── Database Config Tests ────────────────────────────────────────────────────
+
+class DatabaseConfigTest(SimpleTestCase):
+	"""Verify database credentials are present in settings.
+
+	This test catches the regression from the 2026-04-10 incident: if
+	POSTGRES_PASSWORD is absent from the environment, Django's DATABASES config
+	will have an empty PASSWORD and the app will fail to connect to production
+	PostgreSQL (which requires a password). CI uses trust auth so it wouldn't
+	catch the missing credential without this explicit check.
+	"""
+
+	def test_database_password_is_configured(self):
+		password = settings.DATABASES['default']['PASSWORD']
+		self.assertTrue(password, "DATABASES['default']['PASSWORD'] is empty — POSTGRES_PASSWORD env var is missing")
 
 
 # ─── HTTP Endpoint Tests ───────────────────────────────────────────────────────

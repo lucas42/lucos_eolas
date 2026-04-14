@@ -90,6 +90,12 @@ DATABASES = {
     }
 }
 
+if not DATABASES['default']['PASSWORD']:
+    raise ValueError(
+        "POSTGRES_PASSWORD environment variable is not set. "
+        "Django requires a database password to connect to PostgreSQL."
+    )
+
 # Password validation
 # https://docs.djangoproject.com/en/5.2/ref/settings/#auth-password-validators
 

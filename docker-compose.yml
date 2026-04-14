@@ -47,7 +47,7 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data/
     environment:
-      - POSTGRES_PASSWORD=testpassword
+      - POSTGRES_HOST_AUTH_METHOD=trust
     restart: always
   test:
     build: ./app
