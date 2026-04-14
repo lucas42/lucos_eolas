@@ -47,6 +47,12 @@ services:
     volumes:
       - db_data:/var/lib/postgresql/data/
     environment:
+      # NOTE: CI/test uses trust auth — no password required.
+      # Production uses password auth (POSTGRES_PASSWORD env var).
+      # This mismatch is intentional and known: trust auth in CI means tests
+      # will pass even if POSTGRES_PASSWORD is missing from the app config.
+      # Any change to the DATABASES PASSWORD field in settings.py requires
+      # manual validation in production before shipping.
       - POSTGRES_HOST_AUTH_METHOD=trust
     restart: always
   test:
