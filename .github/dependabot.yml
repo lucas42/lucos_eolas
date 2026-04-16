@@ -11,6 +11,14 @@ updates:
       - dependency-name: asgiref
         versions:
           - 3.3.4
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+      major:
+        update-types:
+          - major
   - package-ecosystem: docker
     directory: /app
     schedule:
@@ -18,6 +26,14 @@ updates:
       time: '07:00'
     allow:
       - dependency-type: all
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+      major:
+        update-types:
+          - major
   - package-ecosystem: docker
     directory: /web
     schedule:
@@ -25,6 +41,14 @@ updates:
       time: '07:00'
     allow:
       - dependency-type: all
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+      major:
+        update-types:
+          - major
   - package-ecosystem: github-actions
     directory: /
     schedule:
@@ -32,3 +56,11 @@ updates:
       time: '07:00'
     allow:
       - dependency-type: all
+    groups:
+      minor-and-patch:
+        update-types:
+          - minor
+          - patch
+      major:
+        update-types:
+          - major
