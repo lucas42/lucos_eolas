@@ -1,5 +1,6 @@
 import os
 import rdflib
+from urllib.parse import urlparse
 from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from .models import *
 from .checks import get_place_consistency_checks, get_wikipedia_slug_check
@@ -95,14 +96,21 @@ def ontology_graph():
 				g += model_class.get_ontology_rdf()
 	return g
 
+def _safe_local_redirect(url):
+	"""Only allow redirects to relative paths on this server (no scheme or netloc)."""
+	parsed = urlparse(url)
+	if parsed.scheme or parsed.netloc:
+		return '/'
+	return url
+
 def thing_entrypoint(request, type, pk):
 	class HttpResponseSeeOther(HttpResponseRedirect):
 		status_code = 303
 	if choose_rdf_over_html(request):
-		return HttpResponseSeeOther(f'/metadata/{type}/{pk}/data/')
+		return HttpResponseSeeOther(_safe_local_redirect(f'/metadata/{type}/{pk}/data/'))
 	else:
 		# 303 See Other to the admin change endpoint for non-RDF requests
-		return HttpResponseSeeOther(f'/metadata/{type}/{pk}/change/')
+		return HttpResponseSeeOther(_safe_local_redirect(f'/metadata/{type}/{pk}/change/'))
 
 @api_auth
 def thing_data(request, type, pk):
