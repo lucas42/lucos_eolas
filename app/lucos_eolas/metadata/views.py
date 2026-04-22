@@ -1,7 +1,8 @@
+import logging
 import os
 import rdflib
 from urllib.parse import urlparse
-from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
+from django.http import HttpResponseRedirect, HttpResponse, HttpResponseServerError, JsonResponse
 from .models import *
 from .checks import get_place_consistency_checks, get_wikipedia_slug_check
 from ..lucosauth.decorators import api_auth
@@ -11,6 +12,8 @@ from .utils_conneg import choose_rdf_over_html, pick_best_rdf_format
 from django.apps import apps
 from django.core.exceptions import ObjectDoesNotExist
 
+logger = logging.getLogger(__name__)
+
 BASE_URL = os.environ.get("APP_ORIGIN")
 EOLAS_NS = rdflib.Namespace(f"{BASE_URL}/ontology/")
 DBPEDIA_NS = rdflib.Namespace("https://dbpedia.org/ontology/")
@@ -18,12 +21,17 @@ LOC_NS = rdflib.Namespace("http://www.loc.gov/mads/rdf/v1#")
 WDT_NS = rdflib.Namespace("http://www.wikidata.org/prop/direct/")
 
 def info(request):
-	output = {
-		'system': "lucos_eolas",
-		'checks': {
+	try:
+		checks = {
 			**get_place_consistency_checks(),
 			'no-invalid-wikipedia-slugs': get_wikipedia_slug_check(),
-		},
+		}
+	except Exception:
+		logger.exception("Error computing /_info checks")
+		return HttpResponseServerError("An internal error occurred.")
+	output = {
+		'system': "lucos_eolas",
+		'checks': checks,
 		'metrics': {},
 		'ci': {
 			'circle': "gh/lucas42/lucos_eolas",
