@@ -3,6 +3,7 @@ from django.contrib.auth.models import User
 from unittest.mock import patch, MagicMock, call
 from .checks import get_place_consistency_checks, get_wikipedia_slug_check, _check_no_invalid_wikipedia_slugs, UNIVERSE_PLACE_ID
 from .models import HistoricalEvent
+from .views import _safe_local_redirect
 
 
 # ─── HTTP Endpoint Tests ───────────────────────────────────────────────────────
@@ -91,23 +92,21 @@ class ContentNegotiationTest(SimpleTestCase):
 		self.assertIn('/change/', response['Location'])
 
 
-class ThingEntrypointSanitisationTest(SimpleTestCase):
-	"""thing_entrypoint strips unsafe characters from type and pk before redirecting."""
+class SafeLocalRedirectTest(SimpleTestCase):
+	"""_safe_local_redirect blocks external URLs and passes through relative paths."""
 
-	def test_type_with_non_alpha_chars_stripped(self):
-		# Slashes, dots and scheme chars must not survive into the redirect URL
-		response = self.client.get('/metadata/placetype/1/', HTTP_ACCEPT='text/html')
-		self.assertNotIn('://', response['Location'])
+	def test_relative_path_unchanged(self):
+		self.assertEqual(_safe_local_redirect('/metadata/placetype/1/data/'), '/metadata/placetype/1/data/')
 
-	def test_pk_with_non_word_chars_stripped(self):
-		response = self.client.get('/metadata/placetype/abc123/', HTTP_ACCEPT='text/html')
-		location = response['Location']
-		self.assertIn('/metadata/placetype/abc123/', location)
+	def test_https_url_redirects_to_root(self):
+		self.assertEqual(_safe_local_redirect('https://evil.example.com/phish'), '/')
 
-	def test_redirect_stays_on_same_origin(self):
-		# Even with a crafted type, the Location must be a relative path
-		response = self.client.get('/metadata/placetype/1/', HTTP_ACCEPT='text/html')
-		self.assertTrue(response['Location'].startswith('/'))
+	def test_http_url_redirects_to_root(self):
+		self.assertEqual(_safe_local_redirect('http://evil.example.com/'), '/')
+
+	def test_protocol_relative_url_redirects_to_root(self):
+		# //evil.example.com has no scheme but has a netloc
+		self.assertEqual(_safe_local_redirect('//evil.example.com/phish'), '/')
 
 
 # ─── Merge Action Tests ───────────────────────────────────────────────────────
