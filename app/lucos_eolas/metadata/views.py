@@ -2,7 +2,7 @@ import logging
 import os
 import rdflib
 from urllib.parse import urlparse
-from django.http import HttpResponseRedirect, HttpResponse, HttpResponseServerError, JsonResponse
+from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from .models import *
 from .checks import get_place_consistency_checks, get_wikipedia_slug_check
 from ..lucosauth.decorators import api_auth
@@ -22,16 +22,30 @@ WDT_NS = rdflib.Namespace("http://www.wikidata.org/prop/direct/")
 
 def info(request):
 	try:
-		checks = {
-			**get_place_consistency_checks(),
-			'no-invalid-wikipedia-slugs': get_wikipedia_slug_check(),
-		}
+		place_checks = get_place_consistency_checks()
 	except Exception:
-		logger.exception("Error computing /_info checks")
-		return HttpResponseServerError("An internal error occurred.")
+		logger.exception("Error computing place consistency checks for /_info")
+		error_result = {'ok': False, 'techDetail': 'Could not load place data', 'debug': 'An unexpected error occurred'}
+		place_checks = {
+			'no-circular-containment': error_result,
+			'no-real-place-in-fictional': error_result,
+			'places-in-universe': error_result,
+		}
+	try:
+		wikipedia_check = get_wikipedia_slug_check()
+	except Exception:
+		logger.exception("Error computing Wikipedia slug check for /_info")
+		wikipedia_check = {
+			'ok': False,
+			'techDetail': 'Checks that all Wikipedia slugs produce valid URIs for RDF export',
+			'debug': 'An unexpected error occurred',
+		}
 	output = {
 		'system': "lucos_eolas",
-		'checks': checks,
+		'checks': {
+			**place_checks,
+			'no-invalid-wikipedia-slugs': wikipedia_check,
+		},
 		'metrics': {},
 		'ci': {
 			'circle': "gh/lucas42/lucos_eolas",
