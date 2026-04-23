@@ -18,6 +18,7 @@ LOC_NS = rdflib.Namespace("http://www.loc.gov/mads/rdf/v1#")
 WDT_NS = rdflib.Namespace("http://www.wikidata.org/prop/direct/")
 
 def info(request):
+	# Both check functions handle their own exceptions and always return ok:false with debug on failure.
 	output = {
 		'system': "lucos_eolas",
 		'checks': {
