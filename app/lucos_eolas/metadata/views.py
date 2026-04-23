@@ -1,4 +1,3 @@
-import logging
 import os
 import rdflib
 from urllib.parse import urlparse
@@ -12,8 +11,6 @@ from .utils_conneg import choose_rdf_over_html, pick_best_rdf_format
 from django.apps import apps
 from django.core.exceptions import ObjectDoesNotExist
 
-logger = logging.getLogger(__name__)
-
 BASE_URL = os.environ.get("APP_ORIGIN")
 EOLAS_NS = rdflib.Namespace(f"{BASE_URL}/ontology/")
 DBPEDIA_NS = rdflib.Namespace("https://dbpedia.org/ontology/")
@@ -21,30 +18,11 @@ LOC_NS = rdflib.Namespace("http://www.loc.gov/mads/rdf/v1#")
 WDT_NS = rdflib.Namespace("http://www.wikidata.org/prop/direct/")
 
 def info(request):
-	try:
-		place_checks = get_place_consistency_checks()
-	except Exception:
-		logger.exception("Error computing place consistency checks for /_info")
-		error_result = {'ok': False, 'techDetail': 'Could not load place data', 'debug': 'An unexpected error occurred'}
-		place_checks = {
-			'no-circular-containment': error_result,
-			'no-real-place-in-fictional': error_result,
-			'places-in-universe': error_result,
-		}
-	try:
-		wikipedia_check = get_wikipedia_slug_check()
-	except Exception:
-		logger.exception("Error computing Wikipedia slug check for /_info")
-		wikipedia_check = {
-			'ok': False,
-			'techDetail': 'Checks that all Wikipedia slugs produce valid URIs for RDF export',
-			'debug': 'An unexpected error occurred',
-		}
 	output = {
 		'system': "lucos_eolas",
 		'checks': {
-			**place_checks,
-			'no-invalid-wikipedia-slugs': wikipedia_check,
+			**get_place_consistency_checks(),
+			'no-invalid-wikipedia-slugs': get_wikipedia_slug_check(),
 		},
 		'metrics': {},
 		'ci': {
