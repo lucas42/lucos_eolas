@@ -1,7 +1,10 @@
 """
 Data consistency checks for the /_info endpoint.
 """
+import logging
 from .fields import INVALID_URI_RE
+
+logger = logging.getLogger(__name__)
 
 UNIVERSE_PLACE_ID = 373
 
@@ -145,8 +148,9 @@ def get_place_consistency_checks():
 	"""
 	try:
 		all_places, containment = _load_graph()
-	except Exception as e:
-		error_result = {'ok': False, 'techDetail': 'Could not load place data', 'debug': str(e)}
+	except Exception:
+		logger.exception("Failed to load place graph for /_info checks")
+		error_result = {'ok': False, 'techDetail': 'Could not load place data', 'debug': 'An unexpected error occurred'}
 		return {
 			'no-circular-containment': error_result,
 			'no-real-place-in-fictional': error_result,
@@ -157,31 +161,34 @@ def get_place_consistency_checks():
 
 	try:
 		checks['no-circular-containment'] = _check_no_circular_containment(all_places, containment)
-	except Exception as e:
+	except Exception:
+		logger.exception("Error in _check_no_circular_containment")
 		checks['no-circular-containment'] = {
 			'ok': False,
 			'techDetail': 'Checks that the contained_in hierarchy has no circular references',
-			'debug': str(e),
+			'debug': 'An unexpected error occurred',
 		}
 
 	cycle_found = not checks['no-circular-containment']['ok']
 
 	try:
 		checks['no-real-place-in-fictional'] = _check_no_real_place_in_fictional(all_places, containment)
-	except Exception as e:
+	except Exception:
+		logger.exception("Error in _check_no_real_place_in_fictional")
 		checks['no-real-place-in-fictional'] = {
 			'ok': False,
 			'techDetail': 'Checks that no real place is directly contained_in a fictional place',
-			'debug': str(e),
+			'debug': 'An unexpected error occurred',
 		}
 
 	try:
 		checks['places-in-universe'] = _check_places_in_universe(all_places, containment, cycle_found)
-	except Exception as e:
+	except Exception:
+		logger.exception("Error in _check_places_in_universe")
 		checks['places-in-universe'] = {
 			'ok': False,
 			'techDetail': 'Checks that all non-fictional places are reachable from Universe via transitive contained_in links',
-			'debug': str(e),
+			'debug': 'An unexpected error occurred',
 		}
 
 	return checks
@@ -228,9 +235,10 @@ def get_wikipedia_slug_check():
 			for obj in model.objects.exclude(wikipedia_slug=''):
 				models_with_slugs.append((model.__name__, obj.pk, obj.wikipedia_slug))
 		return _check_no_invalid_wikipedia_slugs(models_with_slugs)
-	except Exception as e:
+	except Exception:
+		logger.exception("Error in get_wikipedia_slug_check")
 		return {
 			'ok': False,
 			'techDetail': 'Checks that all Wikipedia slugs produce valid URIs for RDF export',
-			'debug': str(e),
+			'debug': 'An unexpected error occurred',
 		}
