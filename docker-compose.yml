@@ -40,7 +40,8 @@ services:
       retries: 3
       start_period: 15s
     depends_on:
-      - db
+      db:
+        condition: service_healthy
   db:
     container_name: lucos_eolas_db
     image: postgres:17-alpine
@@ -53,6 +54,12 @@ services:
       # manual validation in production before shipping.
       - POSTGRES_PASSWORD=${POSTGRES_PASSWORD:-test}
     restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+      start_period: 10s
   test:
     build: ./app
     container_name: lucos_eolas_test
@@ -70,7 +77,8 @@ services:
     profiles:
       - test
     depends_on:
-      - db
+      db:
+        condition: service_healthy
 volumes:
   staticfiles:
   db_data:
