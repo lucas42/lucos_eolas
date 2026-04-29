@@ -12,6 +12,8 @@ DBPEDIA_NS = rdflib.Namespace("https://dbpedia.org/ontology/")
 LOC_NS = rdflib.Namespace("http://www.loc.gov/mads/rdf/v1#")
 WDT_NS = rdflib.Namespace("http://www.wikidata.org/prop/direct/")
 
+_JSON_SKIP_FIELDS = {'alternate_names', 'wikipedia_slug'}
+
 class EolasModel(models.Model):
 	name = RDFNameField()
 	alternate_names = RDFArrayField(
@@ -30,6 +32,35 @@ class EolasModel(models.Model):
 
 	def get_absolute_url(self):
 		return f"{BASE_URL}/metadata/{self._meta.model_name}/{self.pk}/"
+
+	def to_json(self):
+		"""Serialise this item to a JSON-ready dict.
+
+		Always includes 'id', 'uri', and 'name'.  Additional fields are derived
+		from _meta.local_fields: ForeignKey fields are expanded to {id, uri, name}
+		dicts; scalar fields are returned as their Python values.  The primary key,
+		'name', 'alternate_names', and 'wikipedia_slug' are omitted from the field
+		loop (they are either already present under a canonical key or not useful
+		for JSON consumers).
+		"""
+		data = {
+			'id': self.pk,
+			'uri': self.get_absolute_url(),
+			'name': self.name,
+		}
+		for field in self._meta.local_fields:
+			if field.primary_key or field.name == 'name' or field.name in _JSON_SKIP_FIELDS:
+				continue
+			if isinstance(field, models.ForeignKey):
+				related = getattr(self, field.name)
+				data[field.name] = {
+					'id': related.pk,
+					'uri': related.get_absolute_url(),
+					'name': str(related),
+				} if related is not None else None
+			else:
+				data[field.name] = getattr(self, field.name)
+		return data
 
 	def get_rdf(self, include_type_label):
 		uri = rdflib.URIRef(self.get_absolute_url())
