@@ -1,0 +1,9 @@
+.git
+.github
+.circleci
+README.md
+update.sh
+**/__pycache__
+**/*.pyc
+**/.env
+**/node_modules
