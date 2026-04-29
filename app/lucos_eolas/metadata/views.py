@@ -142,7 +142,7 @@ def type_list(request, type):
 		return HttpResponse(status=404)
 	if not hasattr(model_class, 'to_json'):
 		return HttpResponse(status=404)
-	items = [obj.to_json() for obj in model_class.objects.all()]
+	items = [obj.to_json() for obj in model_class.objects.select_related().all()]
 	return JsonResponse(items, safe=False)
 
 @api_auth
