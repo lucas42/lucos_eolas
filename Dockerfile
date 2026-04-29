@@ -47,4 +47,9 @@ RUN rm /usr/share/nginx/html/*
 COPY web/routing.conf /etc/nginx/conf.d/
 COPY --from=app /usr/src/app/lucos_eolas/static /usr/share/nginx/html/resources
 
+# Assert that Django admin static files are present.
+# If collectstatic silently omitted admin (e.g. missing django.contrib.admin in INSTALLED_APPS),
+# this build step fails loudly rather than shipping a broken image.
+RUN test -f /usr/share/nginx/html/resources/admin/css/base.css
+
 CMD ["nginx", "-g", "daemon off;"]
