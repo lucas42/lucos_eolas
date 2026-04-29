@@ -108,13 +108,15 @@ class TypeListEndpointTest(TestCase):
 		item = response.json()[0]
 		self.assertEqual(item['order'], 3)
 
-	def test_item_does_not_include_internal_fields(self):
-		# alternate_names and wikipedia_slug should not appear
-		DayOfWeek.objects.create(name='Thursday', order=4)
+	def test_item_includes_alternate_names_and_wikipedia_slug(self):
+		# alternate_names and wikipedia_slug are real fields — they must be included
+		DayOfWeek.objects.create(name='Thursday', order=4, wikipedia_slug='Thursday')
 		response = self.client.get('/metadata/dayofweek/list/', **self.AUTH)
 		item = response.json()[0]
-		self.assertNotIn('alternate_names', item)
-		self.assertNotIn('wikipedia_slug', item)
+		self.assertIn('alternate_names', item)
+		self.assertIn('wikipedia_slug', item)
+		self.assertEqual(item['wikipedia_slug'], 'Thursday')
+		self.assertIsInstance(item['alternate_names'], list)
 
 	def test_foreign_key_serialised_as_dict(self):
 		# Month has a FK to Calendar — it should appear as {id, uri, name}
