@@ -31,6 +31,34 @@ class EolasModel(models.Model):
 	def get_absolute_url(self):
 		return f"{BASE_URL}/metadata/{self._meta.model_name}/{self.pk}/"
 
+	def to_json(self):
+		"""Serialise this item to a JSON-ready dict.
+
+		Always includes 'id', 'uri', and 'name'.  All other concrete fields on the
+		model are included: ForeignKey fields are expanded to {id, uri, name} dicts;
+		scalars and arrays are returned as their Python values.  Only the primary key
+		and 'name' are omitted from the field loop — they are already captured under
+		canonical keys in the base dict.
+		"""
+		data = {
+			'id': self.pk,
+			'uri': self.get_absolute_url(),
+			'name': self.name,
+		}
+		for field in self._meta.local_fields:
+			if field.primary_key or field.name == 'name':
+				continue
+			if isinstance(field, models.ForeignKey):
+				related = getattr(self, field.name)
+				data[field.name] = {
+					'id': related.pk,
+					'uri': related.get_absolute_url(),
+					'name': str(related),
+				} if related is not None else None
+			else:
+				data[field.name] = getattr(self, field.name)
+		return data
+
 	def get_rdf(self, include_type_label):
 		uri = rdflib.URIRef(self.get_absolute_url())
 		g = rdflib.Graph()

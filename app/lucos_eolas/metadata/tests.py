@@ -2,7 +2,7 @@ from django.test import SimpleTestCase, TestCase, override_settings
 from django.contrib.auth.models import User
 from unittest.mock import patch, MagicMock, call
 from .checks import get_place_consistency_checks, get_wikipedia_slug_check, _check_no_invalid_wikipedia_slugs, UNIVERSE_PLACE_ID
-from .models import HistoricalEvent
+from .models import DayOfWeek, Calendar, Month, HistoricalEvent
 from .views import _safe_local_redirect
 
 
@@ -57,6 +57,86 @@ class ApiAuthDecoratorTest(TestCase):
 	def test_bearer_token_also_accepted(self):
 		response = self.client.get('/metadata/all/data/', HTTP_AUTHORIZATION='bearer key')
 		self.assertEqual(response.status_code, 200)
+
+
+class TypeListEndpointTest(TestCase):
+	"""type_list endpoint returns a JSON array of items for a given type."""
+
+	AUTH = {'HTTP_AUTHORIZATION': 'key key'}
+
+	def test_requires_auth(self):
+		response = self.client.get('/metadata/dayofweek/list/')
+		self.assertEqual(response.status_code, 401)
+
+	def test_invalid_key_rejected(self):
+		response = self.client.get('/metadata/dayofweek/list/', HTTP_AUTHORIZATION='key wrongkey')
+		self.assertEqual(response.status_code, 403)
+
+	def test_unknown_type_returns_404(self):
+		response = self.client.get('/metadata/nonexistenttype/list/', **self.AUTH)
+		self.assertEqual(response.status_code, 404)
+
+	def test_returns_json_array(self):
+		DayOfWeek.objects.create(name='Monday', order=1)
+		response = self.client.get('/metadata/dayofweek/list/', **self.AUTH)
+		self.assertEqual(response.status_code, 200)
+		self.assertIn('application/json', response['Content-Type'])
+		data = response.json()
+		self.assertIsInstance(data, list)
+
+	def test_empty_type_returns_empty_array(self):
+		# No DayOfWeek objects in DB → empty list
+		response = self.client.get('/metadata/dayofweek/list/', **self.AUTH)
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(response.json(), [])
+
+	def test_item_has_base_fields(self):
+		day = DayOfWeek.objects.create(name='Tuesday', order=2)
+		response = self.client.get('/metadata/dayofweek/list/', **self.AUTH)
+		data = response.json()
+		self.assertEqual(len(data), 1)
+		item = data[0]
+		self.assertEqual(item['id'], day.pk)
+		self.assertIn('uri', item)
+		self.assertIn('/metadata/dayofweek/', item['uri'])
+		self.assertEqual(item['name'], 'Tuesday')
+
+	def test_item_includes_type_specific_fields(self):
+		# DayOfWeek has an 'order' field — it must appear in the JSON
+		DayOfWeek.objects.create(name='Wednesday', order=3)
+		response = self.client.get('/metadata/dayofweek/list/', **self.AUTH)
+		item = response.json()[0]
+		self.assertEqual(item['order'], 3)
+
+	def test_item_includes_alternate_names_and_wikipedia_slug(self):
+		# alternate_names and wikipedia_slug are real fields — they must be included
+		DayOfWeek.objects.create(name='Thursday', order=4, wikipedia_slug='Thursday')
+		response = self.client.get('/metadata/dayofweek/list/', **self.AUTH)
+		item = response.json()[0]
+		self.assertIn('alternate_names', item)
+		self.assertIn('wikipedia_slug', item)
+		self.assertEqual(item['wikipedia_slug'], 'Thursday')
+		self.assertIsInstance(item['alternate_names'], list)
+
+	def test_foreign_key_serialised_as_dict(self):
+		# Month has a FK to Calendar — it should appear as {id, uri, name}
+		calendar = Calendar.objects.create(name='Gregorian')
+		Month.objects.create(name='January', calendar=calendar, order_in_calendar=1)
+		response = self.client.get('/metadata/month/list/', **self.AUTH)
+		self.assertEqual(response.status_code, 200)
+		item = response.json()[0]
+		self.assertIn('calendar', item)
+		cal_data = item['calendar']
+		self.assertEqual(cal_data['id'], calendar.pk)
+		self.assertIn('uri', cal_data)
+		self.assertEqual(cal_data['name'], 'Gregorian')
+
+	def test_multiple_items_all_returned(self):
+		DayOfWeek.objects.create(name='Friday', order=5)
+		DayOfWeek.objects.create(name='Saturday', order=6)
+		DayOfWeek.objects.create(name='Sunday', order=7)
+		response = self.client.get('/metadata/dayofweek/list/', **self.AUTH)
+		self.assertEqual(len(response.json()), 3)
 
 
 class AllRdfEndpointTest(TestCase):

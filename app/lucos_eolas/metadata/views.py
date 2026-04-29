@@ -129,6 +129,23 @@ def thing_data(request, type, pk):
 	return HttpResponse(g.serialize(format=format), content_type=f'{content_type}; charset={settings.DEFAULT_CHARSET}')
 
 @api_auth
+def type_list(request, type):
+	"""Return all items of the given type as a JSON array.
+
+	Each item includes at minimum 'id', 'uri', and 'name', plus any
+	type-specific scalar and foreign-key fields (see EolasModel.to_json).
+	Returns 404 for unknown types.
+	"""
+	try:
+		model_class = apps.get_model('metadata', type)
+	except LookupError:
+		return HttpResponse(status=404)
+	if not hasattr(model_class, 'to_json'):
+		return HttpResponse(status=404)
+	items = [obj.to_json() for obj in model_class.objects.select_related().all()]
+	return JsonResponse(items, safe=False)
+
+@api_auth
 def all_rdf(request):
 	# Serialize all items of every type into a single RDF graph
 	format, content_type = pick_best_rdf_format(request)
