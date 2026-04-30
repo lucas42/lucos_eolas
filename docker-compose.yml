@@ -75,7 +75,7 @@ services:
       - SYSTEM=lucos_eolas
       - ENVIRONMENT=test
       - POSTGRES_PASSWORD=test
-    command: python3 manage.py test lucos_eolas.metadata.tests --no-input
+    command: python3 manage.py test lucos_eolas.metadata.tests lucos_eolas.lucosauth.tests --no-input
     profiles:
       - test
     depends_on:

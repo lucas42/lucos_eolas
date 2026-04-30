@@ -1,7 +1,8 @@
-from django.test import SimpleTestCase
+from django.test import SimpleTestCase, RequestFactory
 from unittest.mock import patch, MagicMock
 from django.http import HttpResponse
 from .decorators import api_auth
+from .views import loginview
 
 
 def _make_view():
@@ -22,6 +23,61 @@ def _make_request(auth_header=None):
 
 VALID_KEY = 'testkey123'
 MOCK_USER = MagicMock()
+
+
+class LoginViewNextRedirectTest(SimpleTestCase):
+    """Tests for the 'next' parameter validation in loginview."""
+
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.staff_user = MagicMock()
+        self.staff_user.is_staff = True
+        self.regular_user = MagicMock()
+        self.regular_user.is_staff = False
+
+    def _call_loginview(self, url, user, token='valid-token'):
+        request = self.factory.get(url)
+        with patch('lucos_eolas.lucosauth.views.authenticate', return_value=user), \
+             patch('lucos_eolas.lucosauth.views.login'):
+            return loginview(request)
+
+    def test_same_origin_next_redirects(self):
+        """A same-origin relative path in 'next' is followed after login."""
+        response = self._call_loginview('/login?token=t&next=/some/page/', self.staff_user)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['Location'], '/some/page/')
+
+    def test_external_next_redirects_to_root(self):
+        """An external URL in 'next' is rejected; user is redirected to /."""
+        response = self._call_loginview('/login?token=t&next=https://evil.example.com/', self.staff_user)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['Location'], '/')
+
+    def test_no_next_redirects_to_root(self):
+        """When 'next' is absent, user is redirected to /."""
+        response = self._call_loginview('/login?token=t', self.staff_user)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['Location'], '/')
+
+    def test_admin_next_non_staff_returns_403(self):
+        """A non-staff user with next=/admin/... gets a 403."""
+        response = self._call_loginview('/login?token=t&next=/admin/metadata/', self.regular_user)
+        self.assertEqual(response.status_code, 403)
+
+    def test_admin_next_staff_user_redirects(self):
+        """A staff user with next=/admin/... is redirected normally."""
+        response = self._call_loginview('/login?token=t&next=/admin/metadata/', self.staff_user)
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['Location'], '/admin/metadata/')
+
+    def test_external_next_with_admin_path_redirects_to_root(self):
+        """An external URL that contains /admin/ in the path is still rejected."""
+        response = self._call_loginview(
+            '/login?token=t&next=https://evil.example.com/admin/',
+            self.staff_user,
+        )
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(response['Location'], '/')
 
 
 class ApiAuthDecoratorTest(SimpleTestCase):
