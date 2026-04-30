@@ -366,6 +366,53 @@ class Festival(EolasModel):
 				g.add((start_day_bnode, rdflib.TIME.MonthOfYear, month_uri))
 		return g
 
+class FestivalPeriod(EolasModel):
+	rdf_type = EOLAS_NS.FestivalPeriod
+	category = Category.TEMPORAL
+	name = RDFNameField(unique=False)
+	festival = RDFForeignKey(
+		Festival,
+		on_delete=models.CASCADE,
+		null=False,
+		blank=False,
+		rdf_predicate=EOLAS_NS.periodOf,
+		rdf_label="Period of",
+		rdf_inverse_predicate=EOLAS_NS.hasPeriod,
+		rdf_inverse_label="Has Period",
+		db_comment="Festival this period belongs to.",
+	)
+	start_day = RDFIntegerField(
+		null=True,
+		blank=True,
+		verbose_name=_('start day'),
+		rdf_predicate=EOLAS_NS.periodStartDay,
+		rdf_label="Start day",
+		db_comment="Day of month this period starts.",
+	)
+	start_month = RDFForeignKey(
+		Month,
+		on_delete=models.RESTRICT,
+		null=True,
+		blank=True,
+		related_name='festival_periods',
+		rdf_predicate=EOLAS_NS.periodStartMonth,
+		rdf_label="Start month",
+		db_comment="Month this period starts in.",
+	)
+	duration_days = RDFIntegerField(
+		null=True,
+		blank=True,
+		verbose_name=_('duration (days)'),
+		rdf_predicate=EOLAS_NS.periodDurationDays,
+		rdf_label="Duration (days)",
+		db_comment="Number of days this period lasts. Null means one day (if start_day set) or the entire month (if only start_month set).",
+	)
+	class Meta:
+		verbose_name = _('Festival Period')
+		verbose_name_plural = _('Festival Periods')
+		ordering = ['festival', 'start_month', 'start_day']
+		db_table_comment = "A temporal period associated with a festival."
+
 class Season(EolasModel):
 	rdf_type = DBPEDIA_NS.Season
 	category = Category.TEMPORAL

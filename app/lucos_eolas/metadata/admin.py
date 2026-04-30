@@ -193,6 +193,15 @@ class CreativeWorkTypeAdmin(EolasModelAdmin):
 		super().save_model(request, obj, form, change)
 eolasadmin.register(CreativeWorkType, CreativeWorkTypeAdmin)
 
+class FestivalPeriodInline(admin.TabularInline):
+	model = FestivalPeriod
+	extra = 1
+	fields = ['name', 'start_day', 'start_month', 'duration_days']
+
+class FestivalAdmin(EolasModelAdmin):
+	inlines = [FestivalPeriodInline]
+eolasadmin.register(Festival, FestivalAdmin)
+
 ## Register all the other models without any bespoke config
 app_models = apps.get_app_config('metadata').get_models()
 for model in app_models:
