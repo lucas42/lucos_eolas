@@ -301,6 +301,14 @@ class Month(EolasModel):
 		ordering = ['calendar', 'order_in_calendar']
 		unique_together = [['calendar', 'name'],['calendar', 'order_in_calendar']]
 
+	def to_json(self):
+		data = super().to_json()
+		# For months where temporal_month_code is not explicitly stored (non-Hebrew calendars),
+		# derive it from order_in_calendar using the standard M01–M12 format.
+		if not data.get('temporal_month_code'):
+			data['temporal_month_code'] = f'M{self.order_in_calendar:02d}'
+		return data
+
 	def __str__(self):
 		# Check if this name occurs multiple times (case-insensitive)
 		qs = Month.objects.filter(name__iexact=self.name)

@@ -1,6 +1,6 @@
 """
 Data migration to populate temporal_id on Calendar records and
-temporal_month_code on Month records, using the TC39 Temporal API identifiers.
+temporal_month_code on Hebrew Month records, using the TC39 Temporal API identifiers.
 
 Calendar temporal IDs (Temporal calendar identifier):
   Gregorian → "gregory"
@@ -9,17 +9,15 @@ Calendar temporal IDs (Temporal calendar identifier):
   Chinese   → "chinese"
   Hindu     → "indian"
 
-Month temporal month codes use the Temporal monthCode format: M01–M12,
-plus M06L for Adar II (Hebrew leap years). The code is derived from the
-calendar-specific ordering:
+Month temporal_month_code is only stored explicitly for Hebrew months, where the
+Temporal ordering (Tishrei-first) differs from eolas's ordering (Nisan-first).
+For all other calendars, temporal_month_code is derived on read from order_in_calendar
+using the formula M{order_in_calendar:02d} (e.g. month 9 → M09).
 
 Hebrew months (Tishrei-first, the ordering Temporal uses):
   Tishrei=M01, Cheshvan=M02, Kislev=M03, Tevet=M04, Shevat=M05,
   Adar(I)=M06, Adar II=M06L, Nisan=M07, Iyar=M08, Sivan=M09,
   Tammuz=M10, Av=M11, Elul=M12
-
-All other calendars: monthCode = "M" + zero-padded order_in_calendar,
-e.g. Zhēngyuè (Chinese month 1) → M01, Ramadan (Islamic month 9) → M09.
 """
 
 from django.db import migrations
@@ -35,6 +33,7 @@ CALENDAR_TEMPORAL_IDS = {
 }
 
 # Hebrew month names → Temporal monthCode (Tishrei-first / Temporal ordering)
+# Only Hebrew needs explicit codes — all other calendars match order_in_calendar.
 HEBREW_MONTH_CODES = {
     'tishrei': 'M01',
     'cheshvan': 'M02',
@@ -64,17 +63,16 @@ def populate_temporal_ids(apps, schema_editor):
             calendar.temporal_id = temporal_id
             calendar.save(update_fields=['temporal_id'])
 
-    # Set temporal_month_code on Month records
-    for month in Month.objects.select_related('calendar').all():
-        cal_name = month.calendar.name.lower() if month.calendar else ''
-        if cal_name == 'hebrew':
+    # Set temporal_month_code only for Hebrew months (where Temporal's Tishrei-first
+    # ordering differs from eolas's Nisan-first order_in_calendar).
+    # For all other calendars, Month.to_json() derives temporal_month_code from
+    # order_in_calendar on read, so no DB value is needed.
+    for calendar in Calendar.objects.filter(name__iexact='hebrew'):
+        for month in Month.objects.filter(calendar=calendar):
             code = HEBREW_MONTH_CODES.get(month.name.lower())
-        else:
-            # For all other calendars, derive from order_in_calendar
-            code = f'M{month.order_in_calendar:02d}'
-        if code:
-            month.temporal_month_code = code
-            month.save(update_fields=['temporal_month_code'])
+            if code:
+                month.temporal_month_code = code
+                month.save(update_fields=['temporal_month_code'])
 
 
 class Migration(migrations.Migration):
