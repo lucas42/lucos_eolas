@@ -252,6 +252,14 @@ class DayOfWeek(EolasModel):
 class Calendar(EolasModel):
 	rdf_type = EOLAS_NS.Calendar
 	category = Category.TEMPORAL
+	temporal_id = RDFCharField(
+		max_length=20,
+		null=True,
+		blank=True,
+		verbose_name=_('Temporal calendar ID'),
+		help_text=_('The calendar identifier used by the TC39 Temporal API (e.g. "gregory", "hebrew", "islamic", "chinese", "indian").'),
+		db_comment='TC39 Temporal calendar identifier for this calendar system.',
+	)
 	class Meta:
 		verbose_name = _('Calendar')
 		verbose_name_plural = _('Calendars')
@@ -278,6 +286,14 @@ class Month(EolasModel):
 		blank=False,
 		rdf_predicate=EOLAS_NS.orderInCalendar,
 		db_comment='Order of month in calendar.',
+	)
+	temporal_month_code = RDFCharField(
+		max_length=4,
+		null=True,
+		blank=True,
+		verbose_name=_('Temporal month code'),
+		help_text=_('The stable month code used by the TC39 Temporal API (e.g. "M01", "M07", "M06L" for Adar II). Stable across leap/non-leap years.'),
+		db_comment='TC39 Temporal monthCode for this month (stable across leap years).',
 	)
 	class Meta:
 		verbose_name = _('Month')
