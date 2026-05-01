@@ -131,6 +131,23 @@ class TypeListEndpointTest(TestCase):
 		self.assertIn('uri', cal_data)
 		self.assertEqual(cal_data['name'], 'Gregorian')
 
+	def test_month_temporal_month_code_falls_back_to_order_in_calendar(self):
+		# When temporal_month_code is not set, it should be derived from order_in_calendar
+		calendar = Calendar.objects.create(name='Gregorian')
+		Month.objects.create(name='September', calendar=calendar, order_in_calendar=9)
+		response = self.client.get('/metadata/month/list/', **self.AUTH)
+		item = response.json()[0]
+		self.assertEqual(item['temporal_month_code'], 'M09')
+
+	def test_month_temporal_month_code_uses_explicit_value_when_set(self):
+		# When temporal_month_code is set explicitly (e.g. Hebrew months), it overrides the fallback
+		calendar = Calendar.objects.create(name='Hebrew')
+		# Nisan is month 1 in eolas (Nisan-first), but M07 in Temporal (Tishrei-first)
+		Month.objects.create(name='Nisan', calendar=calendar, order_in_calendar=1, temporal_month_code='M07')
+		response = self.client.get('/metadata/month/list/', **self.AUTH)
+		item = response.json()[0]
+		self.assertEqual(item['temporal_month_code'], 'M07')
+
 	def test_multiple_items_all_returned(self):
 		DayOfWeek.objects.create(name='Friday', order=5)
 		DayOfWeek.objects.create(name='Saturday', order=6)
