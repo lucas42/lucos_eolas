@@ -47,26 +47,26 @@ def populate_festival_periods(apps, schema_editor):
             duration_days=16,
         )
 
-    # Chanukah: 8-day festival beginning on 25 Chislev in the Hebrew calendar.
-    chanukah = get_festival("Chanukah")
-    chislev = get_month("Chislev")
-    if chanukah and chislev:
+    # Hanukkah: 8-day festival beginning on 25 Kislev in the Hebrew calendar.
+    hanukkah = get_festival("Hanukkah")
+    kislev = get_month("Kislev")
+    if hanukkah and kislev:
         FestivalPeriod.objects.create(
-            name="Chanukah celebration",
-            festival=chanukah,
+            name="Hanukkah celebration",
+            festival=hanukkah,
             start_day=25,
-            start_month=chislev,
+            start_month=kislev,
             duration_days=8,
         )
 
-    # Allhalloween: themed music period starting 25th October, running 10 days
+    # Hallowe'en: themed music period starting 25th October, running 10 days
     # (to 3rd November), finishing safely before Bonfire Night on 5th November.
-    allhalloween = get_festival("Allhalloween")
+    halloween = get_festival("Hallowe'en")
     october = get_month("October")
-    if allhalloween and october:
+    if halloween and october:
         FestivalPeriod.objects.create(
             name="Hallowe'en themed music",
-            festival=allhalloween,
+            festival=halloween,
             start_day=25,
             start_month=october,
             duration_days=10,
