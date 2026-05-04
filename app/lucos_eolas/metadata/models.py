@@ -1,4 +1,5 @@
 import os
+from django.core.exceptions import ValidationError
 from django.db import models
 from django.utils.translation import gettext_lazy as _
 from django.utils import translation
@@ -430,14 +431,25 @@ class FestivalPeriod(EolasModel):
 	already captures it).  A period record should always say something *more*
 	than the defining day — a longer span, a thematic shift, a build-up.
 
-	A period's shape is given by ``start_day`` + ``start_month`` + ``duration_days``:
+	A period's shape is given by ``start_day`` + ``start_month`` + ``duration_days``.
+	Three combinations are valid; the fourth is rejected by :meth:`clean`:
 
-	* ``start_day`` is null and ``duration_days`` is null → the whole of
-	  ``start_month`` (e.g. "themed music throughout December").
-	* ``start_day`` set, ``duration_days`` null → a single day starting on
-	  ``start_day`` of ``start_month``.
-	* ``start_day`` set, ``duration_days`` set → a span of that length
-	  starting on ``start_day``; may cross into the following month.
+	+--------------+----------------+------------------------------------------+
+	| ``start_day``| ``duration_days``| meaning                                |
+	+==============+================+==========================================+
+	| null         | null           | the whole of ``start_month``             |
+	|              |                | (e.g. "themed music throughout December")|
+	+--------------+----------------+------------------------------------------+
+	| set          | null           | a single day: ``start_day`` of           |
+	|              |                | ``start_month``                          |
+	+--------------+----------------+------------------------------------------+
+	| set          | set            | a span of that length starting on        |
+	|              |                | ``start_day``; may cross into the        |
+	|              |                | following month                          |
+	+--------------+----------------+------------------------------------------+
+	| null         | set            | **invalid** — a duration without a start |
+	|              |                | day has no anchored meaning              |
+	+--------------+----------------+------------------------------------------+
 
 	See issue #226 for the rationale.
 	"""
@@ -480,16 +492,29 @@ class FestivalPeriod(EolasModel):
 		null=True,
 		blank=True,
 		verbose_name=_('duration (days)'),
-		help_text=_('Length of this period in days. Leave blank for a single day.'),
+		help_text=_('Length of this period in days. Leave blank for a single day or a whole month.'),
 		rdf_predicate=EOLAS_NS.periodDurationDays,
 		rdf_label="Duration (days)",
-		db_comment="Number of days this period lasts. Null means one day (if start_day set) or the entire month (if only start_month set).",
+		db_comment="Number of days this period lasts. Null means one day (if start_day set) or the entire start_month (if start_day null).",
 	)
 	class Meta:
 		verbose_name = _('Festival Period')
 		verbose_name_plural = _('Festival Periods')
 		ordering = ['festival', 'start_month', 'start_day']
 		db_table_comment = "A temporal period associated with a festival."
+
+	def clean(self):
+		super().clean()
+		# A duration without a start day has no anchored meaning -- see the
+		# table in this class's docstring.
+		if self.start_day is None and self.duration_days is not None:
+			raise ValidationError({
+				'duration_days': _(
+					'Cannot set a duration without a start day. '
+					'Leave duration blank for a whole-month period, '
+					'or set a start day.'
+				),
+			})
 
 class Season(EolasModel):
 	rdf_type = DBPEDIA_NS.Season
