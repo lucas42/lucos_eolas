@@ -3,7 +3,7 @@ import rdflib
 from urllib.parse import urlparse
 from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from .models import *
-from .checks import get_place_consistency_checks, get_wikipedia_slug_check
+from .checks import get_cached_checks
 from ..lucosauth.decorators import api_auth
 from django.utils import translation
 from django.conf import settings
@@ -17,14 +17,27 @@ DBPEDIA_NS = rdflib.Namespace("https://dbpedia.org/ontology/")
 LOC_NS = rdflib.Namespace("http://www.loc.gov/mads/rdf/v1#")
 WDT_NS = rdflib.Namespace("http://www.wikidata.org/prop/direct/")
 
+_PENDING_CHECK = {
+	'ok': False,
+	'techDetail': 'Checks pending — background recompute not yet complete',
+	'failThreshold': 3,
+}
+
+_COLD_CACHE_CHECKS = {
+	'no-circular-containment': _PENDING_CHECK,
+	'no-real-place-in-fictional': _PENDING_CHECK,
+	'places-in-universe': _PENDING_CHECK,
+	'no-invalid-wikipedia-slugs': _PENDING_CHECK,
+}
+
+
 def info(request):
-	# Both check functions handle their own exceptions and always return ok:false with debug on failure.
+	# Check results are precomputed by a background thread and cached.
+	# On cold start (before the first recompute completes) we return pending placeholders.
+	checks = get_cached_checks() or _COLD_CACHE_CHECKS
 	output = {
 		'system': "lucos_eolas",
-		'checks': {
-			**get_place_consistency_checks(),
-			'no-invalid-wikipedia-slugs': get_wikipedia_slug_check(),
-		},
+		'checks': checks,
 		'metrics': {},
 		'ci': {
 			'circle': "gh/lucas42/lucos_eolas",
