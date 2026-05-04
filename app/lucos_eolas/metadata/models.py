@@ -344,20 +344,46 @@ class HistoricalEvent(EolasModel):
 		db_table_comment = "A notable thing that happened in the past."
 
 class Festival(EolasModel):
+	"""A recurring celebration or event.
+
+	Temporal modelling: ``day_of_month``/``month`` capture the festival's
+	**defining day** — the specific calendar date the festival is "about" (e.g.
+	25 December for Christmas, 31 October for Hallowe'en).  Additional thematic
+	windows around that day — multi-day observances, build-up periods, themed
+	music seasons, etc. — are modelled as separate :class:`FestivalPeriod`
+	records linked back to the festival.
+
+	The two are **additive, not alternatives**:
+
+	* A festival may have ``day_of_month``/``month`` set, one or more
+	  ``FestivalPeriod`` records, both, or neither (e.g. movable feasts that
+	  follow a lunar/solar rule and are computed elsewhere).
+	* ``FestivalPeriod`` is **not** a replacement for ``day_of_month``.  A
+	  festival with only ``day_of_month`` is fully specified — no period record
+	  is required.
+	* Do **not** create a ``FestivalPeriod`` that merely duplicates the
+	  defining day (e.g. a 1-day "Christmas Day" period when ``day_of_month=25``
+	  already captures that — it adds noise and breaks the semantic split).
+
+	``day_of_month``/``month`` is permanent, not transitional.  See issue #226.
+	"""
 	rdf_type = EOLAS_NS.Festival
 	category = Category.TEMPORAL
 	day_of_month = models.IntegerField(
 		verbose_name=_('day of month'),
 		null=True,
 		blank=True,
-		db_comment='When a self starts.',
+		help_text=_("The day of the month on which the festival's defining day falls."),
+		db_comment='Day of the month of the festival\'s defining day.',
 	)
 	month = models.ForeignKey(
 		Month,
 		on_delete=models.RESTRICT,
 		null=True,
 		blank=True,
-		db_comment='When a self starts.',
+		verbose_name=_('month'),
+		help_text=_("The month in which the festival's defining day falls."),
+		db_comment='Month of the festival\'s defining day.',
 	)
 	commemorates = RDFForeignKey(
 		HistoricalEvent,
@@ -391,6 +417,30 @@ class Festival(EolasModel):
 		return g
 
 class FestivalPeriod(EolasModel):
+	"""An additional temporal window associated with a :class:`Festival`.
+
+	A ``FestivalPeriod`` models a thematic window *around* a festival —
+	multi-day observances, build-up periods, themed music seasons, cross-month
+	stretches, etc.  It is **additive** to the festival's defining day
+	(``Festival.day_of_month``/``Festival.month``), not a replacement for it.
+	See the docstring on :class:`Festival` for the full semantic split.
+
+	**Do not** create a ``FestivalPeriod`` whose only purpose is to repeat the
+	defining day (e.g. a 1-day period for Christmas Day when ``day_of_month=25``
+	already captures it).  A period record should always say something *more*
+	than the defining day — a longer span, a thematic shift, a build-up.
+
+	A period's shape is given by ``start_day`` + ``start_month`` + ``duration_days``:
+
+	* ``start_day`` is null and ``duration_days`` is null → the whole of
+	  ``start_month`` (e.g. "themed music throughout December").
+	* ``start_day`` set, ``duration_days`` null → a single day starting on
+	  ``start_day`` of ``start_month``.
+	* ``start_day`` set, ``duration_days`` set → a span of that length
+	  starting on ``start_day``; may cross into the following month.
+
+	See issue #226 for the rationale.
+	"""
 	rdf_type = EOLAS_NS.FestivalPeriod
 	category = Category.TEMPORAL
 	name = RDFNameField(unique=False)
@@ -409,6 +459,7 @@ class FestivalPeriod(EolasModel):
 		null=True,
 		blank=True,
 		verbose_name=_('start day'),
+		help_text=_('Day of the month on which this period begins. Leave blank for a whole-month period.'),
 		rdf_predicate=EOLAS_NS.periodStartDay,
 		rdf_label="Start day",
 		db_comment="Day of month this period starts.",
@@ -419,6 +470,8 @@ class FestivalPeriod(EolasModel):
 		null=True,
 		blank=True,
 		related_name='festival_periods',
+		verbose_name=_('start month'),
+		help_text=_('The month in which this period begins.'),
 		rdf_predicate=EOLAS_NS.periodStartMonth,
 		rdf_label="Start month",
 		db_comment="Month this period starts in.",
@@ -427,6 +480,7 @@ class FestivalPeriod(EolasModel):
 		null=True,
 		blank=True,
 		verbose_name=_('duration (days)'),
+		help_text=_('Length of this period in days. Leave blank for a single day.'),
 		rdf_predicate=EOLAS_NS.periodDurationDays,
 		rdf_label="Duration (days)",
 		db_comment="Number of days this period lasts. Null means one day (if start_day set) or the entire month (if only start_month set).",
