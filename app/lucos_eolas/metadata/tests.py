@@ -1,9 +1,13 @@
+from django.core.cache import cache
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.contrib.auth.models import User
 from unittest.mock import patch, MagicMock, call
-from .checks import get_place_consistency_checks, get_wikipedia_slug_check, _check_no_invalid_wikipedia_slugs, UNIVERSE_PLACE_ID
-from .models import DayOfWeek, Calendar, Month, HistoricalEvent, Festival, FestivalPeriod
 from django.core.exceptions import ValidationError
+from .checks import (
+    get_place_consistency_checks, get_wikipedia_slug_check, _check_no_invalid_wikipedia_slugs,
+    UNIVERSE_PLACE_ID, refresh_check_cache, get_cached_checks, CHECKS_CACHE_KEY,
+)
+from .models import DayOfWeek, Calendar, Month, HistoricalEvent, Festival, FestivalPeriod
 from .views import _safe_local_redirect
 
 
@@ -22,6 +26,123 @@ class InfoEndpointTest(TestCase):
 		self.assertEqual(data['system'], 'lucos_eolas')
 		self.assertIn('checks', data)
 		self.assertIn('ci', data)
+
+
+class InfoEndpointCacheTest(TestCase):
+	"""/_info reads from cache and returns pending placeholders on cold start."""
+
+	def setUp(self):
+		cache.clear()
+
+	def tearDown(self):
+		cache.clear()
+
+	def test_cold_cache_returns_pending_for_all_checks(self):
+		"""When cache is empty, /_info returns a pending placeholder for each check."""
+		response = self.client.get('/_info')
+		self.assertEqual(response.status_code, 200)
+		data = response.json()
+		for check_name in [
+			'no-circular-containment',
+			'no-real-place-in-fictional',
+			'places-in-universe',
+			'no-invalid-wikipedia-slugs',
+		]:
+			self.assertIn(check_name, data['checks'])
+			check = data['checks'][check_name]
+			self.assertFalse(check['ok'])
+			self.assertIn('pending', check['techDetail'].lower())
+			self.assertIn('failThreshold', check)
+
+	@patch('lucos_eolas.metadata.views.get_cached_checks')
+	def test_warm_cache_returns_cached_results(self, mock_get_cached):
+		"""When cache is populated, /_info returns the cached check results."""
+		fake_checks = {
+			'no-circular-containment': {'ok': True, 'techDetail': 'No cycles found'},
+			'no-real-place-in-fictional': {'ok': True, 'techDetail': 'All good'},
+			'places-in-universe': {'ok': False, 'techDetail': 'BFS check', 'debug': 'Orphan found'},
+			'no-invalid-wikipedia-slugs': {'ok': True, 'techDetail': 'All valid'},
+		}
+		mock_get_cached.return_value = fake_checks
+		response = self.client.get('/_info')
+		self.assertEqual(response.status_code, 200)
+		data = response.json()
+		self.assertEqual(data['checks'], fake_checks)
+
+
+class RefreshCheckCacheTest(TestCase):
+	"""refresh_check_cache() populates the Django cache; get_cached_checks() reads it."""
+
+	def setUp(self):
+		cache.clear()
+
+	def tearDown(self):
+		cache.clear()
+
+	@patch('lucos_eolas.metadata.checks.get_place_consistency_checks')
+	@patch('lucos_eolas.metadata.checks.get_wikipedia_slug_check')
+	def test_refresh_stores_all_checks(self, mock_wiki, mock_place):
+		"""refresh_check_cache() merges place and slug checks and stores them."""
+		mock_place.return_value = {
+			'no-circular-containment': {'ok': True, 'techDetail': 'ok'},
+			'no-real-place-in-fictional': {'ok': True, 'techDetail': 'ok'},
+			'places-in-universe': {'ok': True, 'techDetail': 'ok'},
+		}
+		mock_wiki.return_value = {'ok': True, 'techDetail': 'ok'}
+
+		refresh_check_cache()
+
+		cached = get_cached_checks()
+		self.assertIsNotNone(cached)
+		self.assertIn('no-circular-containment', cached)
+		self.assertIn('no-real-place-in-fictional', cached)
+		self.assertIn('places-in-universe', cached)
+		self.assertIn('no-invalid-wikipedia-slugs', cached)
+		self.assertTrue(cached['no-circular-containment']['ok'])
+		self.assertTrue(cached['no-invalid-wikipedia-slugs']['ok'])
+
+	@patch('lucos_eolas.metadata.checks.get_place_consistency_checks')
+	@patch('lucos_eolas.metadata.checks.get_wikipedia_slug_check')
+	def test_refresh_preserves_failing_checks(self, mock_wiki, mock_place):
+		"""A failing check result is stored verbatim (not overridden to pass)."""
+		mock_place.return_value = {
+			'no-circular-containment': {'ok': False, 'techDetail': 'x', 'debug': 'cycle at A'},
+			'no-real-place-in-fictional': {'ok': True, 'techDetail': 'ok'},
+			'places-in-universe': {'ok': True, 'techDetail': 'ok'},
+		}
+		mock_wiki.return_value = {'ok': True, 'techDetail': 'ok'}
+
+		refresh_check_cache()
+
+		cached = get_cached_checks()
+		self.assertFalse(cached['no-circular-containment']['ok'])
+		self.assertEqual(cached['no-circular-containment']['debug'], 'cycle at A')
+
+	def test_get_cached_checks_returns_none_before_refresh(self):
+		"""get_cached_checks() returns None when nothing has been cached yet."""
+		self.assertIsNone(get_cached_checks())
+
+	@patch('lucos_eolas.metadata.checks.get_place_consistency_checks')
+	@patch('lucos_eolas.metadata.checks.get_wikipedia_slug_check')
+	def test_refresh_overwrites_previous_cache(self, mock_wiki, mock_place):
+		"""A second refresh_check_cache() call replaces the previous cached value."""
+		mock_place.return_value = {
+			'no-circular-containment': {'ok': True, 'techDetail': 'ok'},
+			'no-real-place-in-fictional': {'ok': True, 'techDetail': 'ok'},
+			'places-in-universe': {'ok': True, 'techDetail': 'ok'},
+		}
+		mock_wiki.return_value = {'ok': True, 'techDetail': 'ok'}
+		refresh_check_cache()
+
+		mock_place.return_value = {
+			'no-circular-containment': {'ok': False, 'techDetail': 'x', 'debug': 'cycle'},
+			'no-real-place-in-fictional': {'ok': True, 'techDetail': 'ok'},
+			'places-in-universe': {'ok': True, 'techDetail': 'ok'},
+		}
+		refresh_check_cache()
+
+		cached = get_cached_checks()
+		self.assertFalse(cached['no-circular-containment']['ok'])
 
 
 class OntologyEndpointTest(SimpleTestCase):

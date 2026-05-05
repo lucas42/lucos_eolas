@@ -242,3 +242,26 @@ def get_wikipedia_slug_check():
 			'techDetail': 'Checks that all Wikipedia slugs produce valid URIs for RDF export',
 			'debug': 'An unexpected error occurred',
 		}
+
+
+CHECKS_CACHE_KEY = 'eolas_info_checks'
+
+
+def refresh_check_cache():
+	"""Recompute all info checks and store results in the Django cache.
+
+	Called by the background thread in apps.py every 5 minutes so that
+	the /_info endpoint can return pre-computed results quickly.
+	"""
+	from django.core.cache import cache
+	results = {
+		**get_place_consistency_checks(),
+		'no-invalid-wikipedia-slugs': get_wikipedia_slug_check(),
+	}
+	cache.set(CHECKS_CACHE_KEY, results, timeout=None)
+
+
+def get_cached_checks():
+	"""Return cached check results, or None if the cache has not been populated yet."""
+	from django.core.cache import cache
+	return cache.get(CHECKS_CACHE_KEY)
