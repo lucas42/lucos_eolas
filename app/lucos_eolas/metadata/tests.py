@@ -2,7 +2,8 @@ from django.test import SimpleTestCase, TestCase, override_settings
 from django.contrib.auth.models import User
 from unittest.mock import patch, MagicMock, call
 from .checks import get_place_consistency_checks, get_wikipedia_slug_check, _check_no_invalid_wikipedia_slugs, UNIVERSE_PLACE_ID
-from .models import DayOfWeek, Calendar, Month, HistoricalEvent
+from .models import DayOfWeek, Calendar, Month, HistoricalEvent, Festival, FestivalPeriod
+from django.core.exceptions import ValidationError
 from .views import _safe_local_redirect
 
 
@@ -488,3 +489,44 @@ class WikipediaSlugChecksTest(SimpleTestCase):
 		result = get_wikipedia_slug_check()
 		self.assertIn('ok', result)
 		self.assertIn('techDetail', result)
+
+
+class FestivalPeriodValidationTest(TestCase):
+	"""FestivalPeriod.clean() rejects ambiguous shape combinations.
+
+	See the table in FestivalPeriod's docstring for the full set of valid and
+	invalid (start_day, duration_days) combinations.
+	"""
+
+	@classmethod
+	def setUpTestData(cls):
+		cls.calendar = Calendar.objects.create(name='Gregorian')
+		cls.month = Month.objects.create(name='December', calendar=cls.calendar, order_in_calendar=12)
+		cls.festival = Festival.objects.create(name='Christmas', day_of_month=25, month=cls.month)
+
+	def _build(self, *, start_day, duration_days):
+		return FestivalPeriod(
+			name='test period',
+			festival=self.festival,
+			start_day=start_day,
+			start_month=self.month,
+			duration_days=duration_days,
+		)
+
+	def test_whole_month_period_is_valid(self):
+		"""start_day null + duration_days null = the whole start_month."""
+		self._build(start_day=None, duration_days=None).full_clean()
+
+	def test_single_day_period_is_valid(self):
+		"""start_day set + duration_days null = a single day."""
+		self._build(start_day=25, duration_days=None).full_clean()
+
+	def test_explicit_span_period_is_valid(self):
+		"""start_day set + duration_days set = a span starting on start_day."""
+		self._build(start_day=25, duration_days=8).full_clean()
+
+	def test_duration_without_start_day_is_rejected(self):
+		"""start_day null + duration_days set has no anchored meaning."""
+		with self.assertRaises(ValidationError) as cm:
+			self._build(start_day=None, duration_days=8).full_clean()
+		self.assertIn('duration_days', cm.exception.error_dict)
