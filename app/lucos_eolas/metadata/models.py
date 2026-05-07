@@ -611,8 +611,10 @@ class LanguageFamily(EolasModel):
 		return g
 
 	def get_absolute_url(self):
-		# 'qli' is used here for language isolates, but dosen't appear in iso639-5, nor the library of congress list, so needs a local URI
-		if self.pk == "qli":
+		# Synthetic families (qli for language isolates, qsp for ISO 639 special codes) don't
+		# appear in iso639-5 or the library of congress list, so they need local URIs.
+		LOCAL_FAMILY_CODES = {"qli", "qsp"}
+		if self.pk in LOCAL_FAMILY_CODES:
 			return f"{BASE_URL}/metadata/{self._meta.model_name}/{self.pk}/"
 		# For other language families, use the library of congress URI
 		else:

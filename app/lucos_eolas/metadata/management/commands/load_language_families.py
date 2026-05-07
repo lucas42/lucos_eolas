@@ -1,7 +1,7 @@
 import requests
 from django.core.management.base import BaseCommand
 from django.db import transaction
-from lucos_eolas.metadata.models import LanguageFamily
+from lucos_eolas.metadata.models import Language, LanguageFamily
 
 HEADERS = {"Accept": "application/ld+json"}
 ROOT_URI = "https://id.loc.gov/vocabulary/iso639-5.jsonld"
@@ -12,6 +12,7 @@ class Command(BaseCommand):
 
 	def handle(self, *args, **options):
 		self._process_isolates()
+		self._process_special_codes()
 		self.stdout.write("Fetching top-level ISO 639-5 families...")
 		resp = requests.get(ROOT_URI, headers=HEADERS, allow_redirects=True)
 		resp.raise_for_status()
@@ -66,3 +67,22 @@ class Command(BaseCommand):
 		)
 		action = "Created" if created else "Updated"
 		self.stdout.write(f"{action}: language isolates")
+
+	# Create a pseudo family for ISO 639 special codes (meta-codes with no parent in ISO 639-5),
+	# and seed it with zxx (no linguistic content), the only meta-code that warrants modelling.
+	# NB: this isn't included in ISO 639-5, so the code here is invented
+	def _process_special_codes(self):
+		family, created = LanguageFamily.objects.update_or_create(
+			code="qsp", # Codes qaa-qtz are reserved for local use, so this won't clash with a future ISO 639 Code
+			defaults={"name": "ISO 639 special codes"},
+		)
+		action = "Created" if created else "Updated"
+		self.stdout.write(f"{action}: ISO 639 special codes")
+
+		# zxx — no linguistic content (used for instrumental/non-verbal tracks)
+		lang, lang_created = Language.objects.update_or_create(
+			code="zxx",
+			defaults={"name": "No linguistic content", "family": family},
+		)
+		lang_action = "Created" if lang_created else "Updated"
+		self.stdout.write(f"{lang_action}: zxx → No linguistic content")
