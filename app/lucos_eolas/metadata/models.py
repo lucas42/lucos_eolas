@@ -32,6 +32,15 @@ class EolasModel(models.Model):
 	def get_absolute_url(self):
 		return f"{BASE_URL}/metadata/{self._meta.model_name}/{self.pk}/"
 
+	def get_webhook_url(self):
+		"""Return the URL to include in loganne webhook events.
+
+		Defaults to get_absolute_url(). Override on models whose canonical
+		identifier is an external URI (e.g. Library of Congress) so that
+		arachne receives an eolas-hosted URL it can actually fetch.
+		"""
+		return self.get_absolute_url()
+
 	def to_json(self):
 		"""Serialise this item to a JSON-ready dict.
 
@@ -619,6 +628,13 @@ class LanguageFamily(EolasModel):
 		# For other language families, use the library of congress URI
 		else:
 			return f"http://id.loc.gov/vocabulary/iso639-5/{self.pk}"
+
+	def get_webhook_url(self):
+		# Always use the eolas-hosted URL for webhooks, regardless of whether the
+		# canonical identifier is the LoC URI. Arachne fetches this URL to retrieve
+		# eolas's RDF — sending the LoC URI causes arachne to fetch LoC's JSON-LD,
+		# which uses LoC-internal type vocabularies that fail arachne's validator.
+		return f"{BASE_URL}/metadata/{self._meta.model_name}/{self.pk}/"
 
 class Language(EolasModel):
 	rdf_type = LOC_NS.Language

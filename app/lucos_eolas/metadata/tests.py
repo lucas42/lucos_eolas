@@ -676,6 +676,31 @@ class LanguageFamilyUrlTest(TestCase):
 		self.assertEqual(url, 'http://id.loc.gov/vocabulary/iso639-5/gem')
 
 
+class LanguageFamilyWebhookUrlTest(TestCase):
+	"""LanguageFamily.get_webhook_url always returns an eolas-hosted URL.
+
+	get_absolute_url() returns the LoC canonical URI for standard families, but
+	arachne cannot ingest LoC's JSON-LD (wrong type vocabularies). The webhook
+	URL must always point at eolas so arachne fetches eolas's own RDF.
+	"""
+
+	def test_standard_family_webhook_url_is_eolas_hosted(self):
+		family = LanguageFamily(code='gem', name='Germanic languages')
+		url = family.get_webhook_url()
+		self.assertIn('/metadata/languagefamily/gem/', url)
+		self.assertNotIn('id.loc.gov', url)
+
+	def test_synthetic_family_webhook_url_matches_absolute_url(self):
+		family = LanguageFamily(code='qli', name='language isolates')
+		self.assertEqual(family.get_webhook_url(), family.get_absolute_url())
+
+	def test_base_model_webhook_url_defaults_to_absolute_url(self):
+		"""EolasModel.get_webhook_url defaults to get_absolute_url for models that don't override it."""
+		from lucos_eolas.metadata.models import Weather
+		item = Weather(name='Sunny')
+		self.assertEqual(item.get_webhook_url(), item.get_absolute_url())
+
+
 # ─── load_language_families Management Command Tests ─────────────────────────────
 
 class LoadLanguageFamiliesSpecialCodesTest(TestCase):
