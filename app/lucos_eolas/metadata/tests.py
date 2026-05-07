@@ -7,7 +7,7 @@ from .checks import (
     get_place_consistency_checks, get_wikipedia_slug_check, _check_no_invalid_wikipedia_slugs,
     UNIVERSE_PLACE_ID, refresh_check_cache, get_cached_checks, CHECKS_CACHE_KEY,
 )
-from .models import DayOfWeek, Calendar, Month, HistoricalEvent, Festival, FestivalPeriod
+from .models import DayOfWeek, Calendar, Month, HistoricalEvent, Festival, FestivalPeriod, Language, LanguageFamily
 from .views import _safe_local_redirect
 
 
@@ -651,3 +651,63 @@ class FestivalPeriodValidationTest(TestCase):
 		with self.assertRaises(ValidationError) as cm:
 			self._build(start_day=None, duration_days=8).full_clean()
 		self.assertIn('duration_days', cm.exception.error_dict)
+
+
+# ─── Language Family URL Tests ──────────────────────────────────────────────────
+
+class LanguageFamilyUrlTest(TestCase):
+	"""LanguageFamily.get_absolute_url returns local URIs for synthetic families."""
+
+	def test_qli_uses_local_uri(self):
+		family = LanguageFamily(code='qli', name='language isolates')
+		url = family.get_absolute_url()
+		self.assertIn('/metadata/languagefamily/qli/', url)
+		self.assertNotIn('id.loc.gov', url)
+
+	def test_qsp_uses_local_uri(self):
+		family = LanguageFamily(code='qsp', name='ISO 639 special codes')
+		url = family.get_absolute_url()
+		self.assertIn('/metadata/languagefamily/qsp/', url)
+		self.assertNotIn('id.loc.gov', url)
+
+	def test_standard_family_uses_loc_uri(self):
+		family = LanguageFamily(code='gem', name='Germanic languages')
+		url = family.get_absolute_url()
+		self.assertEqual(url, 'http://id.loc.gov/vocabulary/iso639-5/gem')
+
+
+# ─── load_language_families Management Command Tests ─────────────────────────────
+
+class LoadLanguageFamiliesSpecialCodesTest(TestCase):
+	"""_process_special_codes creates the qsp family and zxx language."""
+
+	def setUp(self):
+		from lucos_eolas.metadata.management.commands.load_language_families import Command
+		self.command = Command()
+		self.command.stdout = open('/dev/null', 'w')
+		self.command.style = type('style', (), {
+			'SUCCESS': lambda self, s: s,
+			'WARNING': lambda self, s: s,
+		})()
+
+	def tearDown(self):
+		self.command.stdout.close()
+
+	def test_creates_qsp_family(self):
+		self.command._process_special_codes()
+		family = LanguageFamily.objects.get(code='qsp')
+		self.assertEqual(family.name, 'ISO 639 special codes')
+		self.assertIsNone(family.parent)
+
+	def test_creates_zxx_language(self):
+		self.command._process_special_codes()
+		lang = Language.objects.get(code='zxx')
+		self.assertEqual(lang.name, 'No linguistic content')
+		self.assertEqual(lang.family.code, 'qsp')
+
+	def test_idempotent_on_rerun(self):
+		"""Running _process_special_codes twice should not raise or duplicate."""
+		self.command._process_special_codes()
+		self.command._process_special_codes()
+		self.assertEqual(LanguageFamily.objects.filter(code='qsp').count(), 1)
+		self.assertEqual(Language.objects.filter(code='zxx').count(), 1)
