@@ -112,6 +112,7 @@ class Category(models.TextChoices):
 	LITERARY = "Literary", _("Literary")
 
 class PlaceType(EolasModel):
+	rdf_type = EOLAS_NS.PlaceType
 	plural = RDFCharField(
 		max_length=255,
 		verbose_name=_('plural'),
@@ -577,6 +578,7 @@ class Number(EolasModel):
 		db_table_comment = "A numeric concept."
 
 class TransportMode(EolasModel):
+	rdf_type = EOLAS_NS.TransportMode
 	category = Category.TECHNOLOGICAL
 	plural = RDFCharField(
 		max_length=255,
@@ -798,6 +800,7 @@ class Organisation(EolasModel):
 		db_table_comment = "A group of people with a particular shared purpose"
 
 class CreativeWorkType(EolasModel):
+	rdf_type = EOLAS_NS.CreativeWorkType
 	plural = RDFCharField(
 		max_length=255,
 		verbose_name=_('plural'),
