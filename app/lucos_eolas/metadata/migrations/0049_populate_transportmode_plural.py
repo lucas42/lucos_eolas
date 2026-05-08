@@ -15,34 +15,34 @@ def populate_transportmode_plural(apps, schema_editor):
 
     # Vehicle classes
     vehicle_classes = [
-        ('aeroplane', 'aeroplanes'),
-        ('automobile', 'automobiles'),
         ('bicycle', 'bicycles'),
         ('boat', 'boats'),
         ('bus', 'buses'),
-        ('cab', 'cabs'),
+        ('car', 'cars'),
         ('caravan', 'caravans'),
-        ('chopper', 'choppers'),
-        ('coaster', 'coasters'),
-        ('combine', 'combines'),
+        ('combine harvester', 'combine harvesters'),
         ('donkey', 'donkeys'),
-        ('flying saucer', 'flying saucers'),
+        ('helicopter', 'helicopters'),
         ('horse', 'horses'),
         ('hot air balloon', 'hot air balloons'),
-        ('metro', 'metros'),
-        ('monocycle', 'monocycles'),
-        ('motorbike', 'motorbikes'),
-        ('rocket', 'rockets'),
-        ('sled', 'sleds'),
-        ('sub', 'subs'),
+        ('motorcycle', 'motorcycles'),
+        ('plane', 'planes'),
+        ('roller coaster', 'roller coasters'),
+        ('sledge', 'sledges'),
+        ('space rocket', 'space rockets'),
+        ('submarine', 'submarines'),
+        ('taxi', 'taxis'),
         ('train', 'trains'),
+        ('tube', 'tubes'),
+        ('ufo', 'ufos'),
+        ('unicycle', 'unicycles'),
     ]
 
     # Activity modes (uncountable — plural same as singular)
     activity_modes = [
-        ('ambulation', 'ambulation'),
         ('surfing', 'surfing'),
         ('swimming', 'swimming'),
+        ('walking', 'walking'),
     ]
 
     for singular, plural in vehicle_classes + activity_modes:
