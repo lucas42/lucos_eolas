@@ -193,6 +193,19 @@ class CreativeWorkTypeAdmin(EolasModelAdmin):
 		super().save_model(request, obj, form, change)
 eolasadmin.register(CreativeWorkType, CreativeWorkTypeAdmin)
 
+class TransportModeAdmin(EolasModelAdmin):
+	def save_model(self, request, obj, form, change):
+		obj.name = obj.name.lower()
+		obj.plural = obj.plural.lower()
+		super().save_model(request, obj, form, change)
+eolasadmin.register(TransportMode, TransportModeAdmin)
+
+class VehicleAdmin(EolasModelAdmin):
+	search_fields = ['name', 'alternate_names']
+	list_filter = ['type', 'fictional']
+	show_facets = admin.ShowFacets.ALWAYS
+eolasadmin.register(Vehicle, VehicleAdmin)
+
 class FestivalPeriodInline(admin.TabularInline):
 	model = FestivalPeriod
 	extra = 1

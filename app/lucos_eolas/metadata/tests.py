@@ -7,7 +7,7 @@ from .checks import (
     get_place_consistency_checks, get_wikipedia_slug_check, _check_no_invalid_wikipedia_slugs,
     UNIVERSE_PLACE_ID, refresh_check_cache, get_cached_checks, CHECKS_CACHE_KEY,
 )
-from .models import DayOfWeek, Calendar, Month, HistoricalEvent, Festival, FestivalPeriod, Language, LanguageFamily
+from .models import DayOfWeek, Calendar, Month, HistoricalEvent, Festival, FestivalPeriod, Language, LanguageFamily, TransportMode, Vehicle
 from .views import _safe_local_redirect
 
 
@@ -736,3 +736,54 @@ class LoadLanguageFamiliesSpecialCodesTest(TestCase):
 		self.command._process_special_codes()
 		self.assertEqual(LanguageFamily.objects.filter(code='qsp').count(), 1)
 		self.assertEqual(Language.objects.filter(code='zxx').count(), 1)
+
+
+# ─── TransportMode Tests ───────────────────────────────────────────────────────
+
+class TransportModeStrTest(TestCase):
+	"""TransportMode.__str__ returns the name in title case."""
+
+	def test_str_returns_title_case(self):
+		mode = TransportMode(name='train', plural='trains')
+		self.assertEqual(str(mode), 'Train')
+
+	def test_str_already_title_case(self):
+		mode = TransportMode(name='Aeroplane', plural='aeroplanes')
+		self.assertEqual(str(mode), 'Aeroplane')
+
+	def test_str_multi_word(self):
+		mode = TransportMode(name='hot air balloon', plural='hot air balloons')
+		self.assertEqual(str(mode), 'Hot Air Balloon')
+
+
+# ─── Vehicle Tests ─────────────────────────────────────────────────────────────
+
+class VehicleStrTest(TestCase):
+	"""Vehicle.__str__ disambiguation: shows type in parentheses only when name is shared."""
+
+	@classmethod
+	def setUpTestData(cls):
+		cls.boat = TransportMode.objects.create(name='boat', plural='boats')
+		cls.train = TransportMode.objects.create(name='train', plural='trains')
+
+	def test_unique_name_returns_just_name(self):
+		"""A vehicle whose name is unique returns just its name."""
+		vehicle = Vehicle.objects.create(name='Titanic', type=self.boat)
+		self.assertEqual(str(vehicle), 'Titanic')
+
+	def test_shared_name_includes_type(self):
+		"""When two vehicles share a name, str() disambiguates with the type."""
+		Vehicle.objects.create(name='Discovery', type=self.boat)
+		discovery_train = Vehicle.objects.create(name='Discovery', type=self.train)
+		self.assertIn('(', str(discovery_train))
+		self.assertIn('Discovery', str(discovery_train))
+		self.assertIn('Train', str(discovery_train))
+
+	def test_fictional_vehicle_can_be_created(self):
+		"""fictional=True is accepted and stored correctly."""
+		vehicle = Vehicle.objects.create(
+			name='Chitty Chitty Bang Bang',
+			type=self.boat,  # type used for convenience; fictional cars aren't boats, but test only cares about fictional flag
+			fictional=True,
+		)
+		self.assertTrue(vehicle.fictional)

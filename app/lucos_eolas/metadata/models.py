@@ -577,12 +577,61 @@ class Number(EolasModel):
 		db_table_comment = "A numeric concept."
 
 class TransportMode(EolasModel):
-	rdf_type = DBPEDIA_NS.MeanOfTransportation
 	category = Category.TECHNOLOGICAL
+	plural = RDFCharField(
+		max_length=255,
+		verbose_name=_('plural'),
+		null=False,
+		blank=False,
+		unique=True,
+	)
 	class Meta:
 		verbose_name = _('Mode of Transport')
 		verbose_name_plural = _('Modes of Transport')
 		ordering = ["name"]
+
+	def __str__(self):
+		return self.name.title()
+
+	def get_rdf(self, include_type_label):
+		uri = rdflib.URIRef(self.get_absolute_url())
+		g = super().get_rdf(include_type_label)
+		g.add((uri, rdflib.RDFS.subClassOf, DBPEDIA_NS.MeanOfTransportation))
+		g.add((uri, EOLAS_NS.hasCategory, EOLAS_NS[self.category]))
+		if include_type_label:
+			for lang, _ in settings.LANGUAGES:
+				with translation.override(lang):
+					g.add((EOLAS_NS[self.category], rdflib.SKOS.prefLabel, rdflib.Literal(translation.gettext(self.category), lang=lang)))
+		return g
+
+
+class Vehicle(EolasModel):
+	name = RDFNameField(unique=False)
+	type = RDFForeignKey(
+		TransportMode,
+		on_delete=models.RESTRICT,
+		null=False,
+		blank=False,
+	)
+	fictional = RDFBooleanField(
+		default=False,
+		verbose_name=_('fictional'),
+		rdf_predicate=EOLAS_NS.isFictional,
+		db_comment='Whether or not a vehicle is fictional.',
+	)
+	class Meta:
+		verbose_name = _('Vehicle')
+		verbose_name_plural = _('Vehicles')
+		ordering = ["name"]
+
+	def __str__(self):
+		qs = Vehicle.objects.filter(
+			models.Q(name__iexact=self.name) |
+			models.Q(alternate_names__contains=[self.name])
+		)
+		if qs.count() > 1:
+			return f"{self.name} ({self.type})"
+		return self.name
 
 class LanguageFamily(EolasModel):
 	rdf_type = EOLAS_NS.LanguageFamily
