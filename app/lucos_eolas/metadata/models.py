@@ -651,7 +651,7 @@ class LanguageFamily(EolasModel):
 	class Meta:
 		verbose_name = _('Language Family')
 		verbose_name_plural = _('Language Families')
-		ordering = ["code"]
+		ordering = ["name"]
 
 	def get_rdf(self, include_type_label):
 		uri = rdflib.URIRef(self.get_absolute_url())
@@ -708,7 +708,7 @@ class Language(EolasModel):
 	class Meta:
 		verbose_name = _('Language')
 		verbose_name_plural = _('Languages')
-		ordering = ["code"]
+		ordering = ["name"]
 
 	indigenous_to = RDFManyToManyField(
 		'Place',
