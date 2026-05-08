@@ -30,6 +30,7 @@ class RDFCharField(models.CharField):
 class RDFNameField(models.CharField):
 	rdf_type = rdflib.OWL.DatatypeProperty
 	def __init__(self, unique=True, **kwargs):
+		self._unique_override = unique
 		super().__init__(
 			max_length=255,
 			verbose_name=_('name'),
@@ -37,6 +38,18 @@ class RDFNameField(models.CharField):
 			blank=False,
 			unique=unique,
 		)
+
+	def deconstruct(self):
+		name, path, args, kwargs = super().deconstruct()
+		# Django's base Field.deconstruct() only includes `unique=True` (not False).
+		# RDFNameField defaults to unique=True, so when unique=False is explicitly
+		# set we must include it here — otherwise Django reconstructs the field with
+		# the default unique=True, silently applying a unique constraint the model
+		# author intended to suppress.
+		if not self.unique:
+			kwargs['unique'] = False
+		return name, path, args, kwargs
+
 	def get_rdf(self, obj, value=None):
 		g = rdflib.Graph()
 		uri = rdflib.URIRef(obj.get_absolute_url())
