@@ -84,8 +84,14 @@ def ontology_graph():
 					g.add((class_uri, rdflib.SKOS.prefLabel, rdflib.Literal(translation.gettext(model_class._meta.verbose_name), lang=lang)))
 			if model_class._meta.db_table_comment:
 				g.add((class_uri, rdflib.RDFS.comment, rdflib.Literal(model_class._meta.db_table_comment, lang='en')))
-			if (getattr(model_class, 'category', None)):
-				g.add((class_uri, EOLAS_NS.hasCategory, EOLAS_NS[getattr(model_class, 'category', None)]))
+			class_category = getattr(model_class, 'category', None)
+			if isinstance(class_category, Category):
+				# Only emit a type-level hasCategory when category is a class-level constant
+				# (e.g. Category.TECHNOLOGICAL on TransportMode).  Per-instance category fields
+				# (CharField on PlaceType/CreativeWorkType) are descriptors, not Category enum
+				# values — guarding with isinstance prevents building a garbage URI from the
+				# descriptor's string representation.
+				g.add((class_uri, EOLAS_NS.hasCategory, EOLAS_NS[class_category]))
 			for field in model_class._meta.get_fields():
 				if getattr(field, 'rdf_predicate', None):
 					with translation.override('en'):
