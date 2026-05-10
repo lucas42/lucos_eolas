@@ -75,6 +75,11 @@ def ontology_graph():
 		for lang, _ in settings.LANGUAGES:
 			with translation.override(lang):
 				g.add((category_uri, rdflib.SKOS.prefLabel, rdflib.Literal(category.label, lang=lang)))
+		colours = CATEGORY_COLOURS.get(category.value)
+		if colours:
+			g.add((category_uri, EOLAS_NS.displayBackgroundColour, rdflib.Literal(colours["background"])))
+			g.add((category_uri, EOLAS_NS.displayBorderColour, rdflib.Literal(colours["border"])))
+			g.add((category_uri, EOLAS_NS.displayTextColour, rdflib.Literal(colours["text"])))
 	for model_class in apps.get_app_config('metadata').get_models():
 		if (getattr(model_class, 'rdf_type', None)):
 			class_uri = model_class.rdf_type
@@ -163,6 +168,25 @@ def type_list(request, type):
 		return HttpResponse(status=404)
 	items = [obj.to_json() for obj in model_class.objects.select_related().all()]
 	return JsonResponse(items, safe=False)
+
+# No auth needed — category colour data is not sensitive and is consumed by build steps
+def categories_json(request):
+	"""Return all categories with their display colours as a JSON array.
+
+	Each entry has: name, slug, background, border, text.
+	All three colour fields are always present (never null).
+	"""
+	data = []
+	for category in Category:
+		colours = CATEGORY_COLOURS.get(category.value, {})
+		data.append({
+			"name": category.value,
+			"slug": category.value.lower(),
+			"background": colours.get("background", "#555555"),
+			"border": colours.get("border", "#6d6d6d"),
+			"text": colours.get("text", "#ffffff"),
+		})
+	return JsonResponse(data, safe=False)
 
 @api_auth
 def all_rdf(request):

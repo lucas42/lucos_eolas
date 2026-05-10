@@ -145,6 +145,71 @@ class RefreshCheckCacheTest(TestCase):
 		self.assertFalse(cached['no-circular-containment']['ok'])
 
 
+class CategoriesJsonEndpointTest(SimpleTestCase):
+	"""GET /metadata/categories.json — unauthenticated endpoint returning all category colours."""
+
+	def test_returns_200_without_auth(self):
+		response = self.client.get('/metadata/categories.json')
+		self.assertEqual(response.status_code, 200)
+
+	def test_returns_json(self):
+		response = self.client.get('/metadata/categories.json')
+		self.assertIn('application/json', response['Content-Type'])
+
+	def test_returns_list(self):
+		response = self.client.get('/metadata/categories.json')
+		data = response.json()
+		self.assertIsInstance(data, list)
+
+	def test_has_all_sixteen_categories(self):
+		response = self.client.get('/metadata/categories.json')
+		data = response.json()
+		self.assertEqual(len(data), 16)
+
+	def test_each_entry_has_required_fields(self):
+		response = self.client.get('/metadata/categories.json')
+		data = response.json()
+		for entry in data:
+			self.assertIn('name', entry)
+			self.assertIn('slug', entry)
+			self.assertIn('background', entry)
+			self.assertIn('border', entry)
+			self.assertIn('text', entry)
+
+	def test_no_null_colour_values(self):
+		response = self.client.get('/metadata/categories.json')
+		data = response.json()
+		for entry in data:
+			self.assertIsNotNone(entry['background'])
+			self.assertIsNotNone(entry['border'])
+			self.assertIsNotNone(entry['text'])
+
+	def test_slug_is_lowercase_name(self):
+		response = self.client.get('/metadata/categories.json')
+		data = response.json()
+		for entry in data:
+			self.assertEqual(entry['slug'], entry['name'].lower())
+
+	def test_known_category_has_correct_colours(self):
+		"""Musical category should have the same colours as the search component hardcode."""
+		response = self.client.get('/metadata/categories.json')
+		data = response.json()
+		musical = next(e for e in data if e['name'] == 'Musical')
+		self.assertEqual(musical['background'], '#000060')
+		self.assertEqual(musical['border'], '#000020')
+		self.assertEqual(musical['text'], '#ffffff')
+
+	def test_colours_are_hex_strings(self):
+		"""All colour values should be CSS hex strings starting with #."""
+		import re
+		hex_pattern = re.compile(r'^#[0-9a-fA-F]{3,8}$')
+		response = self.client.get('/metadata/categories.json')
+		data = response.json()
+		for entry in data:
+			for field in ('background', 'border', 'text'):
+				self.assertRegex(entry[field], hex_pattern, f"{entry['name']} {field} is not a valid hex colour")
+
+
 class OntologyEndpointTest(SimpleTestCase):
 	"""ontology endpoint returns RDF content without auth."""
 

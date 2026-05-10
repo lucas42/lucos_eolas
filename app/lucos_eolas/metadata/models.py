@@ -111,6 +111,30 @@ class Category(models.TextChoices):
 	DRAMATURGICAL = "Dramaturgical", _("Dramaturgical")
 	LITERARY = "Literary", _("Literary")
 
+# Canonical display colours for each category.
+# All three colours are specified explicitly for every category — no consumer-side
+# defaulting, no nullable fields.  The text colours were derived by reviewing
+# each category's background luminance; the existing lucos_search_component
+# fallback (#fff) is encoded here where it was the correct choice.
+CATEGORY_COLOURS = {
+	Category.PEOPLE:               {"background": "#044E00", "border": "#033100", "text": "#ffffff"},
+	Category.ANTHROPOLOGICAL:      {"background": "#8affe7", "border": "#068900", "text": "#000000"},
+	Category.ANTHROPOGEOGRAPHICAL: {"background": "#aed0db", "border": "#3f6674", "text": "#0c1a1b"},
+	Category.MUSICAL:              {"background": "#000060", "border": "#000020", "text": "#ffffff"},
+	Category.AQUATIC:              {"background": "#0085fe", "border": "#0036b1", "text": "#ffffff"},
+	Category.TERRESTRIAL:          {"background": "#652c17", "border": "#321200", "text": "#ffffff"},
+	Category.COSMIC:               {"background": "#15163a", "border": "#000000", "text": "#feffe8"},
+	Category.SUPERNATURAL:         {"background": "#f1ff5f", "border": "#674800", "text": "#352005"},
+	Category.HISTORICAL:           {"background": "#740909", "border": "#470202", "text": "#ffffff"},
+	Category.TEMPORAL:             {"background": "#fffc33", "border": "#7f7e00", "text": "#0f0f00"},
+	Category.MATHEMATICAL:         {"background": "#f53b0e", "border": "#7e3d2e", "text": "#ffffff"},
+	Category.TECHNOLOGICAL:        {"background": "#c70f7a", "border": "#8f125b", "text": "#ffffff"},
+	Category.METEOROLOGICAL:       {"background": "#ffffff", "border": "#333333", "text": "#000000"},
+	Category.META:                 {"background": "#4a5568", "border": "#2d3748", "text": "#ffffff"},
+	Category.DRAMATURGICAL:        {"background": "#5f0086", "border": "#59007d", "text": "#ffffff"},
+	Category.LITERARY:             {"background": "#a22400", "border": "#5e1500", "text": "#ffffff"},
+}
+
 class PlaceType(EolasModel):
 	rdf_type = EOLAS_NS.PlaceType
 	plural = RDFCharField(
