@@ -69,12 +69,24 @@ def ontology_graph():
 	g.add((EOLAS_NS.hasCategory, rdflib.SKOS.prefLabel, rdflib.Literal("has category", lang='en')))
 	g.add((EOLAS_NS.hasCategory, rdflib.RDFS.domain, rdflib.OWL.Class))
 	g.add((EOLAS_NS.hasCategory, rdflib.RDFS.range, EOLAS_NS.Category))
+	for pred_uri, label in [
+		(EOLAS_NS.displayBackgroundColour, "display background colour"),
+		(EOLAS_NS.displayBorderColour, "display border colour"),
+		(EOLAS_NS.displayTextColour, "display text colour"),
+	]:
+		g.add((pred_uri, rdflib.RDF.type, rdflib.OWL.DatatypeProperty))
+		g.add((pred_uri, rdflib.SKOS.prefLabel, rdflib.Literal(label, lang='en')))
+		g.add((pred_uri, rdflib.RDFS.domain, EOLAS_NS.Category))
+		g.add((pred_uri, rdflib.RDFS.range, rdflib.XSD.string))
 	for category in Category:
 		category_uri = EOLAS_NS[category.value]
 		g.add((category_uri, rdflib.RDF.type, EOLAS_NS.Category))
 		for lang, _ in settings.LANGUAGES:
 			with translation.override(lang):
 				g.add((category_uri, rdflib.SKOS.prefLabel, rdflib.Literal(category.label, lang=lang)))
+		g.add((category_uri, EOLAS_NS.displayBackgroundColour, rdflib.Literal(category.background)))
+		g.add((category_uri, EOLAS_NS.displayBorderColour, rdflib.Literal(category.border)))
+		g.add((category_uri, EOLAS_NS.displayTextColour, rdflib.Literal(category.text)))
 	for model_class in apps.get_app_config('metadata').get_models():
 		if (getattr(model_class, 'rdf_type', None)):
 			class_uri = model_class.rdf_type
@@ -163,6 +175,24 @@ def type_list(request, type):
 		return HttpResponse(status=404)
 	items = [obj.to_json() for obj in model_class.objects.select_related().all()]
 	return JsonResponse(items, safe=False)
+
+# No auth needed — category colour data is not sensitive and is consumed by build steps
+def categories_json(request):
+	"""Return all categories with their display colours as a JSON array.
+
+	Each entry has: name, slug, background, border, text.
+	All three colour fields are always present (never null).
+	"""
+	data = []
+	for category in Category:
+		data.append({
+			"name": category.value,
+			"slug": category.value.lower(),
+			"background": category.background,
+			"border": category.border,
+			"text": category.text,
+		})
+	return JsonResponse(data, safe=False)
 
 @api_auth
 def all_rdf(request):

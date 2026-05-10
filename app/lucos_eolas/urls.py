@@ -6,6 +6,7 @@ urlpatterns = [
 	re_path(r'^_info$', metadata_views.info),
 	re_path(r'^i18n/', include('django.conf.urls.i18n')),
 
+	path('metadata/categories.json', metadata_views.categories_json),
 	path('metadata/all/data/', metadata_views.all_rdf),
 	path('metadata/<slug:type>/list/', metadata_views.type_list),
 	# Linked Data HTTPRange-14 compliant endpoints
