@@ -178,13 +178,13 @@ def categories_json(request):
 	"""
 	data = []
 	for category in Category:
-		colours = CATEGORY_COLOURS.get(category.value, {})
+		colours = CATEGORY_COLOURS[category.value]
 		data.append({
 			"name": category.value,
 			"slug": category.value.lower(),
-			"background": colours.get("background", "#555555"),
-			"border": colours.get("border", "#6d6d6d"),
-			"text": colours.get("text", "#ffffff"),
+			"background": colours["background"],
+			"border": colours["border"],
+			"text": colours["text"],
 		})
 	return JsonResponse(data, safe=False)
 
