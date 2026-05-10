@@ -69,17 +69,24 @@ def ontology_graph():
 	g.add((EOLAS_NS.hasCategory, rdflib.SKOS.prefLabel, rdflib.Literal("has category", lang='en')))
 	g.add((EOLAS_NS.hasCategory, rdflib.RDFS.domain, rdflib.OWL.Class))
 	g.add((EOLAS_NS.hasCategory, rdflib.RDFS.range, EOLAS_NS.Category))
+	for pred_uri, label in [
+		(EOLAS_NS.displayBackgroundColour, "display background colour"),
+		(EOLAS_NS.displayBorderColour, "display border colour"),
+		(EOLAS_NS.displayTextColour, "display text colour"),
+	]:
+		g.add((pred_uri, rdflib.RDF.type, rdflib.OWL.DatatypeProperty))
+		g.add((pred_uri, rdflib.SKOS.prefLabel, rdflib.Literal(label, lang='en')))
+		g.add((pred_uri, rdflib.RDFS.domain, EOLAS_NS.Category))
+		g.add((pred_uri, rdflib.RDFS.range, rdflib.XSD.string))
 	for category in Category:
 		category_uri = EOLAS_NS[category.value]
 		g.add((category_uri, rdflib.RDF.type, EOLAS_NS.Category))
 		for lang, _ in settings.LANGUAGES:
 			with translation.override(lang):
 				g.add((category_uri, rdflib.SKOS.prefLabel, rdflib.Literal(category.label, lang=lang)))
-		colours = CATEGORY_COLOURS.get(category.value)
-		if colours:
-			g.add((category_uri, EOLAS_NS.displayBackgroundColour, rdflib.Literal(colours["background"])))
-			g.add((category_uri, EOLAS_NS.displayBorderColour, rdflib.Literal(colours["border"])))
-			g.add((category_uri, EOLAS_NS.displayTextColour, rdflib.Literal(colours["text"])))
+		g.add((category_uri, EOLAS_NS.displayBackgroundColour, rdflib.Literal(category.background)))
+		g.add((category_uri, EOLAS_NS.displayBorderColour, rdflib.Literal(category.border)))
+		g.add((category_uri, EOLAS_NS.displayTextColour, rdflib.Literal(category.text)))
 	for model_class in apps.get_app_config('metadata').get_models():
 		if (getattr(model_class, 'rdf_type', None)):
 			class_uri = model_class.rdf_type
@@ -178,13 +185,12 @@ def categories_json(request):
 	"""
 	data = []
 	for category in Category:
-		colours = CATEGORY_COLOURS[category.value]
 		data.append({
 			"name": category.value,
 			"slug": category.value.lower(),
-			"background": colours["background"],
-			"border": colours["border"],
-			"text": colours["text"],
+			"background": category.background,
+			"border": category.border,
+			"text": category.text,
 		})
 	return JsonResponse(data, safe=False)
 

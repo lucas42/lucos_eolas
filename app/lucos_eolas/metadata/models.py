@@ -1,11 +1,41 @@
 import os
 from django.core.exceptions import ValidationError
 from django.db import models
+from django.db.models.enums import ChoicesType
 from django.utils.translation import gettext_lazy as _
 from django.utils import translation
 from django.conf import settings
 from .fields import *
 import rdflib
+
+
+class CategoryChoicesType(ChoicesType):
+	"""Metaclass extending ChoicesType to support per-member colour attributes.
+
+	Members are defined as 5-tuples:
+	    NAME = value, background, border, text, label
+	The colour values (background, border, text) are extracted here and attached
+	as instance attributes on each enum member.  The remaining (value, label)
+	2-tuple is handed to the standard ChoicesType / StrEnum machinery unchanged.
+	"""
+
+	def __new__(metacls, classname, bases, classdict, **kwds):
+		colour_data = {}
+		for key in classdict._member_names:
+			value = classdict[key]
+			# Detect our extended 5-tuple: (str_value, background, border, text, label)
+			if isinstance(value, tuple) and len(value) == 5:
+				str_val, background, border, text, label = value
+				colour_data[key] = (background, border, text)
+				# Rewrite to a standard 2-tuple so ChoicesType and StrEnum handle it
+				dict.__setitem__(classdict, key, (str_val, label))
+		cls = super().__new__(metacls, classname, bases, classdict, **kwds)
+		for name, (background, border, text) in colour_data.items():
+			member = cls._member_map_[name]
+			member.background = background
+			member.border = border
+			member.text = text
+		return cls
 
 BASE_URL = os.environ.get("APP_ORIGIN")
 EOLAS_NS = rdflib.Namespace(f"{BASE_URL}/ontology/")
@@ -93,47 +123,35 @@ class EolasModel(models.Model):
 				g += field.get_rdf(self)
 		return g
 
-class Category(models.TextChoices):
-	PEOPLE = "People", _("People")
-	ANTHROPOLOGICAL = "Anthropological", _("Anthropological")
-	ANTHROPOGEOGRAPHICAL = "Anthropogeographical", _("Anthropogeographical")
-	MUSICAL = "Musical", _("Musical")
-	AQUATIC = "Aquatic", _("Aquatic")
-	TERRESTRIAL = "Terrestrial", _("Terrestrial")
-	COSMIC = "Cosmic", _("Cosmic")
-	SUPERNATURAL = "Supernatural", _("Supernatural")
-	HISTORICAL = "Historical", _("Historical")
-	TEMPORAL = "Temporal", _("Temporal")
-	MATHEMATICAL = "Mathematical", _("Mathematical")
-	TECHNOLOGICAL = "Technological", _("Technological")
-	METEOROLOGICAL = "Meteorological", _("Meteorological")
-	META = "Meta", _("Meta")
-	DRAMATURGICAL = "Dramaturgical", _("Dramaturgical")
-	LITERARY = "Literary", _("Literary")
+class Category(models.TextChoices, metaclass=CategoryChoicesType):
+	"""Enum of eolas categories.
 
-# Canonical display colours for each category.
-# All three colours are specified explicitly for every category — no consumer-side
-# defaulting, no nullable fields.  The text colours were derived by reviewing
-# each category's background luminance; the existing lucos_search_component
-# fallback (#fff) is encoded here where it was the correct choice.
-CATEGORY_COLOURS = {
-	Category.PEOPLE:               {"background": "#044E00", "border": "#033100", "text": "#ffffff"},
-	Category.ANTHROPOLOGICAL:      {"background": "#8affe7", "border": "#068900", "text": "#000000"},
-	Category.ANTHROPOGEOGRAPHICAL: {"background": "#aed0db", "border": "#3f6674", "text": "#0c1a1b"},
-	Category.MUSICAL:              {"background": "#000060", "border": "#000020", "text": "#ffffff"},
-	Category.AQUATIC:              {"background": "#0085fe", "border": "#0036b1", "text": "#ffffff"},
-	Category.TERRESTRIAL:          {"background": "#652c17", "border": "#321200", "text": "#ffffff"},
-	Category.COSMIC:               {"background": "#15163a", "border": "#000000", "text": "#feffe8"},
-	Category.SUPERNATURAL:         {"background": "#f1ff5f", "border": "#674800", "text": "#352005"},
-	Category.HISTORICAL:           {"background": "#740909", "border": "#470202", "text": "#ffffff"},
-	Category.TEMPORAL:             {"background": "#fffc33", "border": "#7f7e00", "text": "#0f0f00"},
-	Category.MATHEMATICAL:         {"background": "#f53b0e", "border": "#7e3d2e", "text": "#ffffff"},
-	Category.TECHNOLOGICAL:        {"background": "#c70f7a", "border": "#8f125b", "text": "#ffffff"},
-	Category.METEOROLOGICAL:       {"background": "#ffffff", "border": "#333333", "text": "#000000"},
-	Category.META:                 {"background": "#4a5568", "border": "#2d3748", "text": "#ffffff"},
-	Category.DRAMATURGICAL:        {"background": "#5f0086", "border": "#59007d", "text": "#ffffff"},
-	Category.LITERARY:             {"background": "#a22400", "border": "#5e1500", "text": "#ffffff"},
-}
+	Each member carries all 5 pieces of info in one place:
+	    NAME = value, background, border, text, label
+
+	The label (last element) is a lazy-translated string.  The three colour
+	values are always explicit — no consumer-side defaults.  CategoryChoicesType
+	extracts the colours before handing the standard 2-tuple (value, label) to
+	Django / StrEnum, then sets .background, .border, .text on each member.
+	"""
+
+	#                        value                   background   border     text       label
+	PEOPLE =               ("People",              "#044E00", "#033100", "#ffffff", _("People"))
+	ANTHROPOLOGICAL =      ("Anthropological",     "#8affe7", "#068900", "#000000", _("Anthropological"))
+	ANTHROPOGEOGRAPHICAL = ("Anthropogeographical","#aed0db", "#3f6674", "#0c1a1b", _("Anthropogeographical"))
+	MUSICAL =              ("Musical",             "#000060", "#000020", "#ffffff", _("Musical"))
+	AQUATIC =              ("Aquatic",             "#0085fe", "#0036b1", "#ffffff", _("Aquatic"))
+	TERRESTRIAL =          ("Terrestrial",         "#652c17", "#321200", "#ffffff", _("Terrestrial"))
+	COSMIC =               ("Cosmic",              "#15163a", "#000000", "#feffe8", _("Cosmic"))
+	SUPERNATURAL =         ("Supernatural",        "#f1ff5f", "#674800", "#352005", _("Supernatural"))
+	HISTORICAL =           ("Historical",          "#740909", "#470202", "#ffffff", _("Historical"))
+	TEMPORAL =             ("Temporal",            "#fffc33", "#7f7e00", "#0f0f00", _("Temporal"))
+	MATHEMATICAL =         ("Mathematical",        "#f53b0e", "#7e3d2e", "#ffffff", _("Mathematical"))
+	TECHNOLOGICAL =        ("Technological",       "#c70f7a", "#8f125b", "#ffffff", _("Technological"))
+	METEOROLOGICAL =       ("Meteorological",      "#ffffff", "#333333", "#000000", _("Meteorological"))
+	META =                 ("Meta",               "#4a5568", "#2d3748", "#ffffff", _("Meta"))
+	DRAMATURGICAL =        ("Dramaturgical",       "#5f0086", "#59007d", "#ffffff", _("Dramaturgical"))
+	LITERARY =             ("Literary",            "#a22400", "#5e1500", "#ffffff", _("Literary"))
 
 class PlaceType(EolasModel):
 	rdf_type = EOLAS_NS.PlaceType
