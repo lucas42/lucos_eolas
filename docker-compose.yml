@@ -28,6 +28,7 @@ services:
       - CLIENT_KEYS
       - LOGANNE_ENDPOINT
       - POSTGRES_PASSWORD
+      - AUTH_ORIGIN
       - AUTH_ORIGIN=https://auth.l42.eu
       - ENVIRONMENT
       - APP_ORIGIN
