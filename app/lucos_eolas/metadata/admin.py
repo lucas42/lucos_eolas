@@ -206,6 +206,19 @@ class VehicleAdmin(EolasModelAdmin):
 	show_facets = admin.ShowFacets.ALWAYS
 eolasadmin.register(Vehicle, VehicleAdmin)
 
+class PersonTypeAdmin(EolasModelAdmin):
+	def save_model(self, request, obj, form, change):
+		obj.name = obj.name.lower()
+		obj.plural = obj.plural.lower()
+		super().save_model(request, obj, form, change)
+eolasadmin.register(PersonType, PersonTypeAdmin)
+
+class PersonAdmin(EolasModelAdmin):
+	search_fields = ['name', 'alternate_names']
+	list_filter = ['type', 'is_fictional']
+	show_facets = admin.ShowFacets.ALWAYS
+eolasadmin.register(Person, PersonAdmin)
+
 class FestivalPeriodInline(admin.TabularInline):
 	model = FestivalPeriod
 	extra = 1

@@ -888,3 +888,75 @@ class CreativeWork(EolasModel):
 		verbose_name = _('Creative Work')
 		verbose_name_plural = _('Creative Works')
 		ordering = ["name"]
+
+class PersonType(EolasModel):
+	rdf_type = EOLAS_NS.PersonType
+	plural = RDFCharField(
+		max_length=255,
+		verbose_name=_('plural'),
+		null=False,
+		blank=False,
+		unique=True,
+	)
+	category = models.CharField(
+		choices=Category,
+		verbose_name=_('category'),
+		null=False,
+		blank=False,
+	)
+	class Meta:
+		verbose_name = _('Person Type')
+		verbose_name_plural = _('Person Types')
+		ordering = ["name"]
+
+	def __str__(self):
+		return self.name.title()
+
+	def get_rdf(self, include_type_label):
+		uri = rdflib.URIRef(self.get_absolute_url())
+		g = super().get_rdf(include_type_label)
+		g.add((uri, rdflib.RDFS.subClassOf, rdflib.FOAF.Person))
+		g.add((uri, EOLAS_NS.hasCategory, EOLAS_NS[self.category]))
+		if include_type_label:
+			for lang, _ in settings.LANGUAGES:
+				with translation.override(lang):
+					g.add((EOLAS_NS[self.category], rdflib.SKOS.prefLabel, rdflib.Literal(translation.gettext(self.category), lang=lang)))
+		return g
+
+class Person(EolasModel):
+	rdf_type = rdflib.FOAF.Person
+	name = RDFNameField(unique=False)
+	type = RDFForeignKey(
+		PersonType,
+		on_delete=models.RESTRICT,
+		null=False,
+		blank=False,
+	)
+	is_fictional = RDFBooleanField(
+		default=False,
+		verbose_name=_('fictional'),
+		rdf_predicate=EOLAS_NS.isFictional,
+		db_comment='Whether or not a person is fictional.',
+	)
+	class Meta:
+		verbose_name = _('Person')
+		verbose_name_plural = _('People')
+		ordering = ["name"]
+		db_table_comment = "A famous, fictional, or named-but-not-personal person."
+
+	def __str__(self):
+		qs = Person.objects.filter(
+			models.Q(name__iexact=self.name) |
+			models.Q(alternate_names__contains=[self.name])
+		)
+		if qs.count() > 1:
+			return f"{self.name} ({self.type})"
+		return self.name
+
+	def get_rdf(self, include_type_label):
+		uri = rdflib.URIRef(self.get_absolute_url())
+		g = super().get_rdf(include_type_label)
+		# Emit foaf:Person directly in addition to the PersonType sub-class URI
+		# so consumers get the well-known type without needing OWL inference.
+		g.add((uri, rdflib.RDF.type, rdflib.FOAF.Person))
+		return g
