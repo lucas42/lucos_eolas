@@ -69,6 +69,16 @@ def ontology_graph():
 	g.add((EOLAS_NS.hasCategory, rdflib.SKOS.prefLabel, rdflib.Literal("has category", lang='en')))
 	g.add((EOLAS_NS.hasCategory, rdflib.RDFS.domain, rdflib.OWL.Class))
 	g.add((EOLAS_NS.hasCategory, rdflib.RDFS.range, EOLAS_NS.Category))
+	g.add((EOLAS_NS.preferredIdentifier, rdflib.RDF.type, rdflib.OWL.ObjectProperty))
+	g.add((EOLAS_NS.preferredIdentifier, rdflib.RDF.type, rdflib.OWL.AsymmetricProperty))
+	g.add((EOLAS_NS.preferredIdentifier, rdflib.SKOS.prefLabel, rdflib.Literal("preferred identifier", lang='en')))
+	g.add((EOLAS_NS.preferredIdentifier, rdflib.RDFS.comment, rdflib.Literal(
+		"Subject URI declares the object URI as its preferred canonical identifier. "
+		"Used by the arachne search-index ingestor to pick the primary id for merged "
+		"owl:sameAs closures: arachne walks preferredIdentifier edges to find the "
+		"terminal URI (the one with no outgoing edge). Asymmetric: if A preferredIdentifier B, "
+		"then B preferredIdentifier A is false. Domain and range deliberately unconstrained — "
+		"the predicate can apply to any URI in the estate.", lang='en')))
 	for pred_uri, label in [
 		(EOLAS_NS.displayBackgroundColour, "display background colour"),
 		(EOLAS_NS.displayBorderColour, "display border colour"),
