@@ -225,6 +225,22 @@ class OntologyEndpointTest(SimpleTestCase):
 		response = self.client.get('/ontology', HTTP_ACCEPT='application/ld+json')
 		self.assertIn('application/ld+json', response['Content-Type'])
 
+	def test_ontology_includes_preferred_identifier(self):
+		import rdflib
+		response = self.client.get('/ontology')
+		g = rdflib.Graph()
+		g.parse(data=response.content, format='turtle')
+		preferred_id_uri = next(
+			(s for s in g.subjects() if str(s).endswith('/preferredIdentifier')),
+			None,
+		)
+		self.assertIsNotNone(preferred_id_uri, "preferredIdentifier term not found in ontology")
+		self.assertIn(
+			(preferred_id_uri, rdflib.RDF.type, rdflib.OWL.ObjectProperty),
+			g,
+			"preferredIdentifier is not declared as owl:ObjectProperty",
+		)
+
 
 class ApiAuthDecoratorTest(TestCase):
 	"""api_auth decorator enforces key authentication."""
