@@ -1,6 +1,9 @@
+import json
 import os
 import rdflib
 from urllib.parse import urlparse
+from django.db import models, IntegrityError
+from django.core.exceptions import ValidationError
 from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from .models import *
 from .checks import get_cached_checks
@@ -219,3 +222,113 @@ def all_rdf(request):
 		for obj in model_class.objects.all():
 			g += obj.get_rdf(include_type_label=False) # Don't include type label for each item, as that'll be covered by ontology_graph()
 	return HttpResponse(g.serialize(format=format), content_type=f'{content_type}; charset={settings.DEFAULT_CHARSET}')
+
+
+@api_auth
+def thing_create(request, type):
+	"""POST /metadata/{type}/ — create a new entity of the given type.
+
+	Request must be JSON (Content-Type: application/json) with at minimum a
+	'name' field.  Other scalar, non-relational fields on the model are accepted
+	and explicitly whitelisted; ForeignKey and primary-key fields are never set
+	from the request body.
+
+	Returns:
+	  201  {"id", "name", "uri"} — entity created.
+	  400  {"error": "..."} — missing or invalid fields.
+	  404  — unknown entity type.
+	  405  — method other than POST.
+	  409  {"error": "already_exists", "id", "name", "uri"} — entity with that
+	       name already exists (only when there is exactly one such entity).
+	  415  — Content-Type is not application/json.
+
+	Loganne itemCreated is emitted via the post_save signal wired in apps.py.
+	"""
+	if request.method != 'POST':
+		return HttpResponse(status=405)
+
+	# Require JSON Content-Type
+	content_type_header = request.content_type or ''
+	if 'application/json' not in content_type_header:
+		return HttpResponse(status=415)
+
+	# Validate entity type
+	try:
+		model_class = apps.get_model('metadata', type)
+	except LookupError:
+		return HttpResponse(status=404)
+
+	# Only support EolasModel subclasses
+	if not hasattr(model_class, 'get_absolute_url'):
+		return HttpResponse(status=404)
+
+	# Parse JSON body
+	try:
+		body = json.loads(request.body)
+	except (json.JSONDecodeError, UnicodeDecodeError, ValueError):
+		return JsonResponse({'error': 'invalid_json'}, status=400)
+
+	if not isinstance(body, dict):
+		return JsonResponse({'error': 'expected a JSON object'}, status=400)
+
+	# Validate required 'name' field
+	name = body.get('name')
+	if not name or not isinstance(name, str) or not name.strip():
+		return JsonResponse({'error': 'name is required'}, status=400)
+	name = name.strip()
+
+	# Build whitelisted kwargs: local fields, excluding PK, ForeignKey, and 'name'
+	writable_fields = {
+		field.name
+		for field in model_class._meta.local_fields
+		if not field.primary_key
+		and not isinstance(field, models.ForeignKey)
+		and field.name != 'name'
+	}
+	create_kwargs = {'name': name}
+	for field_name, value in body.items():
+		if field_name == 'name':
+			continue
+		if field_name in writable_fields:
+			create_kwargs[field_name] = value
+
+	# Duplicate check: if exactly one entity with this name already exists, return it
+	existing = model_class.objects.filter(name__iexact=name)
+	if existing.count() == 1:
+		obj = existing.first()
+		return JsonResponse({
+			'error': 'already_exists',
+			'id': obj.pk,
+			'name': str(obj),
+			'uri': obj.get_absolute_url(),
+		}, status=409)
+
+	# Pre-validate array fields: ArrayField.to_python() raises json.JSONDecodeError
+	# (a ValueError) rather than ValidationError when it receives a non-list value,
+	# so it escapes full_clean()'s ValidationError catch.  Check explicitly here.
+	for field in model_class._meta.local_fields:
+		if hasattr(field, 'base_field') and field.name in create_kwargs:
+			if not isinstance(create_kwargs[field.name], list):
+				return JsonResponse({'error': 'invalid field value'}, status=400)
+
+	# Validate remaining field values before hitting the database
+	try:
+		instance = model_class(**create_kwargs)
+		instance.full_clean(
+			exclude=[model_class._meta.pk.name],
+			validate_unique=False,  # uniqueness handled by the duplicate check above
+		)
+	except ValidationError:
+		return JsonResponse({'error': 'invalid field value'}, status=400)
+
+	# Create entity — post_save signal fires itemCreated via Loganne
+	try:
+		obj = model_class.objects.create(**create_kwargs)
+	except IntegrityError:
+		return JsonResponse({'error': 'invalid field value'}, status=400)
+
+	return JsonResponse({
+		'id': obj.pk,
+		'name': str(obj),
+		'uri': obj.get_absolute_url(),
+	}, status=201)
