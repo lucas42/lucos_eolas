@@ -9,6 +9,7 @@ urlpatterns = [
 	path('metadata/categories.json', metadata_views.categories_json),
 	path('metadata/all/data/', metadata_views.all_rdf),
 	path('metadata/<slug:type>/list/', metadata_views.type_list),
+	path('api/metadata/<slug:type>/', metadata_views.thing_create),
 	# Linked Data HTTPRange-14 compliant endpoints
 	re_path(r'^metadata/(?P<type>[a-z]+)/(?P<pk>(?!add)\w+)/$', metadata_views.thing_entrypoint), # Excludes the `add` path as that's used by django admin.  May cause an issue if Dzodinka is ever added to the language list, as its ISO 639-3 code is 'add'
 	path('metadata/<slug:type>/<slug:pk>/data/', metadata_views.thing_data),

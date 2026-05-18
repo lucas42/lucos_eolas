@@ -1,3 +1,4 @@
+import json
 from django.core.cache import cache
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.contrib.auth.models import User
@@ -7,7 +8,7 @@ from .checks import (
     get_place_consistency_checks, get_wikipedia_slug_check, _check_no_invalid_wikipedia_slugs,
     UNIVERSE_PLACE_ID, refresh_check_cache, get_cached_checks, CHECKS_CACHE_KEY,
 )
-from .models import DayOfWeek, Calendar, Month, HistoricalEvent, Festival, FestivalPeriod, Language, LanguageFamily, TransportMode, Vehicle
+from .models import DayOfWeek, Calendar, Month, HistoricalEvent, Festival, FestivalPeriod, Language, LanguageFamily, TransportMode, Vehicle, Person
 from .views import _safe_local_redirect
 
 
@@ -868,3 +869,165 @@ class VehicleStrTest(TestCase):
 			fictional=True,
 		)
 		self.assertTrue(vehicle.fictional)
+
+
+# ─── ThingCreate (POST /metadata/{type}/) Tests ───────────────────────────────
+
+class ThingCreateEndpointTest(TestCase):
+	"""POST /metadata/{type}/ — create entities programmatically."""
+
+	AUTH = {'HTTP_AUTHORIZATION': 'key key'}
+	JSON_CT = {'content_type': 'application/json'}
+
+	def _post(self, type, body, auth=True, content_type='application/json'):
+		headers = dict(self.AUTH) if auth else {}
+		return self.client.post(
+			f'/api/metadata/{type}/',
+			data=json.dumps(body),
+			content_type=content_type,
+			**headers,
+		)
+
+	# ── Authentication ──────────────────────────────────────────────────────
+
+	def test_no_auth_returns_401(self):
+		response = self._post('person', {'name': 'J. S. Bach'}, auth=False)
+		self.assertEqual(response.status_code, 401)
+
+	def test_invalid_key_returns_403(self):
+		response = self.client.post(
+			'/api/metadata/person/',
+			data=json.dumps({'name': 'J. S. Bach'}),
+			content_type='application/json',
+			HTTP_AUTHORIZATION='key wrongkey',
+		)
+		self.assertEqual(response.status_code, 403)
+
+	# ── Content-Type ────────────────────────────────────────────────────────
+
+	def test_wrong_content_type_returns_415(self):
+		response = self._post('person', {'name': 'J. S. Bach'}, content_type='text/plain')
+		self.assertEqual(response.status_code, 415)
+
+	def test_form_encoded_content_type_returns_415(self):
+		response = self._post('person', {'name': 'J. S. Bach'}, content_type='application/x-www-form-urlencoded')
+		self.assertEqual(response.status_code, 415)
+
+	# ── Method ──────────────────────────────────────────────────────────────
+
+	def test_get_returns_405(self):
+		response = self.client.get('/api/metadata/person/', **self.AUTH)
+		self.assertEqual(response.status_code, 405)
+
+	# ── Type validation ─────────────────────────────────────────────────────
+
+	def test_unknown_type_returns_404(self):
+		response = self._post('unknowntype', {'name': 'Test'})
+		self.assertEqual(response.status_code, 404)
+
+	# ── Field validation ────────────────────────────────────────────────────
+
+	def test_missing_name_returns_400(self):
+		response = self._post('person', {})
+		self.assertEqual(response.status_code, 400)
+		self.assertIn('error', response.json())
+
+	def test_empty_name_returns_400(self):
+		response = self._post('person', {'name': '   '})
+		self.assertEqual(response.status_code, 400)
+		self.assertIn('error', response.json())
+
+	def test_non_string_name_returns_400(self):
+		response = self._post('person', {'name': 42})
+		self.assertEqual(response.status_code, 400)
+
+	def test_invalid_json_returns_400(self):
+		response = self.client.post(
+			'/api/metadata/person/',
+			data=b'not-json',
+			content_type='application/json',
+			**self.AUTH,
+		)
+		self.assertEqual(response.status_code, 400)
+
+	# ── Successful creation ──────────────────────────────────────────────────
+
+	@patch('lucos_eolas.metadata.signals.updateLoganne')
+	def test_creates_person_and_returns_201(self, mock_loganne):
+		response = self._post('person', {'name': 'Johann Sebastian Bach'})
+		self.assertEqual(response.status_code, 201)
+		data = response.json()
+		self.assertIn('id', data)
+		self.assertIn('name', data)
+		self.assertIn('uri', data)
+		self.assertEqual(data['name'], 'Johann Sebastian Bach')
+		self.assertIn('/metadata/person/', data['uri'])
+		self.assertTrue(Person.objects.filter(name='Johann Sebastian Bach').exists())
+
+	@patch('lucos_eolas.metadata.signals.updateLoganne')
+	def test_response_name_is_normalised(self, mock_loganne):
+		"""Response 'name' comes from str(obj), which may differ from submitted value."""
+		response = self._post('person', {'name': '  Ludwig van Beethoven  '})
+		self.assertEqual(response.status_code, 201)
+		data = response.json()
+		# Submitted name is stripped; str(Person) returns the stored name
+		self.assertEqual(data['name'], 'Ludwig van Beethoven')
+
+	@patch('lucos_eolas.metadata.signals.updateLoganne')
+	def test_creates_person_with_optional_fields(self, mock_loganne):
+		response = self._post('person', {
+			'name': 'Sherlock Holmes',
+			'fictional': True,
+			'wikipedia_slug': 'Sherlock_Holmes',
+		})
+		self.assertEqual(response.status_code, 201)
+		person = Person.objects.get(name='Sherlock Holmes')
+		self.assertTrue(person.fictional)
+		self.assertEqual(person.wikipedia_slug, 'Sherlock_Holmes')
+
+	@patch('lucos_eolas.metadata.signals.updateLoganne')
+	def test_unknown_fields_in_body_are_ignored(self, mock_loganne):
+		"""Fields not on the model should be silently ignored (not raise an error)."""
+		response = self._post('person', {
+			'name': 'Agatha Christie',
+			'nonexistent_field': 'some value',
+		})
+		self.assertEqual(response.status_code, 201)
+		self.assertTrue(Person.objects.filter(name='Agatha Christie').exists())
+
+	@patch('lucos_eolas.metadata.signals.updateLoganne')
+	def test_loganne_itemcreated_fired(self, mock_loganne):
+		self._post('person', {'name': 'Charles Darwin'})
+		types_fired = [c.kwargs.get('type') or c.args[0] if c.args else c.kwargs.get('type') for c in mock_loganne.call_args_list]
+		# updateLoganne is called as a keyword-only call: type="itemCreated"
+		called_types = [call.kwargs.get('type') for call in mock_loganne.call_args_list]
+		self.assertIn('itemCreated', called_types)
+
+	# ── Duplicate detection ──────────────────────────────────────────────────
+
+	@patch('lucos_eolas.metadata.signals.updateLoganne')
+	def test_duplicate_name_returns_409(self, mock_loganne):
+		existing = Person.objects.create(name='Wolfgang Amadeus Mozart')
+		response = self._post('person', {'name': 'Wolfgang Amadeus Mozart'})
+		self.assertEqual(response.status_code, 409)
+		data = response.json()
+		self.assertEqual(data['error'], 'already_exists')
+		self.assertEqual(data['id'], existing.pk)
+		self.assertIn('/metadata/person/', data['uri'])
+
+	@patch('lucos_eolas.metadata.signals.updateLoganne')
+	def test_duplicate_check_is_case_insensitive(self, mock_loganne):
+		existing = Person.objects.create(name='Franz Liszt')
+		response = self._post('person', {'name': 'franz liszt'})
+		self.assertEqual(response.status_code, 409)
+		data = response.json()
+		self.assertEqual(data['id'], existing.pk)
+
+	@patch('lucos_eolas.metadata.signals.updateLoganne')
+	def test_multiple_existing_same_name_does_not_block_creation(self, mock_loganne):
+		"""When multiple entities share a name, a new one is created (ambiguous — let admin merge)."""
+		Person.objects.create(name='John Smith')
+		Person.objects.create(name='John Smith')
+		response = self._post('person', {'name': 'John Smith'})
+		self.assertEqual(response.status_code, 201)
+		self.assertEqual(Person.objects.filter(name='John Smith').count(), 3)
