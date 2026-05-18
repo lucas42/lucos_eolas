@@ -462,7 +462,7 @@ class MergeEntitiesActionTest(TestCase):
 		self.assertTrue(HistoricalEvent.objects.filter(pk=target.pk).exists(), 'Target should survive')
 		item_type = HistoricalEvent._meta.verbose_name.title()
 		mock_loganne.assert_called_once_with(
-			type='entityMerged',
+			type='itemMerged',
 			humanReadable=f'{item_type} "Swearing" merged into "Profanity"',
 			url=target_url,
 			sourceUri=source_url,

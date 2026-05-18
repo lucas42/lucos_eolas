@@ -39,7 +39,7 @@ def merge_entities(modeladmin, request, queryset):
 
 		for source in sources:
 			updateLoganne(
-				type="entityMerged",
+				type="itemMerged",
 				humanReadable=f'{item_type} "{source}" merged into "{target}"',
 				url=target.get_absolute_url(),
 				sourceUri=source.get_absolute_url(),
