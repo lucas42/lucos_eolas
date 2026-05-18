@@ -467,7 +467,7 @@ class MergeEntitiesActionTest(TestCase):
 			url=target_url,
 			sourceUri=source_url,
 			targetUri=target_url,
-			entityType=item_type,
+			itemType=item_type,
 		)
 
 	@patch('lucos_eolas.metadata.admin.updateLoganne')
@@ -1008,7 +1008,7 @@ class ThingCreateEndpointTest(TestCase):
 		item_type = Person._meta.verbose_name.title()
 		created_calls = [c for c in mock_loganne.call_args_list if c.kwargs.get('type') == 'itemCreated']
 		self.assertTrue(len(created_calls) > 0, 'itemCreated should have been fired')
-		self.assertEqual(created_calls[0].kwargs['entityType'], item_type)
+		self.assertEqual(created_calls[0].kwargs['itemType'], item_type)
 
 	@patch('lucos_eolas.metadata.signals.updateLoganne')
 	def test_loganne_itemupdated_includes_entity_type(self, mock_loganne):
@@ -1019,7 +1019,7 @@ class ThingCreateEndpointTest(TestCase):
 		item_type = Person._meta.verbose_name.title()
 		updated_calls = [c for c in mock_loganne.call_args_list if c.kwargs.get('type') == 'itemUpdated']
 		self.assertTrue(len(updated_calls) > 0, 'itemUpdated should have been fired')
-		self.assertEqual(updated_calls[0].kwargs['entityType'], item_type)
+		self.assertEqual(updated_calls[0].kwargs['itemType'], item_type)
 
 	@patch('lucos_eolas.metadata.signals.updateLoganne')
 	def test_loganne_itemdeleted_includes_entity_type(self, mock_loganne):
@@ -1029,7 +1029,7 @@ class ThingCreateEndpointTest(TestCase):
 		item_type = Person._meta.verbose_name.title()
 		deleted_calls = [c for c in mock_loganne.call_args_list if c.kwargs.get('type') == 'itemDeleted']
 		self.assertTrue(len(deleted_calls) > 0, 'itemDeleted should have been fired')
-		self.assertEqual(deleted_calls[0].kwargs['entityType'], item_type)
+		self.assertEqual(deleted_calls[0].kwargs['itemType'], item_type)
 
 	@patch('lucos_eolas.metadata.signals.updateLoganne')
 	def test_creates_person_with_alternate_names(self, mock_loganne):

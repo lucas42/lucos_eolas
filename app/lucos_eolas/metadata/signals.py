@@ -5,10 +5,10 @@ from loganne import updateLoganne
 def metadata_post_save(sender, instance, created, **kwargs):
 	item_type = instance._meta.verbose_name.title()
 	if created:
-		updateLoganne(type="itemCreated", humanReadable=f'{item_type} "{instance}" created', url=instance.get_webhook_url(), entityType=item_type)
+		updateLoganne(type="itemCreated", humanReadable=f'{item_type} "{instance}" created', url=instance.get_webhook_url(), itemType=item_type)
 	else:
-		updateLoganne(type="itemUpdated", humanReadable=f'{item_type} "{instance}" updated', url=instance.get_webhook_url(), entityType=item_type)
+		updateLoganne(type="itemUpdated", humanReadable=f'{item_type} "{instance}" updated', url=instance.get_webhook_url(), itemType=item_type)
 
 def metadata_post_delete(sender, instance, **kwargs):
 	item_type = instance._meta.verbose_name.title()
-	updateLoganne(type="itemDeleted", humanReadable=f'{item_type} "{instance}" deleted', url=instance.get_webhook_url(), entityType=item_type)
+	updateLoganne(type="itemDeleted", humanReadable=f'{item_type} "{instance}" deleted', url=instance.get_webhook_url(), itemType=item_type)
