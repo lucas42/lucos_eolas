@@ -206,6 +206,10 @@ class VehicleAdmin(EolasModelAdmin):
 	show_facets = admin.ShowFacets.ALWAYS
 eolasadmin.register(Vehicle, VehicleAdmin)
 
+class PersonAdmin(EolasModelAdmin):
+	search_fields = ['name', 'alternate_names']
+eolasadmin.register(Person, PersonAdmin)
+
 class FestivalPeriodInline(admin.TabularInline):
 	model = FestivalPeriod
 	extra = 1

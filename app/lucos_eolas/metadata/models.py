@@ -888,3 +888,29 @@ class CreativeWork(EolasModel):
 		verbose_name = _('Creative Work')
 		verbose_name_plural = _('Creative Works')
 		ordering = ["name"]
+
+class Person(EolasModel):
+	rdf_type = rdflib.FOAF.Person
+	category = Category.PEOPLE
+	name = RDFNameField(unique=False)
+	fictional = RDFBooleanField(
+		default=False,
+		verbose_name=_('fictional'),
+		rdf_predicate=EOLAS_NS.isFictional,
+		db_comment='Whether or not a person is fictional.',
+	)
+	class Meta:
+		verbose_name = _('Person')
+		verbose_name_plural = _('People')
+		ordering = ["name"]
+		db_table_comment = "An individual human being."
+
+	def __str__(self):
+		qs = Person.objects.filter(
+			models.Q(name__iexact=self.name) |
+			models.Q(alternate_names__contains=[self.name])
+		)
+		if qs.count() > 1:
+			suffix = 'fictional' if self.fictional else 'real'
+			return f"{self.name} ({suffix})"
+		return self.name
