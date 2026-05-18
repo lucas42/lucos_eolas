@@ -904,3 +904,13 @@ class Person(EolasModel):
 		verbose_name_plural = _('People')
 		ordering = ["name"]
 		db_table_comment = "A famous, fictional, or named-but-not-personal person."
+
+	def __str__(self):
+		qs = Person.objects.filter(
+			models.Q(name__iexact=self.name) |
+			models.Q(alternate_names__contains=[self.name])
+		)
+		if qs.count() > 1:
+			suffix = 'fictional' if self.is_fictional else 'real'
+			return f"{self.name} ({suffix})"
+		return self.name
