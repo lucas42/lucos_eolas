@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-17 22:00+0000\n"
+"POT-Creation-Date: 2026-05-18 00:43+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -66,7 +66,7 @@ msgstr "nó mar is fearr aithne"
 msgid "Enter alternate names separated by commas."
 msgstr "Cuir isteach ainmneacha eile scartha le camóga."
 
-#: lucos_eolas/metadata/models.py:139 lucos_eolas/metadata/models.py:943
+#: lucos_eolas/metadata/models.py:139 lucos_eolas/metadata/models.py:904
 msgid "People"
 msgstr "Daoine"
 
@@ -131,12 +131,11 @@ msgid "Literary"
 msgstr "Litríocht"
 
 #: lucos_eolas/metadata/models.py:160 lucos_eolas/metadata/models.py:627
-#: lucos_eolas/metadata/models.py:848 lucos_eolas/metadata/models.py:896
+#: lucos_eolas/metadata/models.py:848
 msgid "plural"
 msgstr "iolra"
 
 #: lucos_eolas/metadata/models.py:167 lucos_eolas/metadata/models.py:855
-#: lucos_eolas/metadata/models.py:903
 msgid "category"
 msgstr "Catagóir"
 
@@ -149,7 +148,7 @@ msgid "Place Types"
 msgstr "Cineálacha Áiteanna"
 
 #: lucos_eolas/metadata/models.py:201 lucos_eolas/metadata/models.py:662
-#: lucos_eolas/metadata/models.py:937
+#: lucos_eolas/metadata/models.py:898
 msgid "fictional"
 msgstr "ficseanúil"
 
@@ -482,15 +481,7 @@ msgstr "Saothar Cruthaitheach"
 msgid "Creative Works"
 msgstr "Saothair Chruthaitheacha"
 
-#: lucos_eolas/metadata/models.py:908
-msgid "Person Type"
-msgstr "Cineál Duine"
-
-#: lucos_eolas/metadata/models.py:909
-msgid "Person Types"
-msgstr "Cineálacha Daoine"
-
-#: lucos_eolas/metadata/models.py:942
+#: lucos_eolas/metadata/models.py:903
 msgid "Person"
 msgstr "Duine"
 
