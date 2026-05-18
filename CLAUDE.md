@@ -10,6 +10,17 @@ To get the canonical name for an entity: use `mcp__arachne__get_entity(uri=...)`
 
 **Example:** The TransportMode "Helicopter" has alternate names "Chopper" and "Whirlybird". `find_entities` may return "Chopper" (alphabetically first). The correct migration entry is `('helicopter', 'helicopters')`, not `('chopper', 'choppers')`.
 
+## Downstream consumers
+
+**Ontology changes can have non-obvious effects on downstream consumers.** Arachne consumes this ontology to build its triplestore and search index, and several kinds of changes have known interactions. When making ontology changes — particularly adding new shapes to existing terms — cross-check [`lucos_arachne/CLAUDE.md`](https://github.com/lucas42/lucos_arachne/blob/main/CLAUDE.md). Known interactions include:
+
+- **Adding `skos:prefLabel` to a predicate or class** can cause arachne's search ingestor to treat the term itself as an indexable item. (Resolved by `lucas42/lucos_arachne#544`'s namespace-based filter, but the broader principle stands: presence of human-readable labels can change what consumers think is "content".)
+- **Adding `owl:inverseOf` on a high-fan-out predicate** causes the ingestor to materialise inverse closures into the inferred graph. For something like `dcterms:language`, this materialises one inferred triple per language tag per item — significant bloat.
+- **Adding `owl:TransitiveProperty`** causes the ingestor to materialise transitive closures, with cost proportional to the depth and fan-out of the predicate.
+- **Introducing a new domain `rdf:type`** requires the source's RDF export to include `skos:prefLabel` and `eolas:hasCategory` for that type — otherwise arachne's search-index ingestor will fail (see `lucas42/lucos_arachne#371` convention).
+
+This list is non-exhaustive. The general principle: ontology terms are consumed structurally by other systems, not just rendered; if a change alters the structural shape (new type, new property characteristic, new label, new inverse relationship), check the consumers.
+
 ## Migrations and Translations
 
 When you change models in `lucos_eolas`, you **MUST NOT** run `makemigrations` directly. Instead:
