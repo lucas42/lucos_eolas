@@ -44,6 +44,7 @@ def merge_entities(modeladmin, request, queryset):
 				url=target.get_absolute_url(),
 				sourceUri=source.get_absolute_url(),
 				targetUri=target.get_absolute_url(),
+				entityType=item_type,
 			)
 			post_delete.disconnect(metadata_post_delete, sender=queryset.model)
 			try:
