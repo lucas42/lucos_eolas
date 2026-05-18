@@ -2,7 +2,8 @@ import json
 import os
 import rdflib
 from urllib.parse import urlparse
-from django.db import models
+from django.db import models, IntegrityError
+from django.core.exceptions import ValidationError
 from django.http import HttpResponseRedirect, HttpResponse, JsonResponse
 from .models import *
 from .checks import get_cached_checks
@@ -302,11 +303,29 @@ def thing_create(request, type):
 			'uri': obj.get_absolute_url(),
 		}, status=409)
 
+	# Pre-validate array fields: ArrayField.to_python() raises json.JSONDecodeError
+	# (a ValueError) rather than ValidationError when it receives a non-list value,
+	# so it escapes full_clean()'s ValidationError catch.  Check explicitly here.
+	for field in model_class._meta.local_fields:
+		if hasattr(field, 'base_field') and field.name in create_kwargs:
+			if not isinstance(create_kwargs[field.name], list):
+				return JsonResponse({'error': 'invalid field value'}, status=400)
+
+	# Validate remaining field values before hitting the database
+	try:
+		instance = model_class(**create_kwargs)
+		instance.full_clean(
+			exclude=[model_class._meta.pk.name],
+			validate_unique=False,  # uniqueness handled by the duplicate check above
+		)
+	except ValidationError:
+		return JsonResponse({'error': 'invalid field value'}, status=400)
+
 	# Create entity — post_save signal fires itemCreated via Loganne
 	try:
 		obj = model_class.objects.create(**create_kwargs)
-	except Exception as e:
-		return JsonResponse({'error': str(e)}, status=400)
+	except IntegrityError:
+		return JsonResponse({'error': 'invalid field value'}, status=400)
 
 	return JsonResponse({
 		'id': obj.pk,

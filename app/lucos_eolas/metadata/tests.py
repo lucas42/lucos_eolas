@@ -998,10 +998,26 @@ class ThingCreateEndpointTest(TestCase):
 	@patch('lucos_eolas.metadata.signals.updateLoganne')
 	def test_loganne_itemcreated_fired(self, mock_loganne):
 		self._post('person', {'name': 'Charles Darwin'})
-		types_fired = [c.kwargs.get('type') or c.args[0] if c.args else c.kwargs.get('type') for c in mock_loganne.call_args_list]
-		# updateLoganne is called as a keyword-only call: type="itemCreated"
 		called_types = [call.kwargs.get('type') for call in mock_loganne.call_args_list]
 		self.assertIn('itemCreated', called_types)
+
+	@patch('lucos_eolas.metadata.signals.updateLoganne')
+	def test_creates_person_with_alternate_names(self, mock_loganne):
+		response = self._post('person', {
+			'name': 'Samuel Clemens',
+			'alternate_names': ['Mark Twain'],
+		})
+		self.assertEqual(response.status_code, 201)
+		person = Person.objects.get(name='Samuel Clemens')
+		self.assertIn('Mark Twain', person.alternate_names)
+
+	def test_invalid_alternate_names_returns_400(self):
+		"""alternate_names must be a list, not a string or other scalar."""
+		response = self._post('person', {
+			'name': 'Agatha Christie',
+			'alternate_names': 'not-a-list',
+		})
+		self.assertEqual(response.status_code, 400)
 
 	# ── Duplicate detection ──────────────────────────────────────────────────
 
