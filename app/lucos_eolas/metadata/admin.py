@@ -208,8 +208,6 @@ eolasadmin.register(Vehicle, VehicleAdmin)
 
 class PersonAdmin(EolasModelAdmin):
 	search_fields = ['name', 'alternate_names']
-	list_filter = ['is_fictional']
-	show_facets = admin.ShowFacets.ALWAYS
 eolasadmin.register(Person, PersonAdmin)
 
 class FestivalPeriodInline(admin.TabularInline):

@@ -893,7 +893,7 @@ class Person(EolasModel):
 	rdf_type = rdflib.FOAF.Person
 	category = Category.PEOPLE
 	name = RDFNameField(unique=False)
-	is_fictional = RDFBooleanField(
+	fictional = RDFBooleanField(
 		default=False,
 		verbose_name=_('fictional'),
 		rdf_predicate=EOLAS_NS.isFictional,
@@ -903,7 +903,7 @@ class Person(EolasModel):
 		verbose_name = _('Person')
 		verbose_name_plural = _('People')
 		ordering = ["name"]
-		db_table_comment = "A famous, fictional, or named-but-not-personal person."
+		db_table_comment = "An individual human being."
 
 	def __str__(self):
 		qs = Person.objects.filter(
@@ -911,6 +911,6 @@ class Person(EolasModel):
 			models.Q(alternate_names__contains=[self.name])
 		)
 		if qs.count() > 1:
-			suffix = 'fictional' if self.is_fictional else 'real'
+			suffix = 'fictional' if self.fictional else 'real'
 			return f"{self.name} ({suffix})"
 		return self.name
