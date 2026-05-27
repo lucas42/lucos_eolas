@@ -8,7 +8,7 @@ from .checks import (
     get_place_consistency_checks, get_wikipedia_slug_check, _check_no_invalid_wikipedia_slugs,
     UNIVERSE_PLACE_ID, refresh_check_cache, get_cached_checks, CHECKS_CACHE_KEY,
 )
-from .models import DayOfWeek, Calendar, Month, HistoricalEvent, Festival, FestivalPeriod, Language, LanguageFamily, TransportMode, Vehicle, Person, CreativeWork, CreativeWorkType
+from .models import DayOfWeek, Calendar, Month, HistoricalEvent, Festival, FestivalPeriod, Language, LanguageFamily, TransportMode, Vehicle, Person, CreativeWork, CreativeWorkType, PlaceType
 from .views import _safe_local_redirect
 
 
@@ -870,6 +870,50 @@ class VehicleStrTest(TestCase):
 			fictional=True,
 		)
 		self.assertTrue(vehicle.fictional)
+
+
+# ─── Parent-class prefLabel Tests ────────────────────────────────────────────
+
+class PlaceTypeParentClassLabelTest(SimpleTestCase):
+	"""PlaceType.get_rdf emits skos:prefLabel for schema:Place when include_type_label=True."""
+
+	def test_parent_class_english_label_emitted(self):
+		import rdflib
+		place_type = PlaceType(name='City', plural='Cities', category='Terrestrial')
+		g = place_type.get_rdf(include_type_label=True)
+		self.assertIn(
+			(rdflib.SDO.Place, rdflib.SKOS.prefLabel, rdflib.Literal("Place", lang="en")),
+			g,
+			"Expected English prefLabel for schema:Place in the graph",
+		)
+
+	def test_parent_class_label_not_emitted_without_type_label(self):
+		import rdflib
+		place_type = PlaceType(name='City', plural='Cities', category='Terrestrial')
+		g = place_type.get_rdf(include_type_label=False)
+		matching = [(s, p, o) for s, p, o in g if s == rdflib.SDO.Place and p == rdflib.SKOS.prefLabel]
+		self.assertEqual(matching, [], "No prefLabel for schema:Place when include_type_label=False")
+
+
+class CreativeWorkTypeParentClassLabelTest(SimpleTestCase):
+	"""CreativeWorkType.get_rdf emits skos:prefLabel for schema:CreativeWork when include_type_label=True."""
+
+	def test_parent_class_english_label_emitted(self):
+		import rdflib
+		cw_type = CreativeWorkType(name='Film', plural='Films', category='Dramaturgical')
+		g = cw_type.get_rdf(include_type_label=True)
+		self.assertIn(
+			(rdflib.SDO.CreativeWork, rdflib.SKOS.prefLabel, rdflib.Literal("Creative Work", lang="en")),
+			g,
+			"Expected English prefLabel for schema:CreativeWork in the graph",
+		)
+
+	def test_parent_class_label_not_emitted_without_type_label(self):
+		import rdflib
+		cw_type = CreativeWorkType(name='Film', plural='Films', category='Dramaturgical')
+		g = cw_type.get_rdf(include_type_label=False)
+		matching = [(s, p, o) for s, p, o in g if s == rdflib.SDO.CreativeWork and p == rdflib.SKOS.prefLabel]
+		self.assertEqual(matching, [], "No prefLabel for schema:CreativeWork when include_type_label=False")
 
 
 # ─── ThingCreate (POST /metadata/{type}/) Tests ───────────────────────────────

@@ -185,6 +185,7 @@ class PlaceType(EolasModel):
 			for lang, _ in settings.LANGUAGES:
 				with translation.override(lang):
 					g.add((EOLAS_NS[self.category], rdflib.SKOS.prefLabel, rdflib.Literal(translation.gettext(self.category), lang=lang)))
+					g.add((rdflib.SDO.Place, rdflib.SKOS.prefLabel, rdflib.Literal(translation.gettext("Place"), lang=lang)))
 		return g
 
 class Place(EolasModel):
@@ -873,6 +874,7 @@ class CreativeWorkType(EolasModel):
 			for lang, _ in settings.LANGUAGES:
 				with translation.override(lang):
 					g.add((EOLAS_NS[self.category], rdflib.SKOS.prefLabel, rdflib.Literal(translation.gettext(self.category), lang=lang)))
+					g.add((rdflib.SDO.CreativeWork, rdflib.SKOS.prefLabel, rdflib.Literal(translation.gettext("Creative Work"), lang=lang)))
 		return g
 
 class CreativeWork(EolasModel):

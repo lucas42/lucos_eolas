@@ -18,6 +18,7 @@ To get the canonical name for an entity: use `mcp__arachne__get_entity(uri=...)`
 - **Adding `owl:inverseOf` on a high-fan-out predicate** causes the ingestor to materialise inverse closures into the inferred graph. For something like `dcterms:language`, this materialises one inferred triple per language tag per item — significant bloat.
 - **Adding `owl:TransitiveProperty`** causes the ingestor to materialise transitive closures, with cost proportional to the depth and fan-out of the predicate.
 - **Introducing a new domain `rdf:type`** requires the source's RDF export to include `skos:prefLabel` and `eolas:hasCategory` for that type — otherwise arachne's search-index ingestor will fail (see `lucas42/lucos_arachne#371` convention).
+- **Any model that emits `rdfs:subClassOf` to a parent class must also emit `skos:prefLabel` for that parent class** (in all supported languages). Once arachne's subclass-aware ingestor (ADR-0004 Phase 2) walks subClassOf chains, it will call `get_label()` on every parent class it encounters — an unlabelled parent raises `ValueError`. The emitting model's `get_rdf(include_type_label=True)` is the right place to add these parent-class labels (see `PlaceType` and `CreativeWorkType` in `models.py` for examples).
 
 This list is non-exhaustive. The general principle: ontology terms are consumed structurally by other systems, not just rendered; if a change alters the structural shape (new type, new property characteristic, new label, new inverse relationship), check the consumers.
 
