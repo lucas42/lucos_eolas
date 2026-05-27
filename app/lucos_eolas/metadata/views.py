@@ -230,8 +230,9 @@ def thing_create(request, type):
 
 	Request must be JSON (Content-Type: application/json) with at minimum a
 	'name' field.  Other scalar, non-relational fields on the model are accepted
-	and explicitly whitelisted; ForeignKey and primary-key fields are never set
-	from the request body.
+	and whitelisted by field name.  ForeignKey fields are accepted via their
+	attname (e.g. pass "type_id": 9 to set a FK field named "type").
+	Primary-key fields are never accepted from the request body.
 
 	Returns:
 	  201  {"id", "name", "uri"} — entity created.
@@ -277,19 +278,28 @@ def thing_create(request, type):
 		return JsonResponse({'error': 'name is required'}, status=400)
 	name = name.strip()
 
-	# Build whitelisted kwargs: local fields, excluding PK, ForeignKey, and 'name'
-	writable_fields = {
+	# Build whitelisted kwargs.
+	# Scalar (non-FK) fields are keyed by field.name.
+	# FK fields are accepted via their attname (e.g. type_id) so callers can
+	# reference related objects by primary key without a URI lookup.
+	# Primary-key and 'name' fields are always excluded.
+	scalar_writable = {
 		field.name
 		for field in model_class._meta.local_fields
 		if not field.primary_key
 		and not isinstance(field, models.ForeignKey)
 		and field.name != 'name'
 	}
+	fk_attname_writable = {
+		field.attname
+		for field in model_class._meta.local_fields
+		if isinstance(field, models.ForeignKey)
+	}
 	create_kwargs = {'name': name}
 	for field_name, value in body.items():
 		if field_name == 'name':
 			continue
-		if field_name in writable_fields:
+		if field_name in scalar_writable or field_name in fk_attname_writable:
 			create_kwargs[field_name] = value
 
 	# Duplicate check: if exactly one entity with this name already exists, return it
