@@ -650,6 +650,14 @@ class TransportMode(EolasModel):
 					g.add((DBPEDIA_NS.MeanOfTransportation, rdflib.SKOS.prefLabel, rdflib.Literal(translation.gettext("Means of Transport"), lang=lang)))
 		return g
 
+	@classmethod
+	def get_ontology_rdf(cls):
+		g = rdflib.Graph()
+		for lang, _ in settings.LANGUAGES:
+			with translation.override(lang):
+				g.add((DBPEDIA_NS.MeanOfTransportation, rdflib.SKOS.prefLabel, rdflib.Literal(translation.gettext("Means of Transport"), lang=lang)))
+		return g
+
 
 class Vehicle(EolasModel):
 	name = RDFNameField(unique=False)
