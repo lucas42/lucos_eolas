@@ -139,3 +139,14 @@ class ApiAuthDecoratorTest(SimpleTestCase):
         request = _make_request('Basic dXNlcjpwYXNz')
         response = view(request)
         self.assertEqual(response.status_code, 200)
+
+    def test_api_auth_is_csrf_exempt(self):
+        # api_auth-decorated views must be CSRF-exempt so that external API clients
+        # using Bearer/key auth can POST without providing a CSRF token.
+        view = _make_view()
+        self.assertTrue(
+            getattr(view, 'csrf_exempt', False),
+            "api_auth-decorated views should have csrf_exempt=True so POST requests "
+            "from external services (e.g. migration scripts) are not rejected by "
+            "Django's CSRF middleware.",
+        )
