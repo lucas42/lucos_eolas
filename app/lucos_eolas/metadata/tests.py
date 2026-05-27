@@ -8,7 +8,7 @@ from .checks import (
     get_place_consistency_checks, get_wikipedia_slug_check, _check_no_invalid_wikipedia_slugs,
     UNIVERSE_PLACE_ID, refresh_check_cache, get_cached_checks, CHECKS_CACHE_KEY,
 )
-from .models import DayOfWeek, Calendar, Month, HistoricalEvent, Festival, FestivalPeriod, Language, LanguageFamily, TransportMode, Vehicle, Person
+from .models import DayOfWeek, Calendar, Month, HistoricalEvent, Festival, FestivalPeriod, Language, LanguageFamily, TransportMode, Vehicle, Person, CreativeWork, CreativeWorkType
 from .views import _safe_local_redirect
 
 
@@ -1077,3 +1077,37 @@ class ThingCreateEndpointTest(TestCase):
 		response = self._post('person', {'name': 'John Smith'})
 		self.assertEqual(response.status_code, 201)
 		self.assertEqual(Person.objects.filter(name='John Smith').count(), 3)
+
+	# ── FK attname fields ────────────────────────────────────────────────────
+
+	@patch('lucos_eolas.metadata.signals.updateLoganne')
+	def test_creates_entity_with_fk_via_attname(self, mock_loganne):
+		"""FK fields accepted via their attname (e.g. type_id) so callers can set
+		mandatory FK fields without needing a URI lookup."""
+		cw_type = CreativeWorkType.objects.create(
+			name='Film', plural='Films', category='Dramaturgical',
+		)
+		response = self._post('creativework', {
+			'name': 'Casablanca',
+			'type_id': cw_type.pk,
+		})
+		self.assertEqual(response.status_code, 201)
+		data = response.json()
+		self.assertIn('id', data)
+		self.assertIn('/metadata/creativework/', data['uri'])
+		cw = CreativeWork.objects.get(name='Casablanca')
+		self.assertEqual(cw.type_id, cw_type.pk)
+
+	def test_invalid_fk_attname_value_returns_400(self):
+		"""Passing a non-existent FK ID should fail validation rather than crash."""
+		response = self._post('creativework', {
+			'name': 'The Phantom Film',
+			'type_id': 99999,
+		})
+		self.assertEqual(response.status_code, 400)
+
+	@patch('lucos_eolas.metadata.signals.updateLoganne')
+	def test_missing_required_fk_returns_400(self, mock_loganne):
+		"""Creating an entity whose model requires a FK without providing it returns 400."""
+		response = self._post('creativework', {'name': 'No Type Film'})
+		self.assertEqual(response.status_code, 400)
