@@ -387,7 +387,7 @@ msgstr "Modhanna Iompair"
 
 #: lucos_eolas/metadata/models.py:650
 msgid "Means of Transport"
-msgstr "Acmhainn Iompair"
+msgstr "Cóir Iompair"
 
 #: lucos_eolas/metadata/models.py:669
 msgid "Vehicle"
