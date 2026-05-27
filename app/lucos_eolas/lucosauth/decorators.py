@@ -1,8 +1,10 @@
 from functools import wraps
 from .envvars import getUserByKey
 from django.http import HttpResponse
+from django.views.decorators.csrf import csrf_exempt
 
 def api_auth(func):
+	@csrf_exempt
 	@wraps(func)
 	def _decorator(request, *args, **kwargs):
 		if 'HTTP_AUTHORIZATION' not in request.META:
