@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-27 14:46+0000\n"
+"POT-Creation-Date: 2026-05-27 15:01+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -386,8 +386,8 @@ msgid "Modes of Transport"
 msgstr "Modhanna Iompair"
 
 #: lucos_eolas/metadata/models.py:650
-msgid "Mean of Transport"
-msgstr "Meán Iompair"
+msgid "Means of Transport"
+msgstr "Acmhainn Iompair"
 
 #: lucos_eolas/metadata/models.py:669
 msgid "Vehicle"

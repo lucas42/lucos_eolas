@@ -925,7 +925,7 @@ class TransportModeParentClassLabelTest(SimpleTestCase):
 		transport_mode = TransportMode(name='Car', plural='Cars')
 		g = transport_mode.get_rdf(include_type_label=True)
 		self.assertIn(
-			(DBPEDIA_NS.MeanOfTransportation, rdflib.SKOS.prefLabel, rdflib.Literal("Mean of Transport", lang="en")),
+			(DBPEDIA_NS.MeanOfTransportation, rdflib.SKOS.prefLabel, rdflib.Literal("Means of Transport", lang="en")),
 			g,
 			"Expected English prefLabel for dbpedia:MeanOfTransportation in the graph",
 		)
