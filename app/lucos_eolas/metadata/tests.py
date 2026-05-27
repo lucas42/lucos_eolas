@@ -916,6 +916,29 @@ class CreativeWorkTypeParentClassLabelTest(SimpleTestCase):
 		self.assertEqual(matching, [], "No prefLabel for schema:CreativeWork when include_type_label=False")
 
 
+class TransportModeParentClassLabelTest(SimpleTestCase):
+	"""TransportMode.get_rdf emits skos:prefLabel for dbpedia:MeanOfTransportation when include_type_label=True."""
+
+	def test_parent_class_english_label_emitted(self):
+		import rdflib
+		DBPEDIA_NS = rdflib.Namespace("https://dbpedia.org/ontology/")
+		transport_mode = TransportMode(name='Car', plural='Cars')
+		g = transport_mode.get_rdf(include_type_label=True)
+		self.assertIn(
+			(DBPEDIA_NS.MeanOfTransportation, rdflib.SKOS.prefLabel, rdflib.Literal("Means of Transport", lang="en")),
+			g,
+			"Expected English prefLabel for dbpedia:MeanOfTransportation in the graph",
+		)
+
+	def test_parent_class_label_not_emitted_without_type_label(self):
+		import rdflib
+		DBPEDIA_NS = rdflib.Namespace("https://dbpedia.org/ontology/")
+		transport_mode = TransportMode(name='Car', plural='Cars')
+		g = transport_mode.get_rdf(include_type_label=False)
+		matching = [(s, p, o) for s, p, o in g if s == DBPEDIA_NS.MeanOfTransportation and p == rdflib.SKOS.prefLabel]
+		self.assertEqual(matching, [], "No prefLabel for dbpedia:MeanOfTransportation when include_type_label=False")
+
+
 # ─── ThingCreate (POST /metadata/{type}/) Tests ───────────────────────────────
 
 class ThingCreateEndpointTest(TestCase):

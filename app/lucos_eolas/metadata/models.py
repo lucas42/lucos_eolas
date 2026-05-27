@@ -647,6 +647,7 @@ class TransportMode(EolasModel):
 			for lang, _ in settings.LANGUAGES:
 				with translation.override(lang):
 					g.add((EOLAS_NS[self.category], rdflib.SKOS.prefLabel, rdflib.Literal(translation.gettext(self.category), lang=lang)))
+					g.add((DBPEDIA_NS.MeanOfTransportation, rdflib.SKOS.prefLabel, rdflib.Literal(translation.gettext("Means of Transport"), lang=lang)))
 		return g
 
 
