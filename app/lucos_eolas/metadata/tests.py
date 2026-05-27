@@ -374,6 +374,56 @@ class AllRdfEndpointTest(TestCase):
 		self.assertIn('application/ld+json', response['Content-Type'])
 
 
+class AllRdfPrefLabelRegressionTest(TestCase):
+	"""Regression: ontology prefLabels for external-namespace parent classes appear in the bulk RDF export.
+
+	These tests exercise the actual all_rdf() code path (ontology_graph() + instance loop)
+	rather than get_rdf(include_type_label=True) directly, which was the gap exploited by #271
+	(the fix landed in a branch never reached by the bulk export).
+	"""
+
+	AUTH = {'HTTP_AUTHORIZATION': 'key key'}
+
+	def _parsed_graph(self):
+		import rdflib
+		response = self.client.get('/metadata/all/data/', **self.AUTH)
+		self.assertEqual(response.status_code, 200)
+		g = rdflib.Graph()
+		g.parse(data=response.content, format='turtle')
+		return g
+
+	def test_bulk_export_contains_schema_place_preflabel(self):
+		"""schema:Place skos:prefLabel 'Place'@en is present in the bulk RDF export."""
+		import rdflib
+		g = self._parsed_graph()
+		self.assertIn(
+			(rdflib.SDO.Place, rdflib.SKOS.prefLabel, rdflib.Literal("Place", lang="en")),
+			g,
+			"Expected English prefLabel for schema:Place in the bulk RDF export",
+		)
+
+	def test_bulk_export_contains_schema_creativework_preflabel(self):
+		"""schema:CreativeWork skos:prefLabel 'Creative Work'@en is present in the bulk RDF export."""
+		import rdflib
+		g = self._parsed_graph()
+		self.assertIn(
+			(rdflib.SDO.CreativeWork, rdflib.SKOS.prefLabel, rdflib.Literal("Creative Work", lang="en")),
+			g,
+			"Expected English prefLabel for schema:CreativeWork in the bulk RDF export",
+		)
+
+	def test_bulk_export_contains_dbpedia_meanoftransportation_preflabel(self):
+		"""dbpedia:MeanOfTransportation skos:prefLabel 'Means of Transport'@en is present in the bulk RDF export."""
+		import rdflib
+		DBPEDIA_NS = rdflib.Namespace("https://dbpedia.org/ontology/")
+		g = self._parsed_graph()
+		self.assertIn(
+			(DBPEDIA_NS.MeanOfTransportation, rdflib.SKOS.prefLabel, rdflib.Literal("Means of Transport", lang="en")),
+			g,
+			"Expected English prefLabel for dbpedia:MeanOfTransportation in the bulk RDF export",
+		)
+
+
 class ContentNegotiationTest(SimpleTestCase):
 	"""thing_entrypoint redirects to /data/ for RDF and /change/ for HTML."""
 
