@@ -162,10 +162,10 @@ class CategoriesJsonEndpointTest(SimpleTestCase):
 		data = response.json()
 		self.assertIsInstance(data, list)
 
-	def test_has_all_sixteen_categories(self):
+	def test_has_all_seventeen_categories(self):
 		response = self.client.get('/metadata/categories.json')
 		data = response.json()
-		self.assertEqual(len(data), 16)
+		self.assertEqual(len(data), 17)
 
 	def test_each_entry_has_required_fields(self):
 		response = self.client.get('/metadata/categories.json')
