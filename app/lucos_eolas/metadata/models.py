@@ -925,3 +925,12 @@ class Person(EolasModel):
 			suffix = 'fictional' if self.fictional else 'real'
 			return f"{self.name} ({suffix})"
 		return self.name
+
+class Offence(EolasModel):
+	rdf_type = EOLAS_NS.Offence
+	category = Category.ANTHROPOLOGICAL
+	class Meta:
+		verbose_name = _('Offence')
+		verbose_name_plural = _('Offences')
+		ordering = ["name"]
+		db_table_comment = "A type of potentially offensive or sensitive content that may appear in media."
