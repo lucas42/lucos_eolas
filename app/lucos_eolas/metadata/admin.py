@@ -194,6 +194,11 @@ class CreativeWorkTypeAdmin(EolasModelAdmin):
 		super().save_model(request, obj, form, change)
 eolasadmin.register(CreativeWorkType, CreativeWorkTypeAdmin)
 
+class CreativeWorkAdmin(EolasModelAdmin):
+	list_filter = ['type']
+	show_facets = admin.ShowFacets.ALWAYS
+eolasadmin.register(CreativeWork, CreativeWorkAdmin)
+
 class TransportModeAdmin(EolasModelAdmin):
 	def save_model(self, request, obj, form, change):
 		obj.name = obj.name.lower()
