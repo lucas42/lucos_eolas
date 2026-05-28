@@ -138,6 +138,7 @@ class Category(models.TextChoices, metaclass=CategoryChoicesType):
 	#                        value                   background   border     text       label
 	PEOPLE =               ("People",              "#044E00", "#033100", "#ffffff", _("People"))
 	ANTHROPOLOGICAL =      ("Anthropological",     "#8affe7", "#068900", "#000000", _("Anthropological"))
+	ADVISORY =             ("Advisory",            "#010102", "#000020", "#ffffff", _("Advisory"))
 	ANTHROPOGEOGRAPHICAL = ("Anthropogeographical","#aed0db", "#3f6674", "#0c1a1b", _("Anthropogeographical"))
 	MUSICAL =              ("Musical",             "#000060", "#000020", "#ffffff", _("Musical"))
 	AQUATIC =              ("Aquatic",             "#0085fe", "#0036b1", "#ffffff", _("Aquatic"))
@@ -928,7 +929,7 @@ class Person(EolasModel):
 
 class Offence(EolasModel):
 	rdf_type = EOLAS_NS.Offence
-	category = Category.ANTHROPOLOGICAL
+	category = Category.ADVISORY
 	class Meta:
 		verbose_name = _('Offence')
 		verbose_name_plural = _('Offences')

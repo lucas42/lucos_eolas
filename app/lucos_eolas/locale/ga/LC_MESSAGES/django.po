@@ -3,7 +3,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-28 15:31+0000\n"
+"POT-Creation-Date: 2026-05-28 17:19+0000\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -66,7 +66,7 @@ msgstr "nó mar is fearr aithne"
 msgid "Enter alternate names separated by commas."
 msgstr "Cuir isteach ainmneacha eile scartha le camóga."
 
-#: lucos_eolas/metadata/models.py:139 lucos_eolas/metadata/models.py:915
+#: lucos_eolas/metadata/models.py:139 lucos_eolas/metadata/models.py:916
 msgid "People"
 msgstr "Daoine"
 
@@ -75,222 +75,226 @@ msgid "Anthropological"
 msgstr "Antraipeolaíoch"
 
 #: lucos_eolas/metadata/models.py:141
+msgid "Advisory"
+msgstr "Rabhadh"
+
+#: lucos_eolas/metadata/models.py:142
 msgid "Anthropogeographical"
 msgstr "Antrapaigeografach"
 
-#: lucos_eolas/metadata/models.py:142
+#: lucos_eolas/metadata/models.py:143
 msgid "Musical"
 msgstr "Ceolmhar"
 
-#: lucos_eolas/metadata/models.py:143
+#: lucos_eolas/metadata/models.py:144
 msgid "Aquatic"
 msgstr "Uisceach"
 
-#: lucos_eolas/metadata/models.py:144
+#: lucos_eolas/metadata/models.py:145
 msgid "Terrestrial"
 msgstr "Domhanda"
 
-#: lucos_eolas/metadata/models.py:145
+#: lucos_eolas/metadata/models.py:146
 msgid "Cosmic"
 msgstr "Cosmach"
 
-#: lucos_eolas/metadata/models.py:146
+#: lucos_eolas/metadata/models.py:147
 msgid "Supernatural"
 msgstr "Osnádúrtha"
 
-#: lucos_eolas/metadata/models.py:147
+#: lucos_eolas/metadata/models.py:148
 msgid "Historical"
 msgstr "Stairiúil"
 
-#: lucos_eolas/metadata/models.py:148
+#: lucos_eolas/metadata/models.py:149
 msgid "Temporal"
 msgstr "Teamparálta"
 
-#: lucos_eolas/metadata/models.py:149
+#: lucos_eolas/metadata/models.py:150
 msgid "Mathematical"
 msgstr "Matamaiticiúil"
 
-#: lucos_eolas/metadata/models.py:150
+#: lucos_eolas/metadata/models.py:151
 msgid "Technological"
 msgstr "Teicneolaíochta"
 
-#: lucos_eolas/metadata/models.py:151
+#: lucos_eolas/metadata/models.py:152
 msgid "Meteorological"
 msgstr "Meitéareolaíochta"
 
-#: lucos_eolas/metadata/models.py:152
+#: lucos_eolas/metadata/models.py:153
 msgid "Meta"
 msgstr "Meit"
 
-#: lucos_eolas/metadata/models.py:153
+#: lucos_eolas/metadata/models.py:154
 msgid "Dramaturgical"
 msgstr "Drámaturgach"
 
-#: lucos_eolas/metadata/models.py:154
+#: lucos_eolas/metadata/models.py:155
 msgid "Literary"
 msgstr "Litríocht"
 
-#: lucos_eolas/metadata/models.py:160 lucos_eolas/metadata/models.py:628
-#: lucos_eolas/metadata/models.py:858
+#: lucos_eolas/metadata/models.py:161 lucos_eolas/metadata/models.py:629
+#: lucos_eolas/metadata/models.py:859
 msgid "plural"
 msgstr "iolra"
 
-#: lucos_eolas/metadata/models.py:167 lucos_eolas/metadata/models.py:865
+#: lucos_eolas/metadata/models.py:168 lucos_eolas/metadata/models.py:866
 msgid "category"
 msgstr "Catagóir"
 
-#: lucos_eolas/metadata/models.py:172
+#: lucos_eolas/metadata/models.py:173
 msgid "Place Type"
 msgstr "Cineál Áite"
 
-#: lucos_eolas/metadata/models.py:173
+#: lucos_eolas/metadata/models.py:174
 msgid "Place Types"
 msgstr "Cineálacha Áiteanna"
 
-#: lucos_eolas/metadata/models.py:188 lucos_eolas/metadata/models.py:257
+#: lucos_eolas/metadata/models.py:189 lucos_eolas/metadata/models.py:258
 msgid "Place"
 msgstr "Áit"
 
-#: lucos_eolas/metadata/models.py:202 lucos_eolas/metadata/models.py:672
-#: lucos_eolas/metadata/models.py:909
+#: lucos_eolas/metadata/models.py:203 lucos_eolas/metadata/models.py:673
+#: lucos_eolas/metadata/models.py:910
 msgid "fictional"
 msgstr "ficseanúil"
 
-#: lucos_eolas/metadata/models.py:211
+#: lucos_eolas/metadata/models.py:212
 #, fuzzy
 #| msgid "contains"
 msgid "contained in"
 msgstr "comhdhéanta"
 
-#: lucos_eolas/metadata/models.py:222
+#: lucos_eolas/metadata/models.py:223
 msgid "partially contained in"
 msgstr ""
 
-#: lucos_eolas/metadata/models.py:233
+#: lucos_eolas/metadata/models.py:234
 msgid "territory of"
 msgstr ""
 
-#: lucos_eolas/metadata/models.py:244
+#: lucos_eolas/metadata/models.py:245
 msgid "bounds"
 msgstr ""
 
-#: lucos_eolas/metadata/models.py:252
+#: lucos_eolas/metadata/models.py:253
 msgid "metonym"
 msgstr "meatonaim"
 
-#: lucos_eolas/metadata/models.py:254
+#: lucos_eolas/metadata/models.py:255
 msgid "Something this place is often used as a substitue for"
 msgstr "Rud a úsáidtear an áit seo go minic mar ionadach dó"
 
-#: lucos_eolas/metadata/models.py:258
+#: lucos_eolas/metadata/models.py:259
 msgid "Places"
 msgstr "Áiteanna"
 
-#: lucos_eolas/metadata/models.py:294
+#: lucos_eolas/metadata/models.py:295
 msgid "order"
 msgstr "ord"
 
-#: lucos_eolas/metadata/models.py:302
+#: lucos_eolas/metadata/models.py:303
 msgid "Day of the Week"
 msgstr "Lá na Seachtaine"
 
-#: lucos_eolas/metadata/models.py:303
+#: lucos_eolas/metadata/models.py:304
 msgid "Days of the Week"
 msgstr "Laethanta na Seachtaine"
 
-#: lucos_eolas/metadata/models.py:313
+#: lucos_eolas/metadata/models.py:314
 msgid "Temporal calendar ID"
 msgstr ""
 
-#: lucos_eolas/metadata/models.py:314
+#: lucos_eolas/metadata/models.py:315
 msgid ""
 "The calendar identifier used by the TC39 Temporal API (e.g. \"gregory\", "
 "\"hebrew\", \"islamic\", \"chinese\", \"indian\")."
 msgstr ""
 
-#: lucos_eolas/metadata/models.py:318
+#: lucos_eolas/metadata/models.py:319
 msgid "Calendar"
 msgstr "Féilire"
 
-#: lucos_eolas/metadata/models.py:319
+#: lucos_eolas/metadata/models.py:320
 msgid "Calendars"
 msgstr "Féilirí"
 
-#: lucos_eolas/metadata/models.py:338
+#: lucos_eolas/metadata/models.py:339
 msgid "order in calendar"
 msgstr "ordú sa fhéilire"
 
-#: lucos_eolas/metadata/models.py:348
+#: lucos_eolas/metadata/models.py:349
 msgid "Temporal month code"
 msgstr ""
 
-#: lucos_eolas/metadata/models.py:349
+#: lucos_eolas/metadata/models.py:350
 msgid ""
 "The stable month code used by the TC39 Temporal API (e.g. \"M01\", \"M07\", "
 "\"M06L\" for Adar II). Stable across leap/non-leap years."
 msgstr ""
 
-#: lucos_eolas/metadata/models.py:353
+#: lucos_eolas/metadata/models.py:354
 msgid "Month"
 msgstr "Mí"
 
-#: lucos_eolas/metadata/models.py:354
+#: lucos_eolas/metadata/models.py:355
 msgid "Months"
 msgstr "Míonna"
 
-#: lucos_eolas/metadata/models.py:377
+#: lucos_eolas/metadata/models.py:378
 msgid "start year"
 msgstr "bliain tosaigh"
 
-#: lucos_eolas/metadata/models.py:380
+#: lucos_eolas/metadata/models.py:381
 msgid "Approximate year the event started, in the Gregorian Calendar"
 msgstr "Garbh-bhliain a thosaigh an imeacht, sa fhéilire Ghréagóra"
 
-#: lucos_eolas/metadata/models.py:386
+#: lucos_eolas/metadata/models.py:387
 msgid "end year"
 msgstr "bliain dheireanach"
 
-#: lucos_eolas/metadata/models.py:389
+#: lucos_eolas/metadata/models.py:390
 msgid "Approximate year the event ended, in the Gregorian Calendar"
 msgstr "Garbh-bhliain a chríochnaigh an imeacht, sa fhéilire Ghréagóra"
 
-#: lucos_eolas/metadata/models.py:395
+#: lucos_eolas/metadata/models.py:396
 msgid "Historical Event"
 msgstr "Imeacht Stairiúil"
 
-#: lucos_eolas/metadata/models.py:396
+#: lucos_eolas/metadata/models.py:397
 msgid "Historical Events"
 msgstr "Imeachtaí Stairiúla"
 
-#: lucos_eolas/metadata/models.py:427
+#: lucos_eolas/metadata/models.py:428
 msgid "day of month"
 msgstr "lá den mhí"
 
-#: lucos_eolas/metadata/models.py:430
+#: lucos_eolas/metadata/models.py:431
 msgid "The day of the month on which the festival's defining day falls."
 msgstr "An lá den mhí a dtiteann lá sainithe na féile air."
 
-#: lucos_eolas/metadata/models.py:438
+#: lucos_eolas/metadata/models.py:439
 msgid "month"
 msgstr "mí"
 
-#: lucos_eolas/metadata/models.py:439
+#: lucos_eolas/metadata/models.py:440
 msgid "The month in which the festival's defining day falls."
 msgstr "An mhí a dtiteann lá sainithe na féile inti."
 
-#: lucos_eolas/metadata/models.py:454
+#: lucos_eolas/metadata/models.py:455
 msgid "Festival"
 msgstr "Féile"
 
-#: lucos_eolas/metadata/models.py:455
+#: lucos_eolas/metadata/models.py:456
 msgid "Festivals"
 msgstr "Féilte"
 
-#: lucos_eolas/metadata/models.py:526
+#: lucos_eolas/metadata/models.py:527
 msgid "start day"
 msgstr "lá tosaigh"
 
-#: lucos_eolas/metadata/models.py:527
+#: lucos_eolas/metadata/models.py:528
 msgid ""
 "Day of the month on which this period begins. Leave blank for a whole-month "
 "period."
@@ -298,34 +302,34 @@ msgstr ""
 "An lá den mhí a dtosaíonn an tréimhse seo. Fág bán le haghaidh tréimhse "
 "mhíosa iomláin."
 
-#: lucos_eolas/metadata/models.py:538
+#: lucos_eolas/metadata/models.py:539
 msgid "start month"
 msgstr "mí tosaigh"
 
-#: lucos_eolas/metadata/models.py:539
+#: lucos_eolas/metadata/models.py:540
 msgid "The month in which this period begins."
 msgstr "An mhí a dtosaíonn an tréimhse seo inti."
 
-#: lucos_eolas/metadata/models.py:547
+#: lucos_eolas/metadata/models.py:548
 msgid "duration (days)"
 msgstr "fad (laethanta)"
 
-#: lucos_eolas/metadata/models.py:548
+#: lucos_eolas/metadata/models.py:549
 msgid ""
 "Length of this period in days. Leave blank for a single day or a whole month."
 msgstr ""
 "Fad na tréimhse seo i laethanta. Fág bán le haghaidh aon lá amháin nó míosa "
 "iomláine."
 
-#: lucos_eolas/metadata/models.py:554
+#: lucos_eolas/metadata/models.py:555
 msgid "Festival Period"
 msgstr "Tréimhse Féile"
 
-#: lucos_eolas/metadata/models.py:555
+#: lucos_eolas/metadata/models.py:556
 msgid "Festival Periods"
 msgstr "Tréimhsí Féile"
 
-#: lucos_eolas/metadata/models.py:566
+#: lucos_eolas/metadata/models.py:567
 msgid ""
 "Cannot set a duration without a start day. Leave duration blank for a whole-"
 "month period, or set a start day."
@@ -333,167 +337,167 @@ msgstr ""
 "Ní féidir fad a shocrú gan lá tosaigh. Fág an fad bán le haghaidh tréimhse "
 "mhíosa iomláin, nó socraigh lá tosaigh."
 
-#: lucos_eolas/metadata/models.py:576
+#: lucos_eolas/metadata/models.py:577
 msgid "Season"
 msgstr "Séasúr"
 
-#: lucos_eolas/metadata/models.py:577
+#: lucos_eolas/metadata/models.py:578
 msgid "Seasons"
 msgstr "Séasúir"
 
-#: lucos_eolas/metadata/models.py:584
+#: lucos_eolas/metadata/models.py:585
 msgid "description"
 msgstr "tuairisc"
 
-#: lucos_eolas/metadata/models.py:590
+#: lucos_eolas/metadata/models.py:591
 msgid "year"
 msgstr "bliain"
 
-#: lucos_eolas/metadata/models.py:593
+#: lucos_eolas/metadata/models.py:594
 msgid "Approximate year of the memory"
 msgstr "Garbh-bhliain ar an gcuimhne"
 
-#: lucos_eolas/metadata/models.py:599
+#: lucos_eolas/metadata/models.py:600
 msgid "Memory"
 msgstr "Cuimhne"
 
-#: lucos_eolas/metadata/models.py:600
+#: lucos_eolas/metadata/models.py:601
 msgid "Memories"
 msgstr "Cuimhní"
 
-#: lucos_eolas/metadata/models.py:610
+#: lucos_eolas/metadata/models.py:611
 msgid "value"
 msgstr "luach"
 
-#: lucos_eolas/metadata/models.py:613
+#: lucos_eolas/metadata/models.py:614
 msgid "Approximate value of this number, up to 2 decimal places"
 msgstr "Garluach an uimhir seo, suas le 2 ionaid dheachúlacha"
 
-#: lucos_eolas/metadata/models.py:618
+#: lucos_eolas/metadata/models.py:619
 msgid "Number"
 msgstr "Uimhir"
 
-#: lucos_eolas/metadata/models.py:619
+#: lucos_eolas/metadata/models.py:620
 msgid "Numbers"
 msgstr "Uimhreacha"
 
-#: lucos_eolas/metadata/models.py:634
+#: lucos_eolas/metadata/models.py:635
 msgid "Mode of Transport"
 msgstr "Modh Iompair"
 
-#: lucos_eolas/metadata/models.py:635
+#: lucos_eolas/metadata/models.py:636
 msgid "Modes of Transport"
 msgstr "Modhanna Iompair"
 
-#: lucos_eolas/metadata/models.py:650 lucos_eolas/metadata/models.py:658
+#: lucos_eolas/metadata/models.py:651 lucos_eolas/metadata/models.py:659
 msgid "Means of Transport"
 msgstr "Cóir Iompair"
 
-#: lucos_eolas/metadata/models.py:677
+#: lucos_eolas/metadata/models.py:678
 msgid "Vehicle"
 msgstr "Feithicil"
 
-#: lucos_eolas/metadata/models.py:678
+#: lucos_eolas/metadata/models.py:679
 msgid "Vehicles"
 msgstr "Feithiclí"
 
-#: lucos_eolas/metadata/models.py:696 lucos_eolas/metadata/models.py:748
+#: lucos_eolas/metadata/models.py:697 lucos_eolas/metadata/models.py:749
 msgid "code"
 msgstr "cód"
 
-#: lucos_eolas/metadata/models.py:697
+#: lucos_eolas/metadata/models.py:698
 msgid "A valid ISO 639-5 code"
 msgstr "Cód bailí ISO 639-5"
 
-#: lucos_eolas/metadata/models.py:706
+#: lucos_eolas/metadata/models.py:707
 msgid "Language Family"
 msgstr "Fine Teangacha"
 
-#: lucos_eolas/metadata/models.py:707
+#: lucos_eolas/metadata/models.py:708
 msgid "Language Families"
 msgstr "Finte Teangacha"
 
-#: lucos_eolas/metadata/models.py:749
+#: lucos_eolas/metadata/models.py:750
 msgid "A valid ISO 639 code"
 msgstr "Cód bailí ISO 639"
 
-#: lucos_eolas/metadata/models.py:763
+#: lucos_eolas/metadata/models.py:764
 msgid "Language"
 msgstr "Teanga"
 
-#: lucos_eolas/metadata/models.py:764
+#: lucos_eolas/metadata/models.py:765
 msgid "Languages"
 msgstr "Teangacha"
 
-#: lucos_eolas/metadata/models.py:771 lucos_eolas/metadata/models.py:824
+#: lucos_eolas/metadata/models.py:772 lucos_eolas/metadata/models.py:825
 msgid "indigenous to"
 msgstr "dúchasach do"
 
-#: lucos_eolas/metadata/models.py:781
+#: lucos_eolas/metadata/models.py:782
 msgid "widely spoken in"
 msgstr "go forleathan labhartha i"
 
-#: lucos_eolas/metadata/models.py:797
+#: lucos_eolas/metadata/models.py:798
 msgid "Weather"
 msgstr "Aimsir"
 
-#: lucos_eolas/metadata/models.py:798
+#: lucos_eolas/metadata/models.py:799
 msgid "Weathers"
 msgstr "Aimsirí"
 
-#: lucos_eolas/metadata/models.py:806
+#: lucos_eolas/metadata/models.py:807
 msgid "Ethnic Group"
 msgstr "Grúpa Eitneach"
 
-#: lucos_eolas/metadata/models.py:807
+#: lucos_eolas/metadata/models.py:808
 msgid "Ethnic Groups"
 msgstr "Grúpaí Eitneacha"
 
-#: lucos_eolas/metadata/models.py:814
+#: lucos_eolas/metadata/models.py:815
 msgid "heritage language"
 msgstr "teanga oidhreachta"
 
-#: lucos_eolas/metadata/models.py:840
+#: lucos_eolas/metadata/models.py:841
 msgid "Direction"
 msgstr "Treo"
 
-#: lucos_eolas/metadata/models.py:841
+#: lucos_eolas/metadata/models.py:842
 msgid "Directions"
 msgstr "Treonna"
 
-#: lucos_eolas/metadata/models.py:849
+#: lucos_eolas/metadata/models.py:850
 msgid "Organisation"
 msgstr "Eagraíocht"
 
-#: lucos_eolas/metadata/models.py:850
+#: lucos_eolas/metadata/models.py:851
 msgid "Organisations"
 msgstr "Eagraíochtaí"
 
-#: lucos_eolas/metadata/models.py:870
+#: lucos_eolas/metadata/models.py:871
 msgid "Creative Work Type"
 msgstr "Cineál Saothair Chruthaitheach"
 
-#: lucos_eolas/metadata/models.py:871
+#: lucos_eolas/metadata/models.py:872
 msgid "Creative Work Types"
 msgstr "Cineálacha Saothair Chruthaitheacha"
 
-#: lucos_eolas/metadata/models.py:886 lucos_eolas/metadata/models.py:899
+#: lucos_eolas/metadata/models.py:887 lucos_eolas/metadata/models.py:900
 msgid "Creative Work"
 msgstr "Saothar Cruthaitheach"
 
-#: lucos_eolas/metadata/models.py:900
+#: lucos_eolas/metadata/models.py:901
 msgid "Creative Works"
 msgstr "Saothair Chruthaitheacha"
 
-#: lucos_eolas/metadata/models.py:914
+#: lucos_eolas/metadata/models.py:915
 msgid "Person"
 msgstr "Duine"
 
-#: lucos_eolas/metadata/models.py:933
+#: lucos_eolas/metadata/models.py:934
 msgid "Offence"
 msgstr "Cion"
 
-#: lucos_eolas/metadata/models.py:934
+#: lucos_eolas/metadata/models.py:935
 msgid "Offences"
 msgstr "Cionta"
 
