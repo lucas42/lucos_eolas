@@ -2,8 +2,6 @@
 {% load i18n admin_urls %}
 
 {% block content %}
-<h1>{% trans "Duplicate name found" %}</h1>
-
 <p>{% blocktrans count count=duplicates_with_urls|length %}
 One existing item already has this name. Are you sure you want to save with the same name?
 {% plural %}
