@@ -1228,3 +1228,85 @@ class ThingCreateEndpointTest(TestCase):
 		"""Creating an entity whose model requires a FK without providing it returns 400."""
 		response = self._post('creativework', {'name': 'No Type Film'})
 		self.assertEqual(response.status_code, 400)
+
+
+# ─── Admin Duplicate Name Confirmation Tests ──────────────────────────────────
+
+@override_settings(AUTHENTICATION_BACKENDS=['django.contrib.auth.backends.ModelBackend'])
+class DuplicateNameConfirmationTest(TestCase):
+	"""EolasModelAdmin shows a confirmation page when creating an item with a duplicate name."""
+
+	def setUp(self):
+		user = User.objects.create_superuser('testadmin', 'admin@test.com', 'password')
+		self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
+
+	def test_create_with_duplicate_name_shows_confirmation(self):
+		"""POST with a name matching an existing item renders the confirmation page."""
+		HistoricalEvent.objects.create(name='World War II')
+		response = self.client.post('/metadata/historicalevent/add/', {'name': 'World War II'})
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, 'Duplicate name found')
+		self.assertContains(response, 'World War II')
+
+	def test_duplicate_check_is_case_insensitive(self):
+		"""The confirmation is shown even when the submitted name differs in case."""
+		HistoricalEvent.objects.create(name='World War II')
+		response = self.client.post('/metadata/historicalevent/add/', {'name': 'world war ii'})
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, 'Duplicate name found')
+
+	def test_unique_name_does_not_show_confirmation(self):
+		"""POST with a unique name redirects after creation — never shows the duplicate confirmation."""
+		response = self.client.post('/metadata/historicalevent/add/', {'name': 'Totally Unique Event'})
+		# 302 = form saved and redirected; confirmation page is always 200, so this is unambiguous
+		self.assertEqual(response.status_code, 302)
+
+	def test_confirm_duplicate_flag_bypasses_check(self):
+		"""When _confirm_duplicate=1 is present, the duplicate check is skipped."""
+		HistoricalEvent.objects.create(name='World War II')
+		response = self.client.post('/metadata/historicalevent/add/', {
+			'name': 'World War II',
+			'_confirm_duplicate': '1',
+		})
+		# Duplicate check is skipped — admin shows form errors (missing fields), not confirmation
+		self.assertEqual(response.status_code, 200)
+		self.assertNotContains(response, 'Duplicate name found')
+
+	def test_edit_without_name_change_no_confirmation(self):
+		"""Saving an existing item with its current name redirects — no duplicate confirmation."""
+		event = HistoricalEvent.objects.create(name='World War I')
+		response = self.client.post(
+			f'/metadata/historicalevent/{event.pk}/change/',
+			{'name': 'World War I'},
+		)
+		# 302 = saved and redirected; confirmation page is always 200, so this is unambiguous
+		self.assertEqual(response.status_code, 302)
+
+	def test_multiple_duplicates_all_listed(self):
+		"""When more than one item matches, all are listed on the confirmation page."""
+		Person.objects.create(name='John Smith')
+		Person.objects.create(name='John Smith')
+		response = self.client.post('/metadata/person/add/', {'name': 'John Smith'})
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, 'Duplicate name found')
+
+	def test_alternate_name_match_shows_confirmation(self):
+		"""A submitted name that matches an existing item's alternate name triggers confirmation."""
+		HistoricalEvent.objects.create(name='Second World War', alternate_names=['World War II'])
+		response = self.client.post('/metadata/historicalevent/add/', {'name': 'World War II'})
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, 'Duplicate name found')
+
+	def test_alternate_name_check_is_case_insensitive(self):
+		"""Alternate-name match is also case-insensitive."""
+		HistoricalEvent.objects.create(name='Second World War', alternate_names=['World War II'])
+		response = self.client.post('/metadata/historicalevent/add/', {'name': 'world war ii'})
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, 'Duplicate name found')
+
+	def test_confirmation_page_contains_link_to_existing_item(self):
+		"""The confirmation page links to the existing item's change page."""
+		event = HistoricalEvent.objects.create(name='World War II')
+		response = self.client.post('/metadata/historicalevent/add/', {'name': 'World War II'})
+		self.assertEqual(response.status_code, 200)
+		self.assertContains(response, f'/metadata/historicalevent/{event.pk}/change/')

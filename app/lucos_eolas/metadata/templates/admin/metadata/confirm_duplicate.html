@@ -1,0 +1,41 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+
+{% block content %}
+<p>{% blocktrans count count=duplicates_with_urls|length %}
+One existing item already has this name. Are you sure you want to save with the same name?
+{% plural %}
+{{ count }} existing items already have this name. Are you sure you want to save with the same name?
+{% endblocktrans %}</p>
+
+<table>
+  <thead>
+    <tr>
+      <th>{% trans "Existing item" %}</th>
+    </tr>
+  </thead>
+  <tbody>
+    {% for entry in duplicates_with_urls %}
+    <tr>
+      <td><a href="{{ entry.change_url }}">{{ entry.item }}</a></td>
+    </tr>
+    {% endfor %}
+  </tbody>
+</table>
+
+<form method="post">
+  {% csrf_token %}
+  {% for key, values in post_data.items %}
+    {% for value in values %}
+      <input type="hidden" name="{{ key }}" value="{{ value }}">
+    {% endfor %}
+  {% endfor %}
+  <input type="hidden" name="_confirm_duplicate" value="1">
+  <p>
+    <button type="submit" class="default" style="margin-top:1em;">
+      {% trans "Yes, save anyway" %}
+    </button>
+    <a href="{{ cancel_url }}" style="margin-left:1em;">{% trans "Cancel" %}</a>
+  </p>
+</form>
+{% endblock %}
