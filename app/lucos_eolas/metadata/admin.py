@@ -80,8 +80,68 @@ class EolasModelAdmin(admin.ModelAdmin):
 		all_fields.insert(0, "name") # Make sure name is always first, regardless of where it is defined
 		all_fields.append("wikipedia_slug") # Move wiki slug to the end of the list
 		return all_fields
+
+	def _find_duplicate_items(self, name, object_id=None):
+		"""Return a queryset of existing items whose name or alternate_names match `name`
+		(case-insensitive), optionally excluding the item being edited (object_id).
+		"""
+		# Primary name match (case-insensitive, database-level)
+		name_qs = self.model.objects.filter(name__iexact=name)
+		if object_id:
+			name_qs = name_qs.exclude(pk=object_id)
+		name_pks = set(name_qs.values_list('pk', flat=True))
+
+		# Alternate names match (Python-level case-insensitive — ArrayField has no icontains)
+		alt_qs = self.model.objects.values_list('pk', 'alternate_names')
+		if object_id:
+			alt_qs = alt_qs.exclude(pk=object_id)
+		alt_pks = {
+			pk
+			for pk, alts in alt_qs
+			if any(alt.lower() == name.lower() for alt in (alts or []))
+		}
+
+		all_pks = name_pks | alt_pks
+		if not all_pks:
+			return self.model.objects.none()
+		return self.model.objects.filter(pk__in=all_pks)
+
 	def changeform_view(self, request, object_id=None, form_url="", extra_context=None):
 		extra_context = extra_context or {}
+
+		# Intercept POST to show a confirmation page when the submitted name clashes
+		# with an existing item — before Django processes or saves the form.
+		if request.method == 'POST' and '_confirm_duplicate' not in request.POST:
+			name = request.POST.get('name', '').strip()
+			if name:
+				duplicates = self._find_duplicate_items(name, object_id)
+				if duplicates.exists():
+					# Pre-compute change-page URLs so the template stays simple
+					duplicates_with_urls = [
+						{
+							'item': item,
+							'change_url': reverse(
+								f'admin:{item._meta.app_label}_{item._meta.model_name}_change',
+								args=[item.pk],
+								current_app=self.admin_site.name,
+							),
+						}
+						for item in duplicates
+					]
+					# Pass through all original POST data (except the CSRF token,
+					# which {% csrf_token %} regenerates in the confirmation form).
+					post_data = {
+						k: v for k, v in request.POST.lists()
+						if k != 'csrfmiddlewaretoken'
+					}
+					return render(request, 'admin/metadata/confirm_duplicate.html', {
+						'title': _('Duplicate name found'),
+						'duplicates_with_urls': duplicates_with_urls,
+						'opts': self.model._meta,
+						'post_data': post_data,
+						'app_label': self.model._meta.app_label,
+					})
+
 		obj = self.get_object(request, object_id)
 		if obj and hasattr(obj, "get_absolute_url"):
 			absolute_object_url = request.build_absolute_uri(
