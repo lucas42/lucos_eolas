@@ -1256,10 +1256,10 @@ class DuplicateNameConfirmationTest(TestCase):
 		self.assertContains(response, 'Duplicate name found')
 
 	def test_unique_name_does_not_show_confirmation(self):
-		"""POST with a name that has no match creates normally (no confirmation page)."""
+		"""POST with a name that has no match shows form errors, not the duplicate confirmation."""
 		response = self.client.post('/metadata/historicalevent/add/', {'name': 'Totally Unique Event'})
-		# Either a redirect (created) or form errors — but never the duplicate confirmation
-		self.assertNotContains(response, 'Duplicate name found', status_code=None)
+		self.assertEqual(response.status_code, 200)
+		self.assertNotContains(response, 'Duplicate name found')
 
 	def test_confirm_duplicate_flag_bypasses_check(self):
 		"""When _confirm_duplicate=1 is present, the duplicate check is skipped."""
@@ -1268,8 +1268,9 @@ class DuplicateNameConfirmationTest(TestCase):
 			'name': 'World War II',
 			'_confirm_duplicate': '1',
 		})
-		# Should not show the confirmation page — admin either creates or shows form errors
-		self.assertNotContains(response, 'Duplicate name found', status_code=None)
+		# Duplicate check is skipped — admin shows form errors (missing fields), not confirmation
+		self.assertEqual(response.status_code, 200)
+		self.assertNotContains(response, 'Duplicate name found')
 
 	def test_edit_without_name_change_no_confirmation(self):
 		"""Saving an existing item with its current name does not trigger confirmation."""
@@ -1278,7 +1279,8 @@ class DuplicateNameConfirmationTest(TestCase):
 			f'/metadata/historicalevent/{event.pk}/change/',
 			{'name': 'World War I'},
 		)
-		self.assertNotContains(response, 'Duplicate name found', status_code=None)
+		self.assertEqual(response.status_code, 200)
+		self.assertNotContains(response, 'Duplicate name found')
 
 	def test_multiple_duplicates_all_listed(self):
 		"""When more than one item matches, all are listed on the confirmation page."""
