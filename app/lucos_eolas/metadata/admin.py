@@ -134,12 +134,26 @@ class EolasModelAdmin(admin.ModelAdmin):
 						k: v for k, v in request.POST.lists()
 						if k != 'csrfmiddlewaretoken'
 					}
+					# Cancel returns to the item's change page when editing, or the
+					# changelist when creating.
+					if object_id:
+						cancel_url = reverse(
+							f'admin:{self.model._meta.app_label}_{self.model._meta.model_name}_change',
+							args=[object_id],
+							current_app=self.admin_site.name,
+						)
+					else:
+						cancel_url = reverse(
+							f'admin:{self.model._meta.app_label}_{self.model._meta.model_name}_changelist',
+							current_app=self.admin_site.name,
+						)
 					return render(request, 'admin/metadata/confirm_duplicate.html', {
 						'title': _('Duplicate name found'),
 						'duplicates_with_urls': duplicates_with_urls,
 						'opts': self.model._meta,
 						'post_data': post_data,
 						'app_label': self.model._meta.app_label,
+						'cancel_url': cancel_url,
 					})
 
 		obj = self.get_object(request, object_id)

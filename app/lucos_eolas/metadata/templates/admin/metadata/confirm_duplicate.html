@@ -5,9 +5,9 @@
 <h1>{% trans "Duplicate name found" %}</h1>
 
 <p>{% blocktrans count count=duplicates_with_urls|length %}
-One existing item already has this name. Are you sure you want to create another item with the same name?
+One existing item already has this name. Are you sure you want to save with the same name?
 {% plural %}
-{{ count }} existing items already have this name. Are you sure you want to create another item with the same name?
+{{ count }} existing items already have this name. Are you sure you want to save with the same name?
 {% endblocktrans %}</p>
 
 <table>
@@ -35,9 +35,9 @@ One existing item already has this name. Are you sure you want to create another
   <input type="hidden" name="_confirm_duplicate" value="1">
   <p>
     <button type="submit" class="default" style="margin-top:1em;">
-      {% trans "Yes, create anyway" %}
+      {% trans "Yes, save anyway" %}
     </button>
-    <a href="{% url opts|admin_urlname:'changelist' %}" style="margin-left:1em;">{% trans "Cancel" %}</a>
+    <a href="{{ cancel_url }}" style="margin-left:1em;">{% trans "Cancel" %}</a>
   </p>
 </form>
 {% endblock %}
