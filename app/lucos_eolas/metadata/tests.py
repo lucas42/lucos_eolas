@@ -424,6 +424,136 @@ class AllRdfPrefLabelRegressionTest(TestCase):
 		)
 
 
+class BatchNamesEndpointTest(TestCase):
+	"""POST /metadata/names — batch URI to canonical name resolution."""
+
+	AUTH = {'HTTP_AUTHORIZATION': 'key key'}
+
+	def _post(self, body, auth=True, content_type='application/json'):
+		headers = dict(self.AUTH) if auth else {}
+		return self.client.post(
+			'/metadata/names',
+			data=json.dumps(body),
+			content_type=content_type,
+			**headers,
+		)
+
+	# ── Authentication ──────────────────────────────────────────────────────────
+
+	def test_no_auth_returns_401(self):
+		response = self._post([], auth=False)
+		self.assertEqual(response.status_code, 401)
+
+	def test_invalid_key_returns_403(self):
+		response = self.client.post(
+			'/metadata/names',
+			data=json.dumps([]),
+			content_type='application/json',
+			HTTP_AUTHORIZATION='key wrongkey',
+		)
+		self.assertEqual(response.status_code, 403)
+
+	# ── Method ──────────────────────────────────────────────────────────────────
+
+	def test_get_returns_405(self):
+		response = self.client.get('/metadata/names', **self.AUTH)
+		self.assertEqual(response.status_code, 405)
+
+	# ── Content-Type ────────────────────────────────────────────────────────────
+
+	def test_wrong_content_type_returns_415(self):
+		response = self._post([], content_type='text/plain')
+		self.assertEqual(response.status_code, 415)
+
+	def test_form_encoded_content_type_returns_415(self):
+		response = self._post([], content_type='application/x-www-form-urlencoded')
+		self.assertEqual(response.status_code, 415)
+
+	# ── Input validation ─────────────────────────────────────────────────────────
+
+	def test_invalid_json_returns_400(self):
+		response = self.client.post(
+			'/metadata/names',
+			data=b'not-json',
+			content_type='application/json',
+			**self.AUTH,
+		)
+		self.assertEqual(response.status_code, 400)
+
+	def test_non_array_body_returns_400(self):
+		response = self._post({'uri': 'http://localhost/metadata/person/1/'})
+		self.assertEqual(response.status_code, 400)
+
+	# ── Successful resolution ────────────────────────────────────────────────────
+
+	def test_empty_list_returns_empty_dict(self):
+		response = self._post([])
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(response.json(), {})
+
+	def test_returns_json_content_type(self):
+		response = self._post([])
+		self.assertIn('application/json', response['Content-Type'])
+
+	def test_resolves_known_uri(self):
+		person = Person.objects.create(name='David Bowie')
+		uri = person.get_absolute_url()
+		response = self._post([uri])
+		self.assertEqual(response.status_code, 200)
+		data = response.json()
+		self.assertEqual(data[uri], 'David Bowie')
+
+	def test_resolves_multiple_uris_of_same_type(self):
+		person1 = Person.objects.create(name='David Bowie')
+		person2 = Person.objects.create(name='Paul McCartney')
+		uri1, uri2 = person1.get_absolute_url(), person2.get_absolute_url()
+		response = self._post([uri1, uri2])
+		self.assertEqual(response.status_code, 200)
+		data = response.json()
+		self.assertEqual(data[uri1], 'David Bowie')
+		self.assertEqual(data[uri2], 'Paul McCartney')
+
+	def test_resolves_uris_of_different_types(self):
+		person = Person.objects.create(name='Beethoven')
+		calendar = Calendar.objects.create(name='Gregorian')
+		uri_person = person.get_absolute_url()
+		uri_cal = calendar.get_absolute_url()
+		response = self._post([uri_person, uri_cal])
+		data = response.json()
+		self.assertEqual(data[uri_person], 'Beethoven')
+		self.assertEqual(data[uri_cal], 'Gregorian')
+
+	def test_unknown_uri_omitted(self):
+		"""URIs with a valid structure but non-existent PK are omitted from the response."""
+		unknown_uri = 'http://localhost/metadata/person/99999/'
+		response = self._post([unknown_uri])
+		self.assertEqual(response.status_code, 200)
+		self.assertNotIn(unknown_uri, response.json())
+
+	def test_malformed_uri_path_omitted(self):
+		"""URIs with wrong path structure are silently omitted."""
+		response = self._post(['not-a-valid-uri', 'http://localhost/wrong/path'])
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(response.json(), {})
+
+	def test_non_string_items_skipped(self):
+		"""Non-string items in the list are skipped without error."""
+		response = self._post([42, None, True])
+		self.assertEqual(response.status_code, 200)
+		self.assertEqual(response.json(), {})
+
+	def test_mixed_found_and_not_found_uris(self):
+		"""Only found URIs appear in the response; missing ones are silently omitted."""
+		person = Person.objects.create(name='George Harrison')
+		found_uri = person.get_absolute_url()
+		missing_uri = 'http://localhost/metadata/person/99999/'
+		response = self._post([found_uri, missing_uri])
+		data = response.json()
+		self.assertIn(found_uri, data)
+		self.assertNotIn(missing_uri, data)
+		self.assertEqual(data[found_uri], 'George Harrison')
+
+
 class ContentNegotiationTest(SimpleTestCase):
 	"""thing_entrypoint redirects to /data/ for RDF and /change/ for HTML."""
 
