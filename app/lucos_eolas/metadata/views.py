@@ -225,6 +225,74 @@ def all_rdf(request):
 
 
 @api_auth
+def batch_names(request):
+	"""POST /metadata/names — resolve a batch of entity URIs to their canonical names.
+
+	Request body: a JSON array of eolas entity URIs.
+	Response: a flat map of URI → canonical name (skos:prefLabel / the 'name' field).
+	URIs that are not found, malformed, or point to unknown types are silently omitted.
+	Auth: same Bearer/key mechanism as other data endpoints.
+
+	This is a *scoped* lookup — it does a direct indexed query over the requested PKs
+	per model type, with no RDF graph materialisation.  It returns in well under a second
+	for batches of thousands of URIs, unlike /metadata/all/data/ which materialises every
+	object in the database.
+	"""
+	if request.method != 'POST':
+		return HttpResponse(status=405)
+
+	content_type_header = request.content_type or ''
+	if 'application/json' not in content_type_header:
+		return HttpResponse(status=415)
+
+	try:
+		body = json.loads(request.body)
+	except (json.JSONDecodeError, UnicodeDecodeError, ValueError):
+		return JsonResponse({'error': 'invalid_json'}, status=400)
+
+	if not isinstance(body, list):
+		return JsonResponse({'error': 'expected a JSON array'}, status=400)
+
+	# Parse BASE_URL once for host validation
+	base_parsed = urlparse(BASE_URL) if BASE_URL else None
+
+	# Group URIs by model type, mapping pk (string) → original URI
+	by_type = {}
+	for uri in body:
+		if not isinstance(uri, str):
+			continue
+		parsed = urlparse(uri)
+		# Only process URIs from this eolas instance
+		if base_parsed and (parsed.scheme != base_parsed.scheme or parsed.netloc != base_parsed.netloc):
+			continue
+		parts = parsed.path.strip('/').split('/')
+		if len(parts) != 3 or parts[0] != 'metadata':
+			continue
+		type_name, pk = parts[1], parts[2]
+		if type_name not in by_type:
+			by_type[type_name] = {}
+		by_type[type_name][pk] = uri
+
+	result = {}
+	for type_name, pk_to_uri in by_type.items():
+		try:
+			model_class = apps.get_model('metadata', type_name)
+		except LookupError:
+			continue
+		if not hasattr(model_class, 'get_absolute_url'):
+			continue
+		try:
+			for obj_pk, name in model_class.objects.filter(pk__in=list(pk_to_uri.keys())).values_list('pk', 'name'):
+				pk_str = str(obj_pk)
+				if pk_str in pk_to_uri:
+					result[pk_to_uri[pk_str]] = name
+		except (ValueError, TypeError):
+			continue
+
+	return JsonResponse(result)
+
+
+@api_auth
 def thing_create(request, type):
 	"""POST /metadata/{type}/ — create a new entity of the given type.
 

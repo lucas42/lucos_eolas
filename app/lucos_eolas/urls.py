@@ -7,6 +7,7 @@ urlpatterns = [
 	re_path(r'^i18n/', include('django.conf.urls.i18n')),
 
 	path('metadata/categories.json', metadata_views.categories_json),
+	path('metadata/names', metadata_views.batch_names),
 	path('metadata/all/data/', metadata_views.all_rdf),
 	path('metadata/<slug:type>/list/', metadata_views.type_list),
 	path('api/metadata/<slug:type>/', metadata_views.thing_create),
