@@ -1245,13 +1245,15 @@ class ThingCreateEndpointTest(TestCase):
 
 	@patch('lucos_eolas.metadata.signals.updateLoganne')
 	def test_loganne_itemcreated_fired(self, mock_loganne):
-		self._post('person', {'name': 'Charles Darwin'})
+		with self.captureOnCommitCallbacks(execute=True):
+			self._post('person', {'name': 'Charles Darwin'})
 		called_types = [call.kwargs.get('type') for call in mock_loganne.call_args_list]
 		self.assertIn('itemCreated', called_types)
 
 	@patch('lucos_eolas.metadata.signals.updateLoganne')
 	def test_loganne_itemcreated_includes_entity_type(self, mock_loganne):
-		self._post('person', {'name': 'Marie Curie'})
+		with self.captureOnCommitCallbacks(execute=True):
+			self._post('person', {'name': 'Marie Curie'})
 		item_type = Person._meta.verbose_name.title()
 		created_calls = [c for c in mock_loganne.call_args_list if c.kwargs.get('type') == 'itemCreated']
 		self.assertTrue(len(created_calls) > 0, 'itemCreated should have been fired')
@@ -1261,8 +1263,9 @@ class ThingCreateEndpointTest(TestCase):
 	def test_loganne_itemupdated_includes_entity_type(self, mock_loganne):
 		person = Person.objects.create(name='Isaac Newton')
 		mock_loganne.reset_mock()
-		person.name = 'Sir Isaac Newton'
-		person.save()
+		with self.captureOnCommitCallbacks(execute=True):
+			person.name = 'Sir Isaac Newton'
+			person.save()
 		item_type = Person._meta.verbose_name.title()
 		updated_calls = [c for c in mock_loganne.call_args_list if c.kwargs.get('type') == 'itemUpdated']
 		self.assertTrue(len(updated_calls) > 0, 'itemUpdated should have been fired')
@@ -1272,7 +1275,8 @@ class ThingCreateEndpointTest(TestCase):
 	def test_loganne_itemdeleted_includes_entity_type(self, mock_loganne):
 		person = Person.objects.create(name='Galileo Galilei')
 		mock_loganne.reset_mock()
-		person.delete()
+		with self.captureOnCommitCallbacks(execute=True):
+			person.delete()
 		item_type = Person._meta.verbose_name.title()
 		deleted_calls = [c for c in mock_loganne.call_args_list if c.kwargs.get('type') == 'itemDeleted']
 		self.assertTrue(len(deleted_calls) > 0, 'itemDeleted should have been fired')
