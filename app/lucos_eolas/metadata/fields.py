@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.postgres.fields import ArrayField
+from django import forms
 import re
 import logging
 import rdflib
@@ -223,6 +224,61 @@ class RDFManyToManyField(models.ManyToManyField):
 	def rdf_range(self):
 		return self.remote_field.model.rdf_type
 
+class ArrayWidget(forms.SelectMultiple):
+	"""Tag/chip input widget for ArrayFields.
+
+	Renders as a <select multiple> so Django admin's bundled Select2 can be
+	initialised in tags mode — each array item becomes a removable chip.
+	Existing values are pre-populated as selected <option> elements so they
+	appear as chips when the page loads.
+
+	value_from_datadict collects the multiple POST values and joins them with
+	a comma so that SimpleArrayField.to_python() can split them as usual.
+	"""
+
+	def __init__(self, *args, **kwargs):
+		super().__init__(*args, **kwargs)
+		self.attrs['class'] = 'array-field-input'
+
+	def format_value(self, value):
+		# SimpleArrayField.prepare_value() converts a Python list to a
+		# comma-separated string before the widget sees it.  Split it back
+		# so optgroups() receives individual values, not one combined string.
+		if isinstance(value, str):
+			return [v.strip() for v in value.split(',') if v.strip()]
+		return super().format_value(value)
+
+	def optgroups(self, name, value, attrs=None):
+		"""Build one selected <option> per existing value (no fixed choices list)."""
+		groups = []
+		for i, v in enumerate(value or []):
+			if v:
+				option = self.create_option(name, v, v, True, i, attrs=attrs)
+				groups.append((None, [option], i))
+		return groups
+
+	def value_from_datadict(self, data, files, name):
+		"""Collect the multiple POST values and return a comma-separated string."""
+		values = data.getlist(name)
+		return ','.join(v.strip() for v in values if v.strip())
+
+	class Media:
+		# select2.full.js MUST come before jquery.init.js.
+		# jquery.init.js calls noConflict(true) which strips window.jQuery;
+		# Select2's UMD wrapper can't find jQuery if it loads after that.
+		# Loading Select2 first lets it attach .select2() to window.jQuery
+		# while it still exists; django.jQuery is the same object so the
+		# method remains available after noConflict(true) removes the global.
+		js = (
+			'admin/js/vendor/select2/select2.full.js',
+			'admin/js/jquery.init.js',
+			'array-field-widget.js',
+		)
+		css = {
+			'all': ('admin/css/vendor/select2/select2.min.css',)
+		}
+
+
 class RDFArrayField(ArrayField):
 	def __init__(self, *args, rdf_predicate=None, rdf_label=None, **kwargs):
 		super().__init__(*args, **kwargs)
@@ -234,3 +290,6 @@ class RDFArrayField(ArrayField):
 		for value in values:
 			g += self.base_field.get_rdf(obj, value=value)
 		return g
+	def formfield(self, **kwargs):
+		kwargs.setdefault('widget', ArrayWidget)
+		return super().formfield(**kwargs)

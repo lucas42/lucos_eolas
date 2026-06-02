@@ -2,12 +2,14 @@ import json
 from django.core.cache import cache
 from django.test import SimpleTestCase, TestCase, override_settings
 from django.contrib.auth.models import User
+from django.http import QueryDict
 from unittest.mock import patch, MagicMock, call
 from django.core.exceptions import ValidationError
 from .checks import (
     get_place_consistency_checks, get_wikipedia_slug_check, _check_no_invalid_wikipedia_slugs,
     UNIVERSE_PLACE_ID, refresh_check_cache, get_cached_checks, CHECKS_CACHE_KEY,
 )
+from .fields import ArrayWidget
 from .models import DayOfWeek, Calendar, Month, HistoricalEvent, Festival, FestivalPeriod, Language, LanguageFamily, TransportMode, Vehicle, Person, CreativeWork, CreativeWorkType, PlaceType
 from .views import _safe_local_redirect
 
@@ -1444,3 +1446,98 @@ class DuplicateNameConfirmationTest(TestCase):
 		response = self.client.post('/metadata/historicalevent/add/', {'name': 'World War II'})
 		self.assertEqual(response.status_code, 200)
 		self.assertContains(response, f'/metadata/historicalevent/{event.pk}/change/')
+
+
+# ─── ArrayWidget Tests ────────────────────────────────────────────────────────
+
+class ArrayWidgetFormatValueTest(SimpleTestCase):
+	"""ArrayWidget.format_value() must split comma-separated strings back into lists.
+
+	SimpleArrayField.prepare_value() joins a Python list to a comma-separated
+	string before passing the value to the widget for rendering.  Without this
+	split, optgroups() would receive ['foo,bar'] (one element) and render a
+	single chip containing a comma rather than two separate chips.
+	"""
+
+	def test_splits_comma_separated_string(self):
+		w = ArrayWidget()
+		self.assertEqual(w.format_value('London,Londres'), ['London', 'Londres'])
+
+	def test_splits_three_values(self):
+		w = ArrayWidget()
+		self.assertEqual(
+			w.format_value('London,Londres,Lunden'),
+			['London', 'Londres', 'Lunden'],
+		)
+
+	def test_strips_whitespace_around_values(self):
+		w = ArrayWidget()
+		self.assertEqual(w.format_value('London , Londres'), ['London', 'Londres'])
+
+	def test_empty_string_returns_empty_list(self):
+		w = ArrayWidget()
+		self.assertEqual(w.format_value(''), [])
+
+	def test_none_returns_empty_list(self):
+		w = ArrayWidget()
+		self.assertEqual(w.format_value(None), [])
+
+	def test_list_passes_through_unchanged(self):
+		"""If value is already a list (e.g. from initial=), pass it through."""
+		w = ArrayWidget()
+		self.assertEqual(w.format_value(['London', 'Londres']), ['London', 'Londres'])
+
+
+class ArrayWidgetValueFromDatadictTest(SimpleTestCase):
+	"""ArrayWidget.value_from_datadict() must rejoin POST values for SimpleArrayField."""
+
+	def test_joins_multiple_values_with_comma(self):
+		w = ArrayWidget()
+		qd = QueryDict('f=London&f=Londres&f=Lunden')
+		self.assertEqual(w.value_from_datadict(qd, {}, 'f'), 'London,Londres,Lunden')
+
+	def test_single_value(self):
+		w = ArrayWidget()
+		qd = QueryDict('f=London')
+		self.assertEqual(w.value_from_datadict(qd, {}, 'f'), 'London')
+
+	def test_empty_returns_empty_string(self):
+		w = ArrayWidget()
+		qd = QueryDict('')
+		self.assertEqual(w.value_from_datadict(qd, {}, 'f'), '')
+
+	def test_strips_whitespace_and_skips_blanks(self):
+		w = ArrayWidget()
+		qd = QueryDict('f=+London+&f=&f=+Paris+')
+		self.assertEqual(w.value_from_datadict(qd, {}, 'f'), 'London,Paris')
+
+
+class ArrayWidgetRenderTest(SimpleTestCase):
+	"""ArrayWidget.render() must produce correct HTML for both empty and populated values."""
+
+	def test_render_existing_values_as_selected_options(self):
+		"""Each existing value must appear as a selected <option>."""
+		w = ArrayWidget()
+		html = w.render('alternate_names', 'London,Londres', attrs={'id': 'id_alternate_names'})
+		self.assertIn('value="London"', html)
+		self.assertIn('value="Londres"', html)
+		self.assertIn('selected', html)
+		self.assertIn('class="array-field-input"', html)
+
+	def test_render_empty_value_produces_bare_select(self):
+		"""An empty value renders a <select> with no <option> elements."""
+		w = ArrayWidget()
+		html = w.render('alternate_names', '', attrs={'id': 'id_alternate_names'})
+		self.assertNotIn('<option', html)
+		self.assertIn('<select', html)
+
+	def test_render_none_produces_bare_select(self):
+		w = ArrayWidget()
+		html = w.render('alternate_names', None, attrs={'id': 'id_alternate_names'})
+		self.assertNotIn('<option', html)
+
+	def test_each_value_is_its_own_option(self):
+		"""Three values must produce three separate <option> elements, not one."""
+		w = ArrayWidget()
+		html = w.render('alternate_names', 'a,b,c', attrs={'id': 'id_alternate_names'})
+		self.assertEqual(html.count('<option'), 3)
