@@ -263,15 +263,16 @@ class ArrayWidget(forms.SelectMultiple):
 		return ','.join(v.strip() for v in values if v.strip())
 
 	class Media:
-		# array-field-widget.js must load BEFORE select2.full.js.
-		# Its first line restores window.jQuery (removed by django 5.x
-		# jquery.init.js noConflict(true)) so Select2 can find jQuery and
-		# register .select2() on it.  Because django.jQuery is the same
-		# object, .select2() then works on django.jQuery too.
+		# select2.full.js MUST come before jquery.init.js.
+		# jquery.init.js calls noConflict(true) which strips window.jQuery;
+		# Select2's UMD wrapper can't find jQuery if it loads after that.
+		# Loading Select2 first lets it attach .select2() to window.jQuery
+		# while it still exists; django.jQuery is the same object so the
+		# method remains available after noConflict(true) removes the global.
 		js = (
+			'admin/js/vendor/select2/select2.full.js',
 			'admin/js/jquery.init.js',
 			'array-field-widget.js',
-			'admin/js/vendor/select2/select2.full.js',
 		)
 		css = {
 			'all': ('admin/css/vendor/select2/select2.min.css',)
