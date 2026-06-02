@@ -240,6 +240,14 @@ class ArrayWidget(forms.SelectMultiple):
 		super().__init__(*args, **kwargs)
 		self.attrs['class'] = 'array-field-input'
 
+	def format_value(self, value):
+		# SimpleArrayField.prepare_value() converts a Python list to a
+		# comma-separated string before the widget sees it.  Split it back
+		# so optgroups() receives individual values, not one combined string.
+		if isinstance(value, str):
+			return [v.strip() for v in value.split(',') if v.strip()]
+		return super().format_value(value)
+
 	def optgroups(self, name, value, attrs=None):
 		"""Build one selected <option> per existing value (no fixed choices list)."""
 		groups = []
