@@ -10,6 +10,7 @@ psycopg = "*"
 rdflib = "*"
 requests = "*"
 lucos_loganne_pythonclient = ">=1.0.26"
+requests-mock = "*"
 
 [dev-packages]
 

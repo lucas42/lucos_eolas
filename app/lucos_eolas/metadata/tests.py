@@ -647,6 +647,7 @@ class MergeEntitiesActionTest(TestCase):
 			type='itemMerged',
 			humanReadable=f'{item_type} "Swearing" merged into "Profanity"',
 			url=target_url,
+			level='routine',
 			sourceUri=source_url,
 			targetUri=target_url,
 			itemType=item_type,
@@ -1541,3 +1542,77 @@ class ArrayWidgetRenderTest(SimpleTestCase):
 		w = ArrayWidget()
 		html = w.render('alternate_names', 'a,b,c', attrs={'id': 'id_alternate_names'})
 		self.assertEqual(html.count('<option'), 3)
+
+
+# ─── Loganne Real-Transport Tests ─────────────────────────────────────────────
+
+@override_settings(AUTHENTICATION_BACKENDS=['django.contrib.auth.backends.ModelBackend'])
+class LoganneRealTransportTest(TestCase):
+	"""Drive the real loganne client against a stubbed HTTP transport.
+
+	These tests verify that `level` is correctly passed to `updateLoganne` after
+	the v2 client made it a required parameter.  They use requests-mock (which
+	intercepts at the HTTPAdapter level) rather than mocking `updateLoganne`
+	itself, so a missing or invalid `level` arg causes the test to fail before
+	any HTTP call is made — catching the integration gap that module-level mocks
+	cannot.
+	"""
+
+	def setUp(self):
+		user = User.objects.create_superuser('realadmin', 'rta@test.com', 'pass')
+		self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
+
+	def test_item_created_signal_posts_routine_level(self):
+		"""Creating an entity fires itemCreated with level='routine' over HTTP."""
+		import requests_mock as requests_mock_lib
+		from loganne import LOGANNE_ENDPOINT
+
+		with requests_mock_lib.Mocker() as m:
+			m.post(LOGANNE_ENDPOINT, json={})
+			with self.captureOnCommitCallbacks(execute=True):
+				DayOfWeek.objects.create(name='Monday', order=1)
+
+		self.assertTrue(m.called, 'Expected an HTTP POST to loganne')
+		payload = m.last_request.json()
+		self.assertEqual(payload['type'], 'itemCreated')
+		self.assertEqual(payload['level'], 'routine')
+
+	def test_item_deleted_signal_posts_routine_level(self):
+		"""Deleting an entity fires itemDeleted with level='routine' over HTTP."""
+		import requests_mock as requests_mock_lib
+		from loganne import LOGANNE_ENDPOINT
+
+		day = DayOfWeek.objects.create(name='Tuesday', order=2)
+		with requests_mock_lib.Mocker() as m:
+			m.post(LOGANNE_ENDPOINT, json={})
+			with self.captureOnCommitCallbacks(execute=True):
+				day.delete()
+
+		self.assertTrue(m.called, 'Expected an HTTP POST to loganne')
+		payload = m.last_request.json()
+		self.assertEqual(payload['type'], 'itemDeleted')
+		self.assertEqual(payload['level'], 'routine')
+
+	def test_item_merged_admin_action_posts_routine_level(self):
+		"""The merge_entities admin action fires itemMerged with level='routine' over HTTP."""
+		import requests_mock as requests_mock_lib
+		from loganne import LOGANNE_ENDPOINT
+
+		source = HistoricalEvent.objects.create(name='Event Alpha')
+		target = HistoricalEvent.objects.create(name='Event Beta')
+		with requests_mock_lib.Mocker() as m:
+			m.post(LOGANNE_ENDPOINT, json={})
+			self.client.post(
+				'/metadata/historicalevent/',
+				{
+					'action': 'merge_entities',
+					'_selected_action': [str(source.pk), str(target.pk)],
+					'apply_merge': '1',
+					'target_id': str(target.pk),
+				},
+			)
+
+		self.assertTrue(m.called, 'Expected an HTTP POST to loganne')
+		payload = m.last_request.json()
+		self.assertEqual(payload['type'], 'itemMerged')
+		self.assertEqual(payload['level'], 'routine')

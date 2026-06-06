@@ -9,7 +9,7 @@ def metadata_post_save(sender, instance, created, **kwargs):
 	human = f'{item_type} "{instance}" {"created" if created else "updated"}'
 	url = instance.get_webhook_url()
 	transaction.on_commit(
-		lambda: updateLoganne(type=event_type, humanReadable=human, url=url, itemType=item_type)
+		lambda: updateLoganne(type=event_type, humanReadable=human, url=url, level="routine", itemType=item_type)
 	)
 
 def metadata_post_delete(sender, instance, **kwargs):
@@ -17,5 +17,5 @@ def metadata_post_delete(sender, instance, **kwargs):
 	human = f'{item_type} "{instance}" deleted'
 	url = instance.get_webhook_url()
 	transaction.on_commit(
-		lambda: updateLoganne(type="itemDeleted", humanReadable=human, url=url, itemType=item_type)
+		lambda: updateLoganne(type="itemDeleted", humanReadable=human, url=url, level="routine", itemType=item_type)
 	)
