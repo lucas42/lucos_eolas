@@ -1562,8 +1562,8 @@ class LoganneRealTransportTest(TestCase):
 		user = User.objects.create_superuser('realadmin', 'rta@test.com', 'pass')
 		self.client.force_login(user, backend='django.contrib.auth.backends.ModelBackend')
 
-	def test_item_created_signal_posts_routine_level(self):
-		"""Creating an entity fires itemCreated with level='routine' over HTTP."""
+	def test_item_created_signal_posts_notable_level(self):
+		"""Creating an entity fires itemCreated with level='notable' over HTTP."""
 		import requests_mock as requests_mock_lib
 		from loganne import LOGANNE_ENDPOINT
 
@@ -1575,7 +1575,7 @@ class LoganneRealTransportTest(TestCase):
 		self.assertTrue(m.called, 'Expected an HTTP POST to loganne')
 		payload = m.last_request.json()
 		self.assertEqual(payload['type'], 'itemCreated')
-		self.assertEqual(payload['level'], 'routine')
+		self.assertEqual(payload['level'], 'notable')
 
 	def test_item_deleted_signal_posts_routine_level(self):
 		"""Deleting an entity fires itemDeleted with level='routine' over HTTP."""
