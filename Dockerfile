@@ -20,7 +20,7 @@ RUN apk add gettext # Needed for translations
 RUN apk add --virtual build-deps gcc python3-dev musl-dev # These are needed to install pyscopg, but can be removed after
 COPY app/Pipfile* .
 RUN pip install --upgrade pip pipenv
-RUN pipenv install --dev --system
+RUN pipenv install --system
 RUN apk del build-deps gcc python3-dev musl-dev
 
 # Copy project after dependencies, so cached dependencies can be used if unchanged
@@ -36,6 +36,12 @@ RUN django-admin compilemessages
 RUN python manage.py collectstatic --noinput --settings=lucos_eolas.settings_collectstatic
 
 CMD ["./startup.sh"]
+
+FROM app AS test
+# Install dev-only dependencies (e.g. requests-mock) on top of the production app stage.
+# These are not included in the production image — this stage is used exclusively by the
+# test service in docker-compose.yml.
+RUN pipenv install --dev --system
 
 FROM nginx:1.29.8-alpine3.23 AS web
 ARG VERSION
