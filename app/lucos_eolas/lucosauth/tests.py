@@ -150,3 +150,106 @@ class ApiAuthDecoratorTest(SimpleTestCase):
             "from external services (e.g. migration scripts) are not rejected by "
             "Django's CSRF middleware.",
         )
+
+
+class EnvVarUserScopeTest(SimpleTestCase):
+    """Unit tests for EnvVarUser.has_scope() and scope parsing."""
+
+    def _make_user(self, scopes=None):
+        from .envvars import EnvVarUser
+        return EnvVarUser(system='testsystem:test', apikey='testkey', scopes=scopes)
+
+    def test_user_with_write_scope_has_write(self):
+        user = self._make_user(scopes=['write'])
+        self.assertTrue(user.has_scope('write'))
+
+    def test_user_with_read_scope_does_not_have_write(self):
+        user = self._make_user(scopes=['read'])
+        self.assertFalse(user.has_scope('write'))
+
+    def test_user_with_no_scopes_has_no_permissions(self):
+        user = self._make_user()
+        self.assertFalse(user.has_scope('read'))
+        self.assertFalse(user.has_scope('write'))
+
+    def test_user_with_read_and_write_scopes_has_both(self):
+        user = self._make_user(scopes=['read', 'write'])
+        self.assertTrue(user.has_scope('read'))
+        self.assertTrue(user.has_scope('write'))
+        self.assertFalse(user.has_scope('admin'))
+
+    def test_user_with_empty_scopes_list_has_no_permissions(self):
+        user = self._make_user(scopes=[])
+        self.assertFalse(user.has_scope('write'))
+
+
+class ApiAuthScopeEnforcementTest(SimpleTestCase):
+    """Tests for scope enforcement via @api_auth(required_scope=...)."""
+
+    def _make_scoped_view(self, required_scope):
+        """Return a view decorated with @api_auth(required_scope=...)."""
+        @api_auth(required_scope=required_scope)
+        def view(request):
+            return HttpResponse(status=200)
+        return view
+
+    def _make_user_with_scopes(self, scopes):
+        user = MagicMock()
+        user.has_scope = lambda scope: scope in scopes
+        return user
+
+    def _call_scoped(self, user, required_scope='write'):
+        view = self._make_scoped_view(required_scope)
+        request = _make_request(f'Bearer testkey')
+        with patch('lucos_eolas.lucosauth.decorators.getUserByKey', return_value=user):
+            return view(request)
+
+    def test_write_scope_required_key_has_write_returns_200(self):
+        user = self._make_user_with_scopes(['write'])
+        response = self._call_scoped(user, required_scope='write')
+        self.assertEqual(response.status_code, 200)
+
+    def test_write_scope_required_key_has_read_and_write_returns_200(self):
+        user = self._make_user_with_scopes(['read', 'write'])
+        response = self._call_scoped(user, required_scope='write')
+        self.assertEqual(response.status_code, 200)
+
+    def test_write_scope_required_key_has_no_scope_returns_403(self):
+        user = self._make_user_with_scopes([])
+        response = self._call_scoped(user, required_scope='write')
+        self.assertEqual(response.status_code, 403)
+
+    def test_write_scope_required_key_has_only_read_scope_returns_403(self):
+        user = self._make_user_with_scopes(['read'])
+        response = self._call_scoped(user, required_scope='write')
+        self.assertEqual(response.status_code, 403)
+
+    def test_no_required_scope_key_with_no_scopes_returns_200(self):
+        # @api_auth (no required_scope) — any valid key succeeds regardless of scopes
+        user = self._make_user_with_scopes([])
+        view = _make_view()
+        request = _make_request('Bearer testkey')
+        with patch('lucos_eolas.lucosauth.decorators.getUserByKey', return_value=user):
+            response = view(request)
+        self.assertEqual(response.status_code, 200)
+
+    def test_scoped_view_is_csrf_exempt(self):
+        # @api_auth(required_scope=...) views must also be CSRF-exempt
+        view = self._make_scoped_view(required_scope='write')
+        self.assertTrue(
+            getattr(view, 'csrf_exempt', False),
+            "@api_auth(required_scope=...) views should be CSRF-exempt.",
+        )
+
+    def test_scoped_view_invalid_key_returns_403(self):
+        view = self._make_scoped_view(required_scope='write')
+        request = _make_request('Bearer badkey')
+        with patch('lucos_eolas.lucosauth.decorators.getUserByKey', return_value=None):
+            response = view(request)
+        self.assertEqual(response.status_code, 403)
+
+    def test_scoped_view_no_auth_header_returns_401(self):
+        view = self._make_scoped_view(required_scope='write')
+        request = _make_request()
+        response = view(request)
+        self.assertEqual(response.status_code, 401)

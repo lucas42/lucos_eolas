@@ -292,7 +292,7 @@ def batch_names(request):
 	return JsonResponse(result)
 
 
-@api_auth
+@api_auth(required_scope='write')
 def thing_create(request, type):
 	"""POST /metadata/{type}/ — create a new entity of the given type.
 
