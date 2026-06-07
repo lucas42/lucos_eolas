@@ -37,6 +37,12 @@ RUN python manage.py collectstatic --noinput --settings=lucos_eolas.settings_col
 
 CMD ["./startup.sh"]
 
+FROM app AS test
+# Install dev-only dependencies (e.g. requests-mock) on top of the production app stage.
+# These are not included in the production image — this stage is used exclusively by the
+# test service in docker-compose.yml.
+RUN pipenv install --dev --system
+
 FROM nginx:1.29.8-alpine3.23 AS web
 ARG VERSION
 ENV VERSION=$VERSION

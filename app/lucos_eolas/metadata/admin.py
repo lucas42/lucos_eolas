@@ -42,6 +42,7 @@ def merge_entities(modeladmin, request, queryset):
 				type="itemMerged",
 				humanReadable=f'{item_type} "{source}" merged into "{target}"',
 				url=target.get_absolute_url(),
+				level="routine",
 				sourceUri=source.get_absolute_url(),
 				targetUri=target.get_absolute_url(),
 				itemType=item_type,
