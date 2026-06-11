@@ -11,6 +11,7 @@ from .checks import (
 )
 from .fields import ArrayWidget
 from .models import DayOfWeek, Calendar, Month, HistoricalEvent, Festival, FestivalPeriod, Language, LanguageFamily, TransportMode, Vehicle, Person, CreativeWork, CreativeWorkType, PlaceType
+from .utils_case import smart_lower, smart_title
 from .views import _safe_local_redirect
 
 
@@ -1627,3 +1628,65 @@ class LoganneRealTransportTest(TestCase):
 		payload = m.last_request.json()
 		self.assertEqual(payload['type'], 'itemMerged')
 		self.assertEqual(payload['level'], 'routine')
+
+
+# ─── Case utility tests ────────────────────────────────────────────────────────
+
+class SmartLowerTest(SimpleTestCase):
+	"""smart_lower preserves all-uppercase words and lowercases the rest."""
+
+	def test_acronym_preserved(self):
+		"""An all-uppercase word is kept uppercase."""
+		self.assertEqual(smart_lower('TV Programme'), 'TV programme')
+
+	def test_multiple_acronyms(self):
+		"""Multiple acronyms in one string are all preserved."""
+		self.assertEqual(smart_lower('BBC TV documentary'), 'BBC TV documentary')
+
+	def test_normal_words_lowercased(self):
+		"""Mixed-case non-acronym words are lowercased."""
+		self.assertEqual(smart_lower('Road'), 'road')
+
+	def test_already_lowercase(self):
+		"""Already-lowercase text is unchanged."""
+		self.assertEqual(smart_lower('tv programme'), 'tv programme')
+
+	def test_single_acronym(self):
+		"""A single all-uppercase word is preserved."""
+		self.assertEqual(smart_lower('BBC'), 'BBC')
+
+	def test_single_lowercase_word(self):
+		"""A single lowercase word is unchanged."""
+		self.assertEqual(smart_lower('road'), 'road')
+
+	def test_title_case_word_lowercased(self):
+		"""A title-cased word (not all-uppercase) is lowercased."""
+		self.assertEqual(smart_lower('Programme'), 'programme')
+
+
+class SmartTitleTest(SimpleTestCase):
+	"""smart_title capitalises the first letter of each word, preserving acronyms."""
+
+	def test_acronym_preserved(self):
+		"""An all-uppercase word is kept uppercase."""
+		self.assertEqual(smart_title('TV programme'), 'TV Programme')
+
+	def test_multiple_acronyms(self):
+		"""Multiple acronyms in one string are all preserved."""
+		self.assertEqual(smart_title('BBC TV documentary'), 'BBC TV Documentary')
+
+	def test_normal_words_capitalised(self):
+		"""Ordinary lowercase words are title-cased."""
+		self.assertEqual(smart_title('road'), 'Road')
+
+	def test_already_lowercase_acronym_lost(self):
+		"""A word that was stored lowercase (acronym info lost) title-cases like .title()."""
+		self.assertEqual(smart_title('tv programme'), 'Tv Programme')
+
+	def test_single_acronym(self):
+		"""A single all-uppercase word is preserved."""
+		self.assertEqual(smart_title('BBC'), 'BBC')
+
+	def test_single_lowercase_word(self):
+		"""A single lowercase word is capitalised."""
+		self.assertEqual(smart_title('road'), 'Road')

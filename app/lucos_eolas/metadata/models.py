@@ -6,6 +6,7 @@ from django.utils.translation import gettext_lazy as _
 from django.utils import translation
 from django.conf import settings
 from .fields import *
+from .utils_case import smart_title
 import rdflib
 
 
@@ -175,7 +176,7 @@ class PlaceType(EolasModel):
 		ordering = ["name"]
 
 	def __str__(self):
-		return self.name.title()
+		return smart_title(self.name)
 
 	def get_rdf(self, include_type_label):
 		uri = rdflib.URIRef(self.get_absolute_url())
@@ -637,7 +638,7 @@ class TransportMode(EolasModel):
 		ordering = ["name"]
 
 	def __str__(self):
-		return self.name.title()
+		return smart_title(self.name)
 
 	def get_rdf(self, include_type_label):
 		uri = rdflib.URIRef(self.get_absolute_url())
@@ -873,7 +874,7 @@ class CreativeWorkType(EolasModel):
 		ordering = ["name"]
 
 	def __str__(self):
-		return self.name.title()
+		return smart_title(self.name)
 
 	def get_rdf(self, include_type_label):
 		uri = rdflib.URIRef(self.get_absolute_url())

@@ -1,6 +1,7 @@
 from django.contrib import admin
 from .models import *
 from .signals import metadata_post_delete
+from .utils_case import smart_lower, smart_title
 from django.utils.html import format_html, format_html_join
 from django.urls import reverse
 from django.utils.translation import gettext_lazy as _
@@ -208,7 +209,7 @@ class PlaceAdmin(EolasModelAdmin):
 
 			links = format_html_join(", ", "{}", ((l,) for l in links_list))
 			rows.append(
-				format_html("<tr><td>{}</td><td>{}</td></tr>", plural.title(), links)
+				format_html("<tr><td>{}</td><td>{}</td></tr>", smart_title(plural), links)
 			)
 
 		# Build table HTML
@@ -231,8 +232,8 @@ eolasadmin.register(Place, PlaceAdmin)
 
 class PlaceTypeAdmin(EolasModelAdmin):
 	def save_model(self, request, obj, form, change):
-		obj.name = obj.name.lower()
-		obj.plural = obj.plural.lower()
+		obj.name = smart_lower(obj.name)
+		obj.plural = smart_lower(obj.plural)
 		super().save_model(request, obj, form, change)
 eolasadmin.register(PlaceType, PlaceTypeAdmin)
 
@@ -264,8 +265,8 @@ eolasadmin.register(EthnicGroup, EthnicGroupAdmin)
 
 class CreativeWorkTypeAdmin(EolasModelAdmin):
 	def save_model(self, request, obj, form, change):
-		obj.name = obj.name.lower()
-		obj.plural = obj.plural.lower()
+		obj.name = smart_lower(obj.name)
+		obj.plural = smart_lower(obj.plural)
 		super().save_model(request, obj, form, change)
 eolasadmin.register(CreativeWorkType, CreativeWorkTypeAdmin)
 
@@ -276,8 +277,8 @@ eolasadmin.register(CreativeWork, CreativeWorkAdmin)
 
 class TransportModeAdmin(EolasModelAdmin):
 	def save_model(self, request, obj, form, change):
-		obj.name = obj.name.lower()
-		obj.plural = obj.plural.lower()
+		obj.name = smart_lower(obj.name)
+		obj.plural = smart_lower(obj.plural)
 		super().save_model(request, obj, form, change)
 eolasadmin.register(TransportMode, TransportModeAdmin)
 
