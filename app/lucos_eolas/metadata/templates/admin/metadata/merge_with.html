@@ -11,9 +11,9 @@
 </div>
 {% endblock %}
 
-{% block content %}
-<h1>{% blocktrans with name=object %}Merge "{{ name }}" with…{% endblocktrans %}</h1>
+{% block content_title %}<h1>{% blocktrans with name=object %}Merge "{{ name }}" with…{% endblocktrans %}</h1>{% endblock %}
 
+{% block content %}
 <p>{% blocktrans with type=opts.verbose_name %}Search for the {{ type }} you want to merge this one with. The two items will be combined into one.{% endblocktrans %}</p>
 
 <form method="get" action="">
