@@ -3,13 +3,15 @@ from .models import *
 from .signals import metadata_post_delete
 from .utils_case import smart_lower, smart_title
 from django.utils.html import format_html, format_html_join
-from django.urls import reverse
+from django.urls import reverse, path
 from django.utils.translation import gettext_lazy as _
 from ..lucosauth import views as auth_views
 from django.apps import apps
 from django.contrib.admin.sites import AlreadyRegistered
 from django.contrib import messages
+from django.core.exceptions import PermissionDenied
 from django.db.models.signals import post_delete
+from django.http import HttpResponseRedirect
 from django.shortcuts import render
 from loganne import updateLoganne
 from urllib.parse import urlencode
@@ -73,6 +75,74 @@ merge_entities.short_description = _('Merge selected entities')
 class EolasModelAdmin(admin.ModelAdmin):
 	actions = ['merge_entities']
 	merge_entities = staticmethod(merge_entities)
+	search_fields = ['name']
+
+	def get_urls(self):
+		custom_urls = [
+			path(
+				'<path:object_id>/merge-with/',
+				self.admin_site.admin_view(self.merge_with_view),
+				name=f'{self.model._meta.app_label}_{self.model._meta.model_name}_merge_with',
+			),
+		]
+		return custom_urls + super().get_urls()
+
+	def merge_with_view(self, request, object_id):
+		"""Custom admin view: find a merge partner across pages and merge two entities."""
+		obj = self.get_object(request, object_id)
+		if obj is None:
+			return self._get_obj_does_not_exist_redirect(request, self.model._meta, object_id)
+
+		if not self.has_change_permission(request, obj):
+			raise PermissionDenied
+
+		if request.method == 'POST':
+			if 'apply_merge' in request.POST:
+				# Final merge: reconstruct queryset from hidden action checkbox inputs
+				selected_pks = request.POST.getlist(admin.helpers.ACTION_CHECKBOX_NAME)
+				queryset = self.model.objects.filter(pk__in=selected_pks)
+				result = merge_entities(self, request, queryset)
+				if result is not None:
+					return result
+				# Merge succeeded — redirect to changelist
+				return HttpResponseRedirect(
+					reverse(
+						f'admin:{self.model._meta.app_label}_{self.model._meta.model_name}_changelist',
+						current_app=self.admin_site.name,
+					)
+				)
+
+			partner_pk = request.POST.get('partner_pk')
+			if partner_pk:
+				partner = self.model.objects.filter(pk=partner_pk).exclude(pk=obj.pk).first()
+				if partner is not None:
+					# Show the existing merge confirmation screen with both items
+					queryset = self.model.objects.filter(pk__in=[obj.pk, partner.pk])
+					return render(request, 'admin/metadata/merge_entities.html', {
+						'title': _('Select merge target'),
+						'queryset': queryset,
+						'opts': self.model._meta,
+						'action_checkbox_name': admin.helpers.ACTION_CHECKBOX_NAME,
+					})
+
+		# GET (or POST fallback): show search form and results
+		search_term = request.GET.get('q', '').strip()
+		results = None
+		if search_term:
+			results = (
+				self.model.objects
+				.filter(name__icontains=search_term)
+				.exclude(pk=obj.pk)
+				.order_by('name')[:20]
+			)
+
+		return render(request, 'admin/metadata/merge_with.html', {
+			'title': _('Merge with…'),
+			'object': obj,
+			'opts': self.model._meta,
+			'search_term': search_term,
+			'results': results,
+		})
 
 	def get_fields(self, request, obj=None):
 		all_fields = [
@@ -166,6 +236,12 @@ class EolasModelAdmin(admin.ModelAdmin):
 			extra_context["arachne_url"] = (
 				"https://arachne.l42.eu/explore/item?"
 				+ urlencode({"uri": absolute_object_url})
+			)
+		if object_id:
+			extra_context["merge_with_url"] = reverse(
+				f'admin:{self.model._meta.app_label}_{self.model._meta.model_name}_merge_with',
+				args=[object_id],
+				current_app=self.admin_site.name,
 			)
 		return super().changeform_view(
 			request, object_id, form_url, extra_context=extra_context

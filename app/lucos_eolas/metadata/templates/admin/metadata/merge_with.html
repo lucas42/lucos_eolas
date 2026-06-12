@@ -1,0 +1,54 @@
+{% extends "admin/base_site.html" %}
+{% load i18n admin_urls %}
+
+{% block breadcrumbs %}
+<div class="breadcrumbs">
+<a href="{% url 'admin:index' %}">{% translate 'Home' %}</a>
+&rsaquo; <a href="{% url 'admin:app_list' app_label=opts.app_label %}">{{ opts.app_config.verbose_name }}</a>
+&rsaquo; <a href="{% url opts|admin_urlname:'changelist' %}">{{ opts.verbose_name_plural|capfirst }}</a>
+&rsaquo; <a href="{% url opts|admin_urlname:'change' object.pk|admin_urlquote %}">{{ object }}</a>
+&rsaquo; {% translate "Merge with…" %}
+</div>
+{% endblock %}
+
+{% block content_title %}<h1>{% blocktrans with name=object %}Merge "{{ name }}" with…{% endblocktrans %}</h1>{% endblock %}
+
+{% block content %}
+<p>{% blocktrans with type=opts.verbose_name %}Search for the {{ type }} you want to merge this one with. The two items will be combined into one.{% endblocktrans %}</p>
+
+<form method="get" action="">
+  <p>
+    <label for="merge-search">{% translate "Search by name:" %}</label>
+    <input type="text" id="merge-search" name="q" value="{{ search_term }}" autofocus>
+    <button type="submit">{% translate "Search" %}</button>
+  </p>
+</form>
+
+{% if results is not None %}
+  {% if results %}
+    <form method="post" action="">
+      {% csrf_token %}
+      <table>
+        <thead>
+          <tr>
+            <th>{% translate "Name" %}</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for item in results %}
+          <tr>
+            <td>{{ item }}</td>
+            <td>
+              <button type="submit" name="partner_pk" value="{{ item.pk }}">{% translate "Select" %}</button>
+            </td>
+          </tr>
+          {% endfor %}
+        </tbody>
+      </table>
+    </form>
+  {% else %}
+    <p>{% blocktrans with term=search_term %}No results found for "{{ term }}".{% endblocktrans %}</p>
+  {% endif %}
+{% endif %}
+{% endblock %}
