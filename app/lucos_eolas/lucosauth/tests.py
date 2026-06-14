@@ -159,6 +159,22 @@ class EnvVarUserScopeTest(SimpleTestCase):
         from .envvars import EnvVarUser
         return EnvVarUser(system='testsystem:test', apikey='testkey', scopes=scopes)
 
+    # --- New estate-vocabulary scope names ---
+
+    def test_user_with_eolas_write_scope_has_eolas_write(self):
+        user = self._make_user(scopes=['eolas:write'])
+        self.assertTrue(user.has_scope('eolas:write'))
+
+    def test_user_with_eolas_read_scope_has_eolas_read(self):
+        user = self._make_user(scopes=['eolas:read'])
+        self.assertTrue(user.has_scope('eolas:read'))
+
+    def test_user_with_eolas_read_does_not_have_eolas_write(self):
+        user = self._make_user(scopes=['eolas:read'])
+        self.assertFalse(user.has_scope('eolas:write'))
+
+    # --- Pre-existing behaviour (kept for regression coverage) ---
+
     def test_user_with_write_scope_has_write(self):
         user = self._make_user(scopes=['write'])
         self.assertTrue(user.has_scope('write'))
@@ -171,6 +187,8 @@ class EnvVarUserScopeTest(SimpleTestCase):
         user = self._make_user()
         self.assertFalse(user.has_scope('read'))
         self.assertFalse(user.has_scope('write'))
+        self.assertFalse(user.has_scope('eolas:read'))
+        self.assertFalse(user.has_scope('eolas:write'))
 
     def test_user_with_read_and_write_scopes_has_both(self):
         user = self._make_user(scopes=['read', 'write'])
@@ -181,6 +199,7 @@ class EnvVarUserScopeTest(SimpleTestCase):
     def test_user_with_empty_scopes_list_has_no_permissions(self):
         user = self._make_user(scopes=[])
         self.assertFalse(user.has_scope('write'))
+        self.assertFalse(user.has_scope('eolas:write'))
 
 
 class ApiAuthScopeEnforcementTest(SimpleTestCase):
@@ -194,15 +213,43 @@ class ApiAuthScopeEnforcementTest(SimpleTestCase):
         return view
 
     def _make_user_with_scopes(self, scopes):
-        user = MagicMock()
-        user.has_scope = lambda scope: scope in scopes
-        return user
+        from .envvars import EnvVarUser
+        return EnvVarUser(system='testsystem:test', apikey='testkey', scopes=scopes)
 
-    def _call_scoped(self, user, required_scope='write'):
+    def _call_scoped(self, user, required_scope='eolas:write'):
         view = self._make_scoped_view(required_scope)
         request = _make_request(f'Bearer testkey')
         with patch('lucos_eolas.lucosauth.decorators.getUserByKey', return_value=user):
             return view(request)
+
+    # --- New estate-vocabulary scope names ---
+
+    def test_eolas_write_scope_required_key_has_eolas_write_returns_200(self):
+        user = self._make_user_with_scopes(['eolas:write'])
+        response = self._call_scoped(user, required_scope='eolas:write')
+        self.assertEqual(response.status_code, 200)
+
+    def test_eolas_write_scope_required_key_has_no_scope_returns_403(self):
+        user = self._make_user_with_scopes([])
+        response = self._call_scoped(user, required_scope='eolas:write')
+        self.assertEqual(response.status_code, 403)
+
+    def test_eolas_write_scope_required_key_has_only_eolas_read_returns_403(self):
+        user = self._make_user_with_scopes(['eolas:read'])
+        response = self._call_scoped(user, required_scope='eolas:write')
+        self.assertEqual(response.status_code, 403)
+
+    def test_eolas_read_scope_required_key_has_eolas_read_returns_200(self):
+        user = self._make_user_with_scopes(['eolas:read'])
+        response = self._call_scoped(user, required_scope='eolas:read')
+        self.assertEqual(response.status_code, 200)
+
+    def test_eolas_read_scope_required_key_has_no_scope_returns_403(self):
+        user = self._make_user_with_scopes([])
+        response = self._call_scoped(user, required_scope='eolas:read')
+        self.assertEqual(response.status_code, 403)
+
+    # --- Pre-existing behaviour (kept for regression coverage) ---
 
     def test_write_scope_required_key_has_write_returns_200(self):
         user = self._make_user_with_scopes(['write'])

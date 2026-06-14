@@ -157,7 +157,7 @@ def thing_entrypoint(request, type, pk):
 		# 303 See Other to the admin change endpoint for non-RDF requests
 		return HttpResponseSeeOther(_safe_local_redirect(f'/metadata/{type}/{pk}/change/'))
 
-@api_auth
+@api_auth(required_scope='eolas:read')
 def thing_data(request, type, pk):
 	format, content_type = pick_best_rdf_format(request)
 	try:
@@ -172,7 +172,7 @@ def thing_data(request, type, pk):
 	g.bind('wdt', WDT_NS)
 	return HttpResponse(g.serialize(format=format), content_type=f'{content_type}; charset={settings.DEFAULT_CHARSET}')
 
-@api_auth
+@api_auth(required_scope='eolas:read')
 def type_list(request, type):
 	"""Return all items of the given type as a JSON array.
 
@@ -207,7 +207,7 @@ def categories_json(request):
 		})
 	return JsonResponse(data, safe=False)
 
-@api_auth
+@api_auth(required_scope='eolas:read')
 def all_rdf(request):
 	# Serialize all items of every type into a single RDF graph
 	format, content_type = pick_best_rdf_format(request)
@@ -224,7 +224,7 @@ def all_rdf(request):
 	return HttpResponse(g.serialize(format=format), content_type=f'{content_type}; charset={settings.DEFAULT_CHARSET}')
 
 
-@api_auth
+@api_auth(required_scope='eolas:read')
 def batch_names(request):
 	"""POST /metadata/names — resolve a batch of entity URIs to their canonical names.
 
@@ -292,7 +292,7 @@ def batch_names(request):
 	return JsonResponse(result)
 
 
-@api_auth(required_scope='write')
+@api_auth(required_scope='eolas:write')
 def thing_create(request, type):
 	"""POST /metadata/{type}/ — create a new entity of the given type.
 
