@@ -1,6 +1,13 @@
 import os
 from django.contrib.auth.models import AnonymousUser
 
+# Dual-accept during migration: new estate-vocabulary scope → legacy scope name.
+# Remove these aliases after production lucos_creds records are migrated to the new names.
+_SCOPE_LEGACY_ALIASES = {
+	'eolas:read': 'read',
+	'eolas:write': 'write',
+}
+
 class EnvVarUser(AnonymousUser):
 	username = None
 	USERNAME_FIELD = 'system'
@@ -11,8 +18,17 @@ class EnvVarUser(AnonymousUser):
 		self.apikey = apikey
 		self.scopes = frozenset(scopes or [])
 	def has_scope(self, scope):
-		"""Return True if this key has been granted the given scope."""
-		return scope in self.scopes
+		"""Return True if this key has been granted the given scope.
+
+		During the scope vocabulary migration, also accepts the legacy scope name
+		as defined in _SCOPE_LEGACY_ALIASES, so production credentials can be
+		migrated without a 403 window.
+		"""
+		if scope in self.scopes:
+			return True
+		# Accept legacy scope name during transition period
+		legacy = _SCOPE_LEGACY_ALIASES.get(scope)
+		return legacy is not None and legacy in self.scopes
 	def is_authenticated(self):
 		return True
 	def is_staff(self):

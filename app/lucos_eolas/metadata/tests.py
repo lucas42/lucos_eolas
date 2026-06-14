@@ -1156,8 +1156,8 @@ class ThingCreateEndpointTest(TestCase):
 		self.assertEqual(response.status_code, 403)
 
 	def test_read_only_key_returns_403(self):
-		# A key with only the 'read' scope must not be able to create entities.
-		# The test CLIENT_KEYS has 'readonlykey' with scope 'read' only.
+		# A key with only the 'eolas:read' scope must not be able to create entities.
+		# The test CLIENT_KEYS has 'readonlykey' with scope 'eolas:read' only.
 		response = self.client.post(
 			'/api/metadata/person/',
 			data=json.dumps({'name': 'J. S. Bach'}),
