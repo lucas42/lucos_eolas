@@ -173,28 +173,6 @@ class EnvVarUserScopeTest(SimpleTestCase):
         user = self._make_user(scopes=['eolas:read'])
         self.assertFalse(user.has_scope('eolas:write'))
 
-    # --- Legacy alias support (dual-accept during migration) ---
-
-    def test_legacy_write_accepted_for_eolas_write(self):
-        """During migration, a key with legacy 'write' scope satisfies 'eolas:write' requirement."""
-        user = self._make_user(scopes=['write'])
-        self.assertTrue(user.has_scope('eolas:write'))
-
-    def test_legacy_read_accepted_for_eolas_read(self):
-        """During migration, a key with legacy 'read' scope satisfies 'eolas:read' requirement."""
-        user = self._make_user(scopes=['read'])
-        self.assertTrue(user.has_scope('eolas:read'))
-
-    def test_legacy_read_does_not_satisfy_eolas_write(self):
-        """Legacy 'read' must not grant 'eolas:write'."""
-        user = self._make_user(scopes=['read'])
-        self.assertFalse(user.has_scope('eolas:write'))
-
-    def test_legacy_write_does_not_satisfy_eolas_read(self):
-        """Legacy 'write' must not grant 'eolas:read'."""
-        user = self._make_user(scopes=['write'])
-        self.assertFalse(user.has_scope('eolas:read'))
-
     # --- Pre-existing behaviour (kept for regression coverage) ---
 
     def test_user_with_write_scope_has_write(self):
@@ -251,12 +229,6 @@ class ApiAuthScopeEnforcementTest(SimpleTestCase):
         response = self._call_scoped(user, required_scope='eolas:write')
         self.assertEqual(response.status_code, 200)
 
-    def test_eolas_write_scope_required_legacy_write_returns_200(self):
-        """During migration: key with legacy 'write' satisfies eolas:write requirement."""
-        user = self._make_user_with_scopes(['write'])
-        response = self._call_scoped(user, required_scope='eolas:write')
-        self.assertEqual(response.status_code, 200)
-
     def test_eolas_write_scope_required_key_has_no_scope_returns_403(self):
         user = self._make_user_with_scopes([])
         response = self._call_scoped(user, required_scope='eolas:write')
@@ -269,12 +241,6 @@ class ApiAuthScopeEnforcementTest(SimpleTestCase):
 
     def test_eolas_read_scope_required_key_has_eolas_read_returns_200(self):
         user = self._make_user_with_scopes(['eolas:read'])
-        response = self._call_scoped(user, required_scope='eolas:read')
-        self.assertEqual(response.status_code, 200)
-
-    def test_eolas_read_scope_required_legacy_read_returns_200(self):
-        """During migration: key with legacy 'read' satisfies eolas:read requirement."""
-        user = self._make_user_with_scopes(['read'])
         response = self._call_scoped(user, required_scope='eolas:read')
         self.assertEqual(response.status_code, 200)
 
