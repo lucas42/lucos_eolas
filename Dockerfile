@@ -1,4 +1,4 @@
-FROM lucas42/lucos_navbar:2.1.63 AS navbar
+FROM lucas42/lucos_navbar:2.1.73 AS navbar
 
 FROM python:3.15.0a8-alpine AS app
 ARG VERSION
@@ -43,7 +43,7 @@ FROM app AS test
 # test service in docker-compose.yml.
 RUN pipenv install --dev --system
 
-FROM nginx:1.29.8-alpine3.23 AS web
+FROM nginx:1.31.1-alpine3.23 AS web
 ARG VERSION
 ENV VERSION=$VERSION
 
