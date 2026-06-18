@@ -43,7 +43,7 @@ FROM app AS test
 # test service in docker-compose.yml.
 RUN pipenv install --dev --system
 
-FROM nginx:1.31.1-alpine3.23 AS web
+FROM nginx:1.31.2-alpine3.23 AS web
 ARG VERSION
 ENV VERSION=$VERSION
 
