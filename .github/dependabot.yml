@@ -26,17 +26,6 @@ updates:
       time: '07:00'
     allow:
       - dependency-type: all
-    ignore:
-      # We track stable Python only — not alpha/beta/rc pre-releases.
-      # (Dependabot once bumped the base image onto a 3.15 pre-release, which
-      # gave the misleading impression we wanted pre-releases. We don't.)
-      # Mirrors the rule in lucos_media_import. If the normalised form below
-      # fails to match silently, fall back to per-series range syntax.
-      - dependency-name: "python"
-        versions:
-          - "*.pre.a"   # alpha
-          - "*.pre.b"   # beta
-          - "*.pre.rc*" # release candidate
     groups:
       minor-and-patch:
         update-types:
