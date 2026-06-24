@@ -69,21 +69,23 @@ A custom Django authentication middleware replaces both the introspection
 `AUTHENTICATION_BACKENDS` entry and the `login()` dance. Each request it:
 
 1. defaults `request.user = AnonymousUser()`;
-2. reads the token from the `aithne_session` **cookie** (the human-session source) or, if
-   absent, an `Authorization: Bearer <aithne JWT>` header (the **aithne agent** source — see
-   the note below);
-3. verifies it (per §3); on success, maps the principal (per §5) and stashes the verified
-   `scopes` on the request; on failure, leaves `AnonymousUser`.
+2. reads the token from the `aithne_session` **cookie** (the human-session source);
+3. verifies it (per §3) — which **rejects any non-human token** (§3 requires
+   `principal_class == "human"`); on success, maps the principal (per §5) and stashes the
+   verified `scopes` on the request; on failure, leaves `AnonymousUser`.
 
-**Two different "Bearer" tokens — do not conflate them.** The Bearer header read here carries
-an **aithne** JWT (an agent's client-credentials token, same JWKS-verified format as the
-cookie). It is distinct from the existing `@api_auth` machine path, which carries a
-**lucos_creds** API key — that path is unchanged and out of scope (see "Out of scope" above).
-The aithne agent Bearer source exists for one purpose in these two services: the **dev-only
-`render-ui` snapshot path** (§4). An agent cannot receive the `Secure; Domain=l42.eu` cookie
-on `http://localhost`, so Bearer is the only way `render-ui` can work for `lucos-ux` in
-development. It grants nothing in production, where `render-ui` is ignored (§4) and no agent is
-granted these services' human-UI scopes.
+**No Bearer / agent token source in this backend.** This is the **human session** backend: it
+reads only the cookie and §3 admits only `principal_class == "human"`. Two consequences worth
+stating so an implementer doesn't reintroduce an agent path by accident:
+
+- The existing `@api_auth` machine path (a **lucos_creds** API key in the `Authorization`
+  header) is unchanged and out of scope — it is a separate decorator on its own views and does
+  not flow through this middleware.
+- The **aithne agent** principal (an agent's client-credentials JWT, same JWKS format) is
+  **deliberately not accepted here.** Its only conceivable use for these two services is the
+  dev-only `render-ui` snapshot path, which is marginal (see §4) and is recorded as a named
+  future extension rather than wired now. Keeping the human-session backend human-only removes
+  the token-type ambiguity entirely.
 
 The middleware **never blocks** — it only populates `request.user`, exactly as Django's own
 `AuthenticationMiddleware` does. This is deliberate and gives the `/_info` exemption for free:
@@ -103,6 +105,17 @@ A small `lucosauth/aithne.py` module, identical in both repos except the §5 map
   §1–6: ES256 with **algorithm pinning** (never trust the header `alg`); `iss ==
   {AITHNE_ORIGIN}`; `aud` contains `l42.eu`; `exp`/`iat` with 30-second leeway; require
   `exp`/`iat`/`sub`.
+- **Require `principal_class == "human"` — explicit, load-bearing.** After the claim checks
+  and **before** `map_principal`, the verifier MUST reject any token whose `principal_class` is
+  not `"human"` (contract §5 mandates validating this claim; this backend's scope makes it
+  mandatory). Without it, a valid **agent** JWT — correct ES256 signature, correct `iss`/`aud`,
+  non-expired — passes every other check and reaches `map_principal`. Relying on the mapping to
+  "happen not to resolve" an agent `sub` is not a guarantee: eolas's
+  `User.objects.get_or_create(id=sub)` could auto-create an unintended user (and a text-typed
+  id field would let an agent slug *become* a Django user), and contacts' `sub → Person` lookup
+  silently returns nothing. The class check is the single line that makes "machine tokens can
+  never authenticate as a human user" a spec guarantee rather than an accident of the data
+  model. (This is the verification-time gate; §5's mapping then only ever sees humans.)
 - **Serve-last-known-good on JWKS-fetch failure.** `PyJWKClient` (like `jose`'s client)
   **raises** on a failed JWKS fetch rather than serving stale — the library caveat the
   contract calls out explicitly. Without a wrapper, a JWKS blip during a cold start or a
@@ -139,32 +152,32 @@ agreed estate-wide pattern):
 
 The `?next=` value is validated as an **internal path only**
 (`url_has_allowed_host_and_scheme(allowed_hosts={request.get_host()})`, falling back to `/`)
-to close the open-redirect risk the guide warns about. The dev-only `render-ui` bypass
-(contract §6) is honoured at this `@require_scope` decorator, gated strictly on
-`ENVIRONMENT == "development"` — so in development an agent presenting `render-ui` (via the
-Bearer source, §2) can snapshot the **scope-gated views** (e.g. contacts' readonly layer).
+to close the open-redirect risk the guide warns about.
 
-**`render-ui` does not escalate to Django admin.** Admin access is gated by Django's own
-`is_staff` check (§6), which `render-ui` deliberately does not satisfy — `render-ui` is a
-GET-render capability, not an admin grant. So the Django admin surface is not agent-snapshottable
-under this design; that is out of scope and intentionally so (letting a dev escape-hatch scope
-confer superuser would be a privilege-escalation footgun).
+**The dev-only `render-ui` bypass is deferred, not wired (deliberate scope choice).** The
+estate `render-ui` bypass (contract §6) is for an **agent** (`lucos-ux`) to snapshot rendered
+UI in dev — but an agent presents a `principal_class == "agent"` token, which §3 now rejects,
+and an agent cannot receive the `Secure; Domain=l42.eu` cookie on `http://localhost` anyway. So
+admitting it would mean re-opening an agent token path in the human-session backend. Its value
+for these two services is marginal: eolas's only surface is the Django admin, which `render-ui`
+deliberately must **not** reach (admin is gated by `is_staff` (§6), a capability a GET-render
+escape-hatch must never confer — that would be privilege escalation); for contacts it would buy
+only a dev snapshot of the readonly layer. Given that, this ADR keeps the backend human-only and
+records `render-ui` as a **named follow-up**: if dev snapshotting of contacts' scope-gated views
+is later wanted, it is added as a narrow, clearly-separated path — admit `principal_class ==
+"agent"` **only** when `ENVIRONMENT == "development"` **and** the `render-ui` scope is present,
+map it to a non-staff principal (never `is_staff`), and enforce it at the `@require_scope`
+decorator. Until then, `render-ui` is not honoured by these services.
 
 ### 5. Login view and per-service mapping hook
 
 The login view collapses to a single redirect with **no `?token=` handling** — the cookie is
 set domain-wide by aithne, so on return the middleware just picks it up.
 
-**`map_principal` MUST branch on `principal_class` first.** The claim is `"human"` or
-`"agent"` (contract §5), and `sub` means different things for each: a `lucos_contacts`
-contact-id for humans, a `lucos_agent` persona slug for agents. So the human-mapping logic
-below must run **only** for `principal_class == "human"` — running contacts' `sub → Person`
-lookup on an agent slug would error (no `Person` with that id). For `principal_class ==
-"agent"`, do **not** resolve a Django admin user: the agent principal is meaningful here only
-for the dev-only `render-ui` snapshot path (§4), which is enforced at the decorator and needs
-no mapped user, so `request.user` is left as a non-staff/anonymous principal (the verified
-`scopes` are still stashed on the request for the `render-ui` check). Reject any unrecognised
-`principal_class`. The human mapping, then, is the only per-service difference:
+`map_principal` only ever sees a **human** principal, because §3 rejects every non-human token
+at verification time (the `sub` is therefore always a `lucos_contacts` contact-id, never an
+agent slug). It needs no `principal_class` branch of its own. The mapping is the only
+per-service difference:
 
 - **eolas (reference):** `User.objects.get_or_create(id=sub)`.
 - **contacts (follows):** `sub` → `Person` → `get_or_create(LucosUser)` (plus the existing
@@ -237,6 +250,9 @@ introspection entry; register the new middleware after `AuthenticationMiddleware
   services; admin rights are granted, attributable, multi-admin, and revocable.
 - **The crypto is off-the-shelf.** PyJWT + `cryptography` do the JWS/JWKS work; we own only
   thin glue.
+- **Machine tokens can never authenticate as a human user — by spec, not by accident.** The
+  `principal_class == "human"` gate (§3) makes this a guarantee of the design rather than a
+  fortunate side-effect of how the `id` field happens to be typed.
 
 ### Negative
 
@@ -286,3 +302,8 @@ introspection entry; register the new middleware after `AuthenticationMiddleware
   aithne consumer-migration waves (`lucas42/lucos_aithne#12`).
 - **contacts migration** — port the pattern to `lucos_contacts`, changing only
   `map_principal` and the scope grain (§5, §6).
+- **(Optional, deferred) dev-only `render-ui` for contacts** — if `lucos-ux` dev snapshotting
+  of contacts' scope-gated readonly views is later wanted, add the narrow agent path described
+  in §4 (admit `principal_class == "agent"` only when `ENVIRONMENT == "development"` and
+  `render-ui` is present; never `is_staff`). Not needed for the migration; eolas does not want
+  it at all (admin-only surface).
