@@ -4,19 +4,12 @@
 **Status:** Accepted
 **Discussion:** https://github.com/lucas42/lucos/issues/249
 
-> **Amendment 2026-06-24 (#320, Option A — lucas42's decision):**
-> (a) §4 clarified so `@require_scope` gates on `request.user.is_authenticated` **and** the
-> scope (never the scope alone), and §5 maps a non-human principal to `AnonymousUser`
-> **in production** — closing the §4 "valid token" ambiguity a security review raised (a
-> verified agent JWT carrying a human-UI scope must not reach a protected view in prod).
-> (b) Per lucas42, the dev-only `render-ui` path now reaches the **Django admin** of both
-> services in development (a dev-only staff principal, GET-only, strictly inert in prod) — this
-> revises the earlier "render-ui never reaches the admin" stance, for development only.
-> (c) The model is deliberately left **open to a future, explicitly-granted production agent
-> scope** (a planned human-approved data-suggestions capability) without weakening the human-UI
-> protection. Option B (a hard `principal_class == "human"` reject at §3, dropping `render-ui`)
-> was considered and not taken — `render-ui` is a wanted capability and Option A is
-> security-sufficient.
+> **Amendment 2026-06-24 (#320, lucas42's decision):** Authorisation is **scope-first** —
+> access is decided by the principal's granted scopes (§4, §6), the same for every principal.
+> `principal_class` is used **only** to attach an identity (a human's contact, for the contacts
+> navbar — §5), never to gate access. In development the `render-ui` scope grants read-only
+> (`GET`/`HEAD`) access to the UI, including the Django admin. This replaces an earlier,
+> more complex `principal_class`-based access model.
 
 ## Context
 
@@ -83,21 +76,14 @@ A custom Django authentication middleware replaces both the introspection
 `AUTHENTICATION_BACKENDS` entry and the `login()` dance. Each request it:
 
 1. defaults `request.user = AnonymousUser()`;
-2. reads the token from the `aithne_session` **cookie** (the human-session source) or, if
-   absent, an `Authorization: Bearer <aithne JWT>` header (the **aithne agent** source — see
-   the note below);
+2. reads the token from the `aithne_session` **cookie** (humans) or, if absent, an
+   `Authorization: Bearer <aithne JWT>` header (agents — e.g. `lucos-ux`, which can't receive
+   the `Secure; Domain=l42.eu` cookie on `http://localhost`);
 3. verifies it (per §3); on success, maps the principal (per §5) and stashes the verified
    `scopes` on the request; on failure, leaves `AnonymousUser`.
 
-**Two different "Bearer" tokens — do not conflate them.** The Bearer header read here carries
-an **aithne** JWT (an agent's client-credentials token, same JWKS-verified format as the
-cookie). It is distinct from the existing `@api_auth` machine path, which carries a
-**lucos_creds** API key — that path is unchanged and out of scope (see "Out of scope" above).
-The aithne agent Bearer source exists for one purpose in these two services: the **dev-only
-`render-ui` snapshot path** (§4). An agent cannot receive the `Secure; Domain=l42.eu` cookie
-on `http://localhost`, so Bearer is the only way `render-ui` can work for `lucos-ux` in
-development. It grants nothing in production, where `render-ui` is ignored (§4) and no agent is
-granted these services' human-UI scopes.
+The Bearer here carries an **aithne** JWT, distinct from the existing `@api_auth` **lucos_creds**
+API-key path, which is unchanged and out of scope (above).
 
 The middleware **never blocks** — it only populates `request.user`, exactly as Django's own
 `AuthenticationMiddleware` does. This is deliberate and gives the `/_info` exemption for free:
@@ -117,13 +103,9 @@ A small `lucosauth/aithne.py` module, identical in both repos except the §5 map
   §1–6: ES256 with **algorithm pinning** (never trust the header `alg`); `iss ==
   {AITHNE_ORIGIN}`; `aud` contains `l42.eu`; `exp`/`iat` with 30-second leeway; require
   `exp`/`iat`/`sub`.
-- **Accept both principal classes; stash the scopes.** The verifier accepts a recognised
-  `principal_class` (`"human"` or `"agent"`) and rejects unknown classes — it does **not** hard-reject
-  agents (that would be Option B). The verified `principal_class` and `scopes` are stashed on the
-  request. This is what keeps the door open for a future production agent capability (§4): an agent
-  token is verified and its scopes are available, even though — by default — an agent satisfies no
-  human-UI check (§4/§5). Authorisation, not authentication, is where agent-vs-human capability is
-  decided.
+- **Stash `principal_class` and `scopes` on the request.** Accept a recognised `principal_class`
+  (`"human"` / `"agent"`), reject unknown ones. Access is decided downstream by scope (§4); the
+  class is only used for identity mapping (§5).
 - **Serve-last-known-good on JWKS-fetch failure.** `PyJWKClient` (like `jose`'s client)
   **raises** on a failed JWKS fetch rather than serving stale — the library caveat the
   contract calls out explicitly. Without a wrapper, a JWKS blip during a cold start or a
@@ -149,113 +131,49 @@ ours.
 
 ### 4. Authorisation — the three-branch pattern
 
-Protected views enforce via a small `@require_scope("…")` decorator (migration-guide C2, the
-agreed estate-wide pattern):
+Protected views enforce via a small `@require_scope("…")` decorator (migration-guide C2):
 
-1. **Authenticated human (`request.user.is_authenticated`) *and* required scope** → proceed.
-2. **Authenticated human, missing/wrong scope** → the service's **own styled 403** (never
-   redirect-to-login — the user is already signed in; re-login yields the same scopeless token
-   and an infinite loop; there is no shared aithne "request access" endpoint).
-3. **Not authenticated** — no token, an expired/invalid token, **or** a verified non-human
-   token — → redirect to `{AITHNE_ORIGIN}/auth/login?next=<path>`.
+1. **Valid token *and* the required scope** → proceed.
+2. **Valid token, scope missing** → the service's **own styled 403** (not redirect-to-login —
+   the user is signed in; re-login yields the same scopeless token, an infinite loop).
+3. **No valid token** → redirect to `{AITHNE_ORIGIN}/auth/login?next=<path>`.
 
-**`@require_scope` gates on `request.user.is_authenticated` *first*, then the scope — never on
-the scope alone (amended per #320).** This is the load-bearing disambiguation of what "valid
-token" means in branch 1. **In production**, §5 maps every non-human (agent) principal to
-`AnonymousUser` (whose `.is_authenticated` is `False`), so a verified **agent** JWT can never
-satisfy branch 1 — *even if it carries a granted human-UI scope* — and falls to branch 3,
-redirected exactly as an anonymous request is. This makes "no agent is granted these services'
-human-UI scopes" a **redundant** belt-and-braces rather than a load-bearing operational
-constraint: an accidental grant of `contacts:read` / `eolas:admin` / `contacts:admin` to an
-agent does **not** open a production hole, because the agent never gets past the
-`is_authenticated` gate. Two independent barriers — the §5 production mapping (agent →
-`AnonymousUser`) and this decorator check — defense in depth, not a single point.
-`is_authenticated` is idiomatic Django (exactly what `@login_required` checks), so composing
-`@login_required` with the scope check yields barrier two for free. *(The dev-only `render-ui`
-path is the one deliberate exception — see below — and is inert in production.)*
+**Access is the scope — the same test for every principal**, human or agent. Default-deny
+(`lucos_aithne` ADR-0001 §6) is the protection: a principal reaches a view only if granted its
+scope, so "don't grant an agent a human-UI scope" is a grant-layer decision, not a per-consumer
+`principal_class` check. `is_staff`/`is_superuser` likewise follow the admin scope (§6). Because
+access is scope-based, a future production agent scope (e.g. the planned human-approved
+data-suggestions feature) needs no change to this model — it is just another granted scope a
+dedicated endpoint would check.
 
 The `?next=` value is validated as an **internal path only**
 (`url_has_allowed_host_and_scheme(allowed_hosts={request.get_host()})`, falling back to `/`)
-to close the open-redirect risk the guide warns about.
+to close the open-redirect risk.
 
-**Dev-only `render-ui` — reaches scope-gated views *and* the Django admin (development only,
-per lucas42's #320 decision).** In development, the `render-ui` escape hatch gives `lucos-ux`
-(an agent, presenting its JWT via the Bearer source, §2) access to **both** services' rendered
-surfaces, **including the Django admin pages**, for snapshotting. This is enforced in two
-places, each strictly gated on `ENVIRONMENT == "development"`:
-
-- the `@require_scope` decorator honours `render-ui` as a pass for scope-gated views
-  (regardless of the specific scope); and
-- §5 maps a dev `render-ui` agent to a **dev-only staff principal** (`is_staff` / `is_superuser`),
-  which is what carries it through Django admin's own `is_staff` gate.
-
-`render-ui` stays **GET-only** (contract §6): `map_principal` mints the dev staff principal
-**only** for `GET`/`HEAD` requests (mechanism in §5); any other method falls back to an
-unauthenticated principal, so a write is refused everywhere — **including the Django admin**
-(which does not pass through `@require_scope`). An agent can screenshot the delete form, not
-submit it. **In production the whole path is
-inert**: with `ENVIRONMENT != "development"` no dev staff principal is ever minted, `render-ui`
-is ignored, and agents map to `AnonymousUser` (above). This deliberately revises the earlier
-"`render-ui` never reaches the admin" stance — for **development only** — and rests on the
-standing render-ui invariant: safe only while dev data is non-sensitive and dev credentials
-cannot mint production sessions.
-
-**Future consideration — a production agent scope is not foreclosed (#320).** This design
-verifies agent tokens (§3) and keeps their scopes on the request; it only declines to let an
-agent satisfy a **human-UI** check. A capability lucas42 has flagged for later — agents
-submitting **data-change suggestions** that require human approval before touching production
-data — would be authorised by a **dedicated agent-facing endpoint** that checks
-`principal_class == "agent"` **and** a dedicated, explicitly-granted agent scope (e.g. a future
-`eolas:suggest`), **not** the human `is_authenticated` gate and **never** a human-UI scope. So
-an agent *can* be granted a named scope in production later, for that purpose, without weakening
-the human-UI protection above. The feature is **not built here** (details TBD); the design
-simply leaves the door open.
+**Dev-only `render-ui`.** In development (`ENVIRONMENT == "development"`), the `render-ui` scope
+grants **read-only** (`GET`/`HEAD`) access to the UI, including the Django admin, so `lucos-ux`
+can snapshot pages. It is strictly dev-gated (inert in production) and read-only — a write falls
+through to no access — so an agent can render the delete form but not submit it.
 
 ### 5. Login view and per-service mapping hook
 
 The login view collapses to a single redirect with **no `?token=` handling** — the cookie is
 set domain-wide by aithne, so on return the middleware just picks it up.
 
-**`map_principal` MUST branch on `principal_class` first.** The claim is `"human"` or
-`"agent"` (contract §5), and `sub` means different things for each: a `lucos_contacts`
-contact-id for humans, a `lucos_agent` persona slug for agents. So the human-mapping logic
-below must run **only** for `principal_class == "human"` — running contacts' `sub → Person`
-lookup on an agent slug would error (no `Person` with that id). For `principal_class ==
-"agent"`, the mapping is **environment-aware**:
+**`map_principal` uses `principal_class` only to attach an identity — not to decide access**
+(access is the scope, §4). `is_staff`/`is_superuser` come from the admin scope (§6) for any
+principal.
 
-- **Production (and dev without `render-ui`):** do **not** resolve a Django user — `request.user`
-  is left as **`AnonymousUser`** (the verified `scopes` stay stashed on the request, available to
-  a future dedicated agent endpoint — §4). This is barrier two of the §4 defense-in-depth:
-  `AnonymousUser.is_authenticated` is `False`, so `@require_scope` rejects the agent regardless of
-  its scopes. In production an agent must **never** be mapped to a real or auto-created `User` —
-  that would defeat the barrier.
-- **Development *with* `render-ui`** (strictly `ENVIRONMENT == "development"`): if
-  `request.method in ("GET", "HEAD")`, map to a **dev-only staff principal** (`is_staff` /
-  `is_superuser`) so `lucos-ux` can snapshot the scope-gated views and the Django admin (§4).
-  For **any other method**, do **not** mint the staff principal — treat the agent as
-  **unauthenticated** (`AnonymousUser`), exactly as in production. This principal is minted
-  **only** in development — never when `ENVIRONMENT != "development"`.
-  - **The method check lives in `map_principal`, before the staff principal is minted — not in
-    `@require_scope`, and not left to CSRF.** `map_principal` is the single chokepoint with full
-    request context, upstream of all dispatch, so it covers the **Django admin** too (which does
-    not pass through `@require_scope`). It must **not** be left to Django's `CsrfViewMiddleware`,
-    which is only an implicit backstop and would break for any `@csrf_exempt` admin view. Because
-    an unsafe-method request simply falls back to `AnonymousUser`, the populate-only middleware
-    keeps its "never blocks" property (§2) — there is no separate blocking step. This check is
-    **as security-critical as the env gate** and must be tested — e.g. a dev `render-ui` POST to
-    an admin change view is treated as unauthenticated (no `is_staff`), so the mutation is
-    refused.
-
-Reject any unrecognised `principal_class`. The human mapping, then, is the only per-service
-difference:
-
-- **eolas (reference):** `User.objects.get_or_create(id=sub)`.
-- **contacts (follows):** `sub` → `Person` → `get_or_create(LucosUser)` (plus the existing
-  shadow `auth.User` so `django_admin_log` doesn't error), non-prod auto-create of the
-  `Person`. The navbar username is **unaffected**: `templates/navbar.html` renders
-  `user.get_short_name()` → `agent.getName()`, which reads the name from the local `Person`
-  record, not from the JWT. `AnonymousUser` appears only when there is no valid session — i.e.
-  precisely when there is no name to show and the user is being redirected to login.
+- **human** — `sub` is a `lucos_contacts` contact-id; map it to the Django user so the UI knows
+  who is signed in. **eolas:** `User.objects.get_or_create(id=sub)`. **contacts:** `sub` →
+  `Person` → `get_or_create(LucosUser)` (plus the existing shadow `auth.User` so
+  `django_admin_log` doesn't error; non-prod auto-creates the `Person`). The navbar is
+  **unaffected** — `templates/navbar.html`'s `user.get_short_name()` → `agent.getName()` reads
+  the name from the local `Person`, not the JWT.
+- **agent** — `sub` is a `lucos_agent` slug, not a contact, so there is no Django user to attach
+  (and no navbar name); the principal is authorised purely by its scopes (§4). In development a
+  `render-ui` agent is treated as staff for **`GET`/`HEAD`** requests only (read-only
+  snapshotting, §4); any other method gets no such access.
 
 ### 6. Staff/superuser from a scope, not a hardcoded id
 
@@ -320,29 +238,21 @@ introspection entry; register the new middleware after `AuthenticationMiddleware
   services; admin rights are granted, attributable, multi-admin, and revocable.
 - **The crypto is off-the-shelf.** PyJWT + `cryptography` do the JWS/JWKS work; we own only
   thin glue.
-- **An accidental agent scope-grant is not a production hole.** In production the §4
-  `is_authenticated` gate plus the §5 agent→`AnonymousUser` mapping mean a verified agent JWT can
-  never satisfy a protected view, even if it is wrongly granted a human-UI scope — two
-  independent barriers (#320).
-- **Door left open for a future prod agent capability.** Agents are verified and their scopes
-  retained, so the planned human-approved data-suggestions feature can later authorise an agent
-  on a dedicated scope without reworking the model or weakening human-UI protection (#320).
+- **Scope-first, so uniform and extensible.** One access test (the scope) for every principal,
+  decided by default-deny grants (ADR-0001 §6) rather than per-consumer `principal_class` logic.
+  A future production agent scope (e.g. the planned suggestions feature) drops in with no model
+  change.
 
 ### Negative
 
 - **A verification per request.** Cheaper than the old per-request `/data` introspection
   callback (local public-key verify vs network round-trip), but not zero. Acceptable, and a
   net improvement on today.
-- **The dev `render-ui` path now mints a dev-only staff principal.** Allowing render-ui to reach
-  the Django admin in development is a wider dev surface than before (admin snapshots, not just
-  scope-gated views). It is strictly `ENVIRONMENT == "development"`-gated and `GET`/`HEAD`-only,
-  and inert in production — but it widens what a dev `render-ui` token can see, and its safety
-  rests on the standing invariant that dev data is non-sensitive and dev credentials cannot mint
-  production sessions. A bug that let this principal be minted outside development — **or for a
-  non-`GET`/`HEAD` method** — would be a privilege escalation. **Both the environment gate and
-  the `map_principal` method check are security-critical and must be covered by tests** (the
-  staff principal is minted only when `ENVIRONMENT == "development"`; and a dev `render-ui` write
-  request is treated as unauthenticated, getting no `is_staff`).
+- **Dev `render-ui` widens the development surface (admin snapshots).** It is strictly
+  `ENVIRONMENT == "development"`-gated and `GET`/`HEAD`-only, inert in production, and rests on
+  the standing invariant that dev data is non-sensitive and dev credentials cannot mint
+  production sessions. The env gate and the read-only restriction are both security-critical and
+  must be tested (the staff treatment applies only in development, and only to `GET`/`HEAD`).
 - **Enforcement discipline moves to the views.** With no `login()` gate, every protected view
   must apply `@login_required` / `@require_scope`; a view that forgets is silently public.
   This is the same exposure as today, but worth stating — it relies on convention, and unit
