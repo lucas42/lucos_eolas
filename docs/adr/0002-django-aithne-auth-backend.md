@@ -190,8 +190,9 @@ places, each strictly gated on `ENVIRONMENT == "development"`:
   which is what carries it through Django admin's own `is_staff` gate.
 
 `render-ui` stays **GET-only** (contract §6): the dev staff principal is restricted to safe
-methods (`GET` / `HEAD`), so it can render and snapshot admin pages but cannot POST mutations —
-an agent can screenshot the delete form, not submit it. **In production the whole path is
+methods (`GET` / `HEAD`) — enforced at the middleware layer so it also covers the Django admin
+(mechanism in §5) — so it can render and snapshot admin pages but cannot POST mutations — an
+agent can screenshot the delete form, not submit it. **In production the whole path is
 inert**: with `ENVIRONMENT != "development"` no dev staff principal is ever minted, `render-ui`
 is ignored, and agents map to `AnonymousUser` (above). This deliberately revises the earlier
 "`render-ui` never reaches the admin" stance — for **development only** — and rests on the
@@ -228,9 +229,20 @@ lookup on an agent slug would error (no `Person` with that id). For `principal_c
   its scopes. In production an agent must **never** be mapped to a real or auto-created `User` —
   that would defeat the barrier.
 - **Development *with* `render-ui`** (strictly `ENVIRONMENT == "development"`): map to a
-  **dev-only staff principal** (`is_staff` / `is_superuser`, restricted to `GET` / `HEAD`) so
-  `lucos-ux` can snapshot the scope-gated views and the Django admin (§4). This principal is
-  minted **only** in development — never when `ENVIRONMENT != "development"`.
+  **dev-only staff principal** (`is_staff` / `is_superuser`) so `lucos-ux` can snapshot the
+  scope-gated views and the Django admin (§4). This principal is minted **only** in development
+  — never when `ENVIRONMENT != "development"`. Tag it at mapping time (e.g. a
+  `request.render_ui_readonly` flag).
+  - **GET/HEAD-only is enforced at the middleware layer, never in `@require_scope`.** Reject any
+    non-`GET`/`HEAD` request carrying this principal with **`405`, before view dispatch**. It
+    MUST sit at the middleware layer because it has to cover the **Django admin**, which does not
+    pass through `@require_scope` — a method check placed only in the decorator would leave admin
+    POSTs reachable, defeating the read-only intent. To preserve the populate-only auth
+    middleware's "never blocks" property (§2), implement this as a **separate, development-only
+    enforcement step** (its own small middleware, or an explicitly dev-gated block) rather than
+    folding blocking logic into the populate step; it is naturally inert in production, where the
+    dev staff principal is never minted. This restriction is **as security-critical as the env
+    gate** and must be tested — e.g. a dev `render-ui` POST to an admin change view returns `405`.
 
 Reject any unrecognised `principal_class`. The human mapping, then, is the only per-service
 difference:
