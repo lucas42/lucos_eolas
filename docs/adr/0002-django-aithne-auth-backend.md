@@ -1,8 +1,16 @@
 # ADR-0002: Django aithne auth backend (reference for lucos_eolas + lucos_contacts)
 
 **Date:** 2026-06-24
-**Status:** Proposed
+**Status:** Accepted
 **Discussion:** https://github.com/lucas42/lucos/issues/249
+
+> **Amendment 2026-06-24 (#320, Option A):** §4 clarified so `@require_scope` gates on
+> `request.user.is_authenticated` **and** the scope (never the scope alone), and §5 made
+> explicit that a non-human principal maps to `AnonymousUser`. This closes the §4 "valid token"
+> ambiguity a security review raised (a verified agent JWT carrying a human-UI scope must not
+> reach a protected view) while keeping the dev-only `render-ui` path. The alternative
+> (Option B: a hard `principal_class == "human"` reject at §3, dropping `render-ui`) was not
+> taken — `render-ui` is a wanted capability and Option A is security-sufficient.
 
 ## Context
 
@@ -131,11 +139,26 @@ ours.
 Protected views enforce via a small `@require_scope("…")` decorator (migration-guide C2, the
 agreed estate-wide pattern):
 
-1. **Valid token *and* required scope** → proceed.
-2. **Valid token, missing/wrong scope** → the service's **own styled 403** (never
+1. **Authenticated human (`request.user.is_authenticated`) *and* required scope** → proceed.
+2. **Authenticated human, missing/wrong scope** → the service's **own styled 403** (never
    redirect-to-login — the user is already signed in; re-login yields the same scopeless token
    and an infinite loop; there is no shared aithne "request access" endpoint).
-3. **No / expired / invalid token** → redirect to `{AITHNE_ORIGIN}/auth/login?next=<path>`.
+3. **Not authenticated** — no token, an expired/invalid token, **or** a verified non-human
+   token — → redirect to `{AITHNE_ORIGIN}/auth/login?next=<path>`.
+
+**`@require_scope` gates on `request.user.is_authenticated` *first*, then the scope — never on
+the scope alone (amended per #320).** This is the load-bearing disambiguation of what "valid
+token" means in branch 1. Because §5 maps every non-human principal to `AnonymousUser` (whose
+`.is_authenticated` is `False`), a verified **agent** JWT can never satisfy branch 1 — *even if
+it carries a granted human-UI scope*. It falls to branch 3 and is redirected, exactly as an
+anonymous request is. This makes "no agent is granted these services' human-UI scopes" a
+**redundant** belt-and-braces rather than a load-bearing operational constraint: an accidental
+grant of `contacts:read` / `eolas:admin` / `contacts:admin` to an agent does **not** open a
+production hole, because the agent never gets past the `is_authenticated` gate. The protection
+is two independent barriers — the §5 mapping (agent → `AnonymousUser`) and this decorator
+check — i.e. defense in depth, not a single point. `is_authenticated` is idiomatic Django (it
+is exactly what `@login_required` checks), so composing `@login_required` with the scope check
+yields barrier two for free.
 
 The `?next=` value is validated as an **internal path only**
 (`url_has_allowed_host_and_scheme(allowed_hosts={request.get_host()})`, falling back to `/`)
@@ -160,11 +183,13 @@ set domain-wide by aithne, so on return the middleware just picks it up.
 contact-id for humans, a `lucos_agent` persona slug for agents. So the human-mapping logic
 below must run **only** for `principal_class == "human"` — running contacts' `sub → Person`
 lookup on an agent slug would error (no `Person` with that id). For `principal_class ==
-"agent"`, do **not** resolve a Django admin user: the agent principal is meaningful here only
-for the dev-only `render-ui` snapshot path (§4), which is enforced at the decorator and needs
-no mapped user, so `request.user` is left as a non-staff/anonymous principal (the verified
-`scopes` are still stashed on the request for the `render-ui` check). Reject any unrecognised
-`principal_class`. The human mapping, then, is the only per-service difference:
+"agent"`, do **not** resolve a Django user at all: `request.user` is left as **`AnonymousUser`**
+(the verified `scopes` are still stashed on the request for the dev-only `render-ui` check in
+§4). This is barrier two of the §4 defense-in-depth: because the agent maps to `AnonymousUser`,
+its `is_authenticated` is `False`, so `@require_scope` rejects it regardless of scopes. Mapping
+an agent to a real (or auto-created) user here would defeat that — so it must be `AnonymousUser`,
+never a `User`. Reject any unrecognised `principal_class`. The human mapping, then, is the only
+per-service difference:
 
 - **eolas (reference):** `User.objects.get_or_create(id=sub)`.
 - **contacts (follows):** `sub` → `Person` → `get_or_create(LucosUser)` (plus the existing
@@ -237,6 +262,10 @@ introspection entry; register the new middleware after `AuthenticationMiddleware
   services; admin rights are granted, attributable, multi-admin, and revocable.
 - **The crypto is off-the-shelf.** PyJWT + `cryptography` do the JWS/JWKS work; we own only
   thin glue.
+- **An accidental agent scope-grant is not a production hole.** The §4 `is_authenticated` gate
+  plus the §5 agent→`AnonymousUser` mapping mean a verified agent JWT can never satisfy a
+  protected view, even if it is wrongly granted a human-UI scope — two independent barriers
+  (#320).
 
 ### Negative
 
