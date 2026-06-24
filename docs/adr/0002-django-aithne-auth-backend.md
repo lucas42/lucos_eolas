@@ -173,7 +173,8 @@ principal.
 - **agent** — `sub` is a `lucos_agent` slug, not a contact, so there is no Django user to attach
   (and no navbar name); the principal is authorised purely by its scopes (§4). In development a
   `render-ui` agent is treated as staff for **`GET`/`HEAD`** requests only (read-only
-  snapshotting, §4); any other method gets no such access.
+  snapshotting, §4); any other method gets no such access. This method check is in
+  `map_principal`, not `@require_scope` (which does not cover the Django admin).
 
 ### 6. Staff/superuser from a scope, not a hardcoded id
 
