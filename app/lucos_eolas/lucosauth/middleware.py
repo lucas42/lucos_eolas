@@ -25,9 +25,13 @@ graceful transition window where existing sessions continue until they expire
 naturally (login() is no longer called, so no new sessions are minted).
 """
 
+import logging
+
 from django.contrib.auth.models import AnonymousUser
 
 from .aithne import verify_aithne_token, map_principal
+
+logger = logging.getLogger(__name__)
 
 
 class AithneAuthMiddleware:
@@ -47,8 +51,9 @@ class AithneAuthMiddleware:
     def __call__(self, request):
         request.aithne_scopes = []
 
-        token = self._extract_token(request)
+        token, source = self._extract_token(request)
         if token:
+            logger.debug("aithne token found via %s on %s", source, request.path)
             # JWT present — take ownership of request.user.
             # Always reset first so an invalid/expired token never falls back to
             # a session-populated user.
@@ -58,13 +63,23 @@ class AithneAuthMiddleware:
                 principal_class, sub, scopes = result
                 request.aithne_scopes = scopes
                 map_principal(request, principal_class, sub, scopes)
+            else:
+                logger.warning(
+                    "aithne token present (via %s) but verification failed — "
+                    "treating %s as unauthenticated (see rejection reason above)",
+                    source, request.path,
+                )
+        else:
+            logger.debug("No aithne token on %s — proceeding as anonymous", request.path)
         # No JWT: leave request.user as set by AuthenticationMiddleware (session auth).
 
         return self.get_response(request)
 
     @staticmethod
     def _extract_token(request):
-        """Return the raw JWT string from the request, or None if absent.
+        """Return (token, source) where source names where the token came from.
+
+        Returns (None, None) when no aithne JWT is present.
 
         Prefers the aithne_session cookie (set domain-wide by aithne for
         browser sessions). Falls back to Authorization: Bearer <token> for
@@ -78,11 +93,11 @@ class AithneAuthMiddleware:
         # Cookie path — human sessions
         cookie = request.COOKIES.get("aithne_session")
         if cookie:
-            return cookie
+            return cookie, "aithne_session cookie"
 
         # Bearer header path — agents in development
         auth_header = request.META.get("HTTP_AUTHORIZATION", "")
         if auth_header.lower().startswith("bearer "):
-            return auth_header[7:].strip()
+            return auth_header[7:].strip(), "Bearer header"
 
-        return None
+        return None, None

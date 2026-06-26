@@ -91,8 +91,27 @@ def verify_aithne_token(token_str):
     - iss == AITHNE_ORIGIN, aud contains l42.eu
     - exp/iat with 30-second clock-skew leeway; exp/iat/sub required
     """
+    # Phase 1 — resolve signing key from JWKS.  Network/parse failures are
+    # logged with specific messages by _LKGJWKSClient; we just surface them here.
+    # Note: get_signing_key_from_jwt also decodes the JWT header to extract the
+    # kid, so malformed tokens (too few segments, invalid base64, etc.) raise
+    # jwt.DecodeError here, before we even reach jwt.decode() in phase 2.
     try:
         signing_key = _jwks_client.get_signing_key_from_jwt(token_str)
+    except PyJWKClientNetworkError:
+        # _LKGJWKSClient already logged a WARNING for this case (cold-start
+        # or fallback exhausted).  Treat as unauthenticated.
+        logger.warning("JWT rejected: JWKS unreachable and no cached key available")
+        return None
+    except PyJWKClientError as exc:
+        logger.warning("JWT rejected: JWKS client error (%s: %s)", type(exc).__name__, exc)
+        return None
+    except jwt.DecodeError as exc:
+        logger.warning("JWT rejected: malformed token (can't parse header) — %s", exc)
+        return None
+
+    # Phase 2 — decode and validate the JWT payload.
+    try:
         payload = jwt.decode(
             token_str,
             signing_key.key,
@@ -102,17 +121,33 @@ def verify_aithne_token(token_str):
             leeway=30,
             options={"require": ["exp", "iat", "sub"]},
         )
-        principal_class = payload.get("principal_class")
-        scopes = payload.get("scopes") or []
-        sub = payload["sub"]
-        logger.debug(
-            "JWT verified: principal_class=%s sub=%.30s scopes=%s",
-            principal_class, sub, scopes,
-        )
-        return (principal_class, sub, scopes)
-    except Exception as e:
-        logger.debug("JWT verification failed: %s", type(e).__name__)
+    except jwt.ExpiredSignatureError:
+        logger.warning("JWT rejected: token has expired")
         return None
+    except jwt.InvalidIssuerError:
+        logger.warning("JWT rejected: wrong issuer (expected '%s')", _AITHNE_ISSUER)
+        return None
+    except jwt.InvalidAudienceError:
+        logger.warning("JWT rejected: wrong audience (expected '%s')", _AITHNE_AUDIENCE)
+        return None
+    except jwt.MissingRequiredClaimError as exc:
+        logger.warning("JWT rejected: missing required claim — %s", exc)
+        return None
+    except jwt.DecodeError as exc:
+        logger.warning("JWT rejected: decode error — %s", exc)
+        return None
+    except jwt.InvalidTokenError as exc:
+        logger.warning("JWT rejected: %s — %s", type(exc).__name__, exc)
+        return None
+
+    principal_class = payload.get("principal_class")
+    scopes = payload.get("scopes") or []
+    sub = payload["sub"]
+    logger.debug(
+        "JWT verified: principal_class=%s sub=%.30s scopes=%s",
+        principal_class, sub, scopes,
+    )
+    return (principal_class, sub, scopes)
 
 
 def map_principal(request, principal_class, sub, scopes):

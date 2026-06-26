@@ -73,8 +73,8 @@ def require_scope(scope):
 
 			# Branch 2: valid token but scope missing → styled 403
 			if user.is_authenticated:
-				logger.debug(
-					"Access denied to %s: scope '%s' not in %s",
+				logger.warning(
+					"Access denied to %s: scope '%s' required but not in %s",
 					request.path, scope, scopes,
 				)
 				return HttpResponse(
@@ -87,7 +87,10 @@ def require_scope(scope):
 				)
 
 			# Branch 3: no valid token → redirect to aithne login
-			logger.debug("Unauthenticated request to %s — redirecting to aithne", request.path)
+			logger.warning(
+				"Unauthenticated request to %s — no valid aithne token, redirecting to login",
+				request.path,
+			)
 			return aithne_login_redirect(request)
 
 		return _decorator

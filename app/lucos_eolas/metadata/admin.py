@@ -1,8 +1,10 @@
+import logging
+
 from django.contrib import admin
 from .models import *
 from .signals import metadata_post_delete
 from .utils_case import smart_lower, smart_title
-from django.utils.html import format_html, format_html_join
+from django.utils.html import escape, format_html, format_html_join
 from django.urls import reverse, path
 from django.utils.translation import gettext_lazy as _
 from ..lucosauth import views as auth_views
@@ -11,15 +13,50 @@ from django.contrib.admin.sites import AlreadyRegistered
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.db.models.signals import post_delete
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from loganne import updateLoganne
 from urllib.parse import urlencode
 
+logger = logging.getLogger(__name__)
+
+
 class EolasAdminSite(admin.AdminSite):
 	site_title = 'LucOS Eolas'
 	index_title = None
+
 	def login(self, request):
+		"""Handle requests to the admin login URL.
+
+		Django admin calls this when has_permission() returns False — two very
+		different cases that need different responses:
+
+		1. No valid aithne JWT → user is not authenticated.
+		   Correct response: redirect to aithne so they can log in.
+
+		2. Valid aithne JWT but no eolas:admin scope → user IS authenticated,
+		   just not authorised.  Re-logging in yields the same scopeless token
+		   → infinite redirect loop.
+		   Correct response: styled 403, not a redirect.
+		"""
+		if request.user.is_authenticated:
+			scopes = getattr(request, 'aithne_scopes', [])
+			logger.warning(
+				"Admin access denied: authenticated user lacks eolas:admin "
+				"(scopes present: %s)",
+				scopes,
+			)
+			return HttpResponse(
+				"<html><head><title>Access Denied</title></head><body>"
+				"<p>You are signed in but lack the <code>eolas:admin</code> "
+				"scope needed to access this admin area.</p>"
+				"<p>Scopes granted: <code>" + escape(str(scopes)) + "</code></p>"
+				"<p><a href='/'>← Home</a></p>"
+				"</body></html>",
+				status=403,
+				content_type="text/html",
+			)
+		logger.debug("Unauthenticated request to admin login — redirecting to aithne")
 		return auth_views.loginview(request)
 eolasadmin = EolasAdminSite()
 
