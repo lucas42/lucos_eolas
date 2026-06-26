@@ -1,25 +1,24 @@
-from django.shortcuts import redirect
-from django.utils.http import url_has_allowed_host_and_scheme, urlencode
-import os
+import logging
+
+from django.utils.http import url_has_allowed_host_and_scheme
+
+from .aithne import aithne_login_redirect
+
+logger = logging.getLogger(__name__)
 
 
 def loginview(request):
 	"""Redirect to aithne login (ADR-0002 §5).
 
-	The aithne_session cookie is set domain-wide by aithne after authentication,
-	so on return AithneAuthMiddleware picks it up automatically — no ?token=
-	handling or login() call needed.
+	The aithne_session cookie is set domain-wide by aithne after authentication;
+	AithneAuthMiddleware picks it up automatically on return — no ?token= handling
+	or login() call needed.
 
-	The ?next= value is derived from the server-side request path (never from a
-	user-supplied query parameter) and validated as an internal path only, to
-	prevent open-redirect abuse.
+	?next= from the incoming query string is validated as an internal path, then
+	forwarded as a full URL so aithne knows which origin to redirect back to.
 	"""
-	aithne_origin = os.environ.get("AITHNE_ORIGIN", "https://aithne.l42.eu")
-
-	# Use ?next= from query string if safe; otherwise default to /
-	next_url = request.GET.get("next", "/")
-	if not url_has_allowed_host_and_scheme(url=next_url, allowed_hosts={request.get_host()}):
-		next_url = "/"
-
-	login_url = f"{aithne_origin}/auth/login?{urlencode({'next': next_url})}"
-	return redirect(login_url)
+	next_path = request.GET.get("next", "/")
+	if not url_has_allowed_host_and_scheme(url=next_path, allowed_hosts={request.get_host()}):
+		logger.debug("loginview: rejecting external ?next=%s, falling back to /", next_path)
+		next_path = "/"
+	return aithne_login_redirect(request, next_path)

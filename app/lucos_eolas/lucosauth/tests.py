@@ -50,12 +50,17 @@ class LoginViewAithneRedirectTest(SimpleTestCase):
     def test_same_origin_next_is_preserved(self):
         response = self._call('/login?next=/some/page/')
         self.assertEqual(response.status_code, 302)
-        self.assertIn('next=%2Fsome%2Fpage%2F', response['Location'])
+        # ?next= is now a full URL so aithne can redirect back to the right origin
+        location = response['Location']
+        self.assertIn('next=', location)
+        self.assertIn('some%2Fpage%2F', location)
 
     def test_external_next_is_replaced_with_root(self):
         response = self._call('/login?next=https://evil.example.com/')
         self.assertEqual(response.status_code, 302)
-        self.assertIn('next=%2F', response['Location'])
+        location = response['Location']
+        # External ?next= must be rejected — must not appear in the redirect
+        self.assertNotIn('evil.example.com', location)
 
     def test_redirect_uses_aithne_origin(self):
         response = self._call('/login', aithne_origin='http://aithne.test')
@@ -223,13 +228,16 @@ class RequireScopeDecoratorTest(SimpleTestCase):
         self.assertIn('http://aithne.test/auth/login', response['Location'])
 
     def test_redirect_includes_next_param(self):
-        """Login redirect must include the current path as ?next=."""
+        """Login redirect must include the current URL as ?next= (full URL, not path)."""
         view = self._make_protected_view('eolas:admin')
         request = self._make_auth_request(authenticated=False, path='/admin/metadata/')
         with patch.dict('os.environ', {'AITHNE_ORIGIN': 'http://aithne.test'}):
             response = view(request)
-        self.assertIn('next=', response['Location'])
-        self.assertIn('%2Fadmin%2Fmetadata%2F', response['Location'])
+        location = response['Location']
+        self.assertIn('next=', location)
+        # next= must be a full URL (testserver is the RequestFactory host)
+        self.assertIn('testserver', location)
+        self.assertIn('admin%2Fmetadata%2F', location)
 
     def test_valid_token_empty_scopes_returns_403(self):
         """Authenticated principal with no scopes → 403 (not redirect)."""

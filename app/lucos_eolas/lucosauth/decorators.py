@@ -1,10 +1,13 @@
 from functools import wraps
-from .envvars import getUserByKey
+import logging
+
 from django.http import HttpResponse
-from django.shortcuts import redirect
-from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.csrf import csrf_exempt
-import os
+
+from .envvars import getUserByKey
+from .aithne import aithne_login_redirect
+
+logger = logging.getLogger(__name__)
 
 
 def api_auth(func=None, *, required_scope=None):
@@ -50,14 +53,13 @@ def require_scope(scope):
 	Three-branch pattern (ADR-0002 §4):
 	  1. Valid token AND the required scope → proceed.
 	  2. Valid token, scope missing → styled 403 naming the missing scope.
-	     (Do NOT redirect — the user is already signed in; re-login yields the
-	     same scopeless token, creating an infinite loop.)
-	  3. No valid token (absent/expired/invalid) → redirect to aithne login with
-	     a ?next= pointing at the current request path (server-side derived,
-	     validated as an internal path to prevent open-redirect).
+	     (Not a redirect — the user is already signed in; re-login yields the
+	     same scopeless token, which would create an infinite loop.)
+	  3. No valid token → redirect to aithne login with a ?next= full URL
+	     pointing at the current page.
 
-	request.aithne_scopes is set by AithneAuthMiddleware; request.user is
-	populated (or AnonymousUser) by the same middleware.
+	request.aithne_scopes and request.user are populated by AithneAuthMiddleware
+	before this decorator runs.
 	"""
 	def decorator(f):
 		@wraps(f)
@@ -71,6 +73,10 @@ def require_scope(scope):
 
 			# Branch 2: valid token but scope missing → styled 403
 			if user.is_authenticated:
+				logger.debug(
+					"Access denied to %s: scope '%s' not in %s",
+					request.path, scope, scopes,
+				)
 				return HttpResponse(
 					f"<html><head><title>Access Denied</title></head><body>"
 					f"<p>You don't have access to this page. "
@@ -81,17 +87,8 @@ def require_scope(scope):
 				)
 
 			# Branch 3: no valid token → redirect to aithne login
-			aithne_origin = os.environ.get("AITHNE_ORIGIN", "https://aithne.l42.eu")
-			# Derive next from the server-side request path — never from a
-			# query param — to close the open-redirect risk (ADR-0002 §4).
-			next_url = request.path
-			if not url_has_allowed_host_and_scheme(
-				url=next_url, allowed_hosts={request.get_host()}
-			):
-				next_url = "/"
-			from django.utils.http import urlencode
-			login_url = f"{aithne_origin}/auth/login?{urlencode({'next': next_url})}"
-			return redirect(login_url)
+			logger.debug("Unauthenticated request to %s — redirecting to aithne", request.path)
+			return aithne_login_redirect(request)
 
 		return _decorator
 	return decorator
