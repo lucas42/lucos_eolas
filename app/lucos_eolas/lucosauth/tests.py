@@ -1,8 +1,10 @@
-from django.test import SimpleTestCase, RequestFactory
+from django.test import SimpleTestCase, RequestFactory, TestCase, override_settings
 from unittest.mock import patch, MagicMock
 from django.http import HttpResponse
-from .decorators import api_auth
+from django.contrib.auth.models import AnonymousUser
+from .decorators import api_auth, require_scope
 from .views import loginview
+from .middleware import AithneAuthMiddleware
 
 
 def _make_view():
@@ -25,60 +27,239 @@ VALID_KEY = 'testkey123'
 MOCK_USER = MagicMock()
 
 
-class LoginViewNextRedirectTest(SimpleTestCase):
-    """Tests for the 'next' parameter validation in loginview."""
+# ---------------------------------------------------------------------------
+# LoginView tests — new aithne-redirect behaviour
+# ---------------------------------------------------------------------------
+
+class LoginViewAithneRedirectTest(SimpleTestCase):
+    """The login view is now a plain redirect to aithne (no token handling)."""
 
     def setUp(self):
         self.factory = RequestFactory()
-        self.staff_user = MagicMock()
-        self.staff_user.is_staff = True
-        self.regular_user = MagicMock()
-        self.regular_user.is_staff = False
 
-    def _call_loginview(self, url, user, token='valid-token'):
+    def _call(self, url, aithne_origin='http://aithne.test'):
         request = self.factory.get(url)
-        with patch('lucos_eolas.lucosauth.views.authenticate', return_value=user), \
-             patch('lucos_eolas.lucosauth.views.login'):
+        with patch.dict('os.environ', {'AITHNE_ORIGIN': aithne_origin}):
             return loginview(request)
 
-    def test_same_origin_next_redirects(self):
-        """A same-origin relative path in 'next' is followed after login."""
-        response = self._call_loginview('/login?token=t&next=/some/page/', self.staff_user)
+    def test_no_next_redirects_to_aithne_login(self):
+        response = self._call('/login')
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response['Location'], '/some/page/')
+        self.assertIn('/auth/login', response['Location'])
 
-    def test_external_next_redirects_to_root(self):
-        """An external URL in 'next' is rejected; user is redirected to /."""
-        response = self._call_loginview('/login?token=t&next=https://evil.example.com/', self.staff_user)
+    def test_same_origin_next_is_preserved(self):
+        response = self._call('/login?next=/some/page/')
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response['Location'], '/')
+        self.assertIn('next=%2Fsome%2Fpage%2F', response['Location'])
 
-    def test_no_next_redirects_to_root(self):
-        """When 'next' is absent, user is redirected to /."""
-        response = self._call_loginview('/login?token=t', self.staff_user)
+    def test_external_next_is_replaced_with_root(self):
+        response = self._call('/login?next=https://evil.example.com/')
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response['Location'], '/')
+        self.assertIn('next=%2F', response['Location'])
 
-    def test_admin_next_non_staff_returns_403(self):
-        """A non-staff user with next=/admin/... gets a 403."""
-        response = self._call_loginview('/login?token=t&next=/admin/metadata/', self.regular_user)
+    def test_redirect_uses_aithne_origin(self):
+        response = self._call('/login', aithne_origin='http://aithne.test')
+        self.assertTrue(response['Location'].startswith('http://aithne.test/auth/login'))
+
+    def test_no_longer_handles_token_param(self):
+        """The old ?token= flow is gone — redirect must not include the raw token."""
+        request = self.factory.get('/login?token=sometoken')
+        with patch.dict('os.environ', {'AITHNE_ORIGIN': 'http://aithne.test'}):
+            response = loginview(request)
+        # Redirect target must NOT forward the token
+        self.assertNotIn('token=sometoken', response['Location'])
+
+
+# ---------------------------------------------------------------------------
+# AithneAuthMiddleware tests
+# ---------------------------------------------------------------------------
+
+class AithneMiddlewareTest(SimpleTestCase):
+    """AithneAuthMiddleware is populate-only — never blocks."""
+
+    def setUp(self):
+        self.factory = RequestFactory()
+        self.get_response = MagicMock(return_value=HttpResponse(status=200))
+
+    def _get_middleware(self):
+        return AithneAuthMiddleware(self.get_response)
+
+    def _make_request(self, cookie=None, auth_header=None, path='/'):
+        request = self.factory.get(path)
+        request.user = AnonymousUser()
+        request.aithne_scopes = []
+        if cookie:
+            request.COOKIES['aithne_session'] = cookie
+        if auth_header:
+            request.META['HTTP_AUTHORIZATION'] = auth_header
+        return request
+
+    def test_no_token_leaves_anonymous_user(self):
+        mw = self._get_middleware()
+        request = self._make_request()
+        with patch('lucos_eolas.lucosauth.middleware.verify_aithne_token', return_value=None):
+            mw(request)
+        self.assertIsInstance(request.user, AnonymousUser)
+
+    def test_no_token_still_calls_view(self):
+        """Middleware never blocks — it always calls get_response."""
+        mw = self._get_middleware()
+        request = self._make_request()
+        with patch('lucos_eolas.lucosauth.middleware.verify_aithne_token', return_value=None):
+            mw(request)
+        self.get_response.assert_called_once()
+
+    def test_valid_cookie_token_calls_verify_and_map(self):
+        mw = self._get_middleware()
+        request = self._make_request(cookie='valid.jwt.token')
+        with patch('lucos_eolas.lucosauth.middleware.verify_aithne_token',
+                   return_value=('human', 'user123', ['eolas:admin'])) as mock_verify, \
+             patch('lucos_eolas.lucosauth.middleware.map_principal') as mock_map:
+            mw(request)
+        mock_verify.assert_called_once_with('valid.jwt.token')
+        mock_map.assert_called_once_with(request, 'human', 'user123', ['eolas:admin'])
+
+    def test_valid_bearer_token_calls_verify_and_map(self):
+        mw = self._get_middleware()
+        request = self._make_request(auth_header='Bearer valid.jwt.token')
+        with patch('lucos_eolas.lucosauth.middleware.verify_aithne_token',
+                   return_value=('agent', 'lucos-ux', ['render-ui'])) as mock_verify, \
+             patch('lucos_eolas.lucosauth.middleware.map_principal') as mock_map:
+            mw(request)
+        mock_verify.assert_called_once_with('valid.jwt.token')
+
+    def test_cookie_takes_priority_over_bearer(self):
+        mw = self._get_middleware()
+        request = self._make_request(
+            cookie='cookie.jwt.token',
+            auth_header='Bearer bearer.jwt.token',
+        )
+        with patch('lucos_eolas.lucosauth.middleware.verify_aithne_token',
+                   return_value=None) as mock_verify, \
+             patch('lucos_eolas.lucosauth.middleware.map_principal'):
+            mw(request)
+        mock_verify.assert_called_once_with('cookie.jwt.token')
+
+    def test_invalid_token_leaves_anonymous(self):
+        mw = self._get_middleware()
+        request = self._make_request(cookie='bad.jwt')
+        with patch('lucos_eolas.lucosauth.middleware.verify_aithne_token', return_value=None):
+            mw(request)
+        self.assertIsInstance(request.user, AnonymousUser)
+
+    def test_scopes_populated_on_request_on_success(self):
+        mw = self._get_middleware()
+        request = self._make_request(cookie='valid.jwt.token')
+
+        mock_user = MagicMock()
+        mock_user.is_authenticated = True
+
+        def fake_map(req, pc, sub, scopes):
+            req.user = mock_user
+
+        with patch('lucos_eolas.lucosauth.middleware.verify_aithne_token',
+                   return_value=('human', 'u1', ['eolas:admin'])), \
+             patch('lucos_eolas.lucosauth.middleware.map_principal', side_effect=fake_map):
+            mw(request)
+        self.assertEqual(request.aithne_scopes, ['eolas:admin'])
+
+
+# ---------------------------------------------------------------------------
+# @require_scope decorator tests
+# ---------------------------------------------------------------------------
+
+class RequireScopeDecoratorTest(SimpleTestCase):
+    """@require_scope enforces the three-branch pattern (ADR-0002 §4)."""
+
+    def setUp(self):
+        self.factory = RequestFactory()
+
+    def _make_protected_view(self, scope='eolas:admin'):
+        @require_scope(scope)
+        def view(request):
+            return HttpResponse(status=200)
+        return view
+
+    def _make_auth_request(self, scopes=None, authenticated=True, path='/admin/'):
+        request = self.factory.get(path)
+        if authenticated:
+            user = MagicMock()
+            user.is_authenticated = True
+            request.user = user
+        else:
+            request.user = AnonymousUser()
+        request.aithne_scopes = scopes or []
+        return request
+
+    def test_valid_token_with_required_scope_proceeds(self):
+        """Branch 1: valid token + scope → 200."""
+        view = self._make_protected_view('eolas:admin')
+        request = self._make_auth_request(scopes=['eolas:admin'])
+        response = view(request)
+        self.assertEqual(response.status_code, 200)
+
+    def test_valid_token_missing_scope_returns_403(self):
+        """Branch 2: valid token, scope absent → styled 403."""
+        view = self._make_protected_view('eolas:admin')
+        request = self._make_auth_request(scopes=['eolas:read'])
+        response = view(request)
         self.assertEqual(response.status_code, 403)
 
-    def test_admin_next_staff_user_redirects(self):
-        """A staff user with next=/admin/... is redirected normally."""
-        response = self._call_loginview('/login?token=t&next=/admin/metadata/', self.staff_user)
-        self.assertEqual(response.status_code, 302)
-        self.assertEqual(response['Location'], '/admin/metadata/')
+    def test_403_body_names_missing_scope(self):
+        """The 403 body must name the required scope."""
+        view = self._make_protected_view('eolas:admin')
+        request = self._make_auth_request(scopes=[])
+        response = view(request)
+        self.assertEqual(response.status_code, 403)
+        self.assertIn(b'eolas:admin', response.content)
 
-    def test_external_next_with_admin_path_redirects_to_root(self):
-        """An external URL that contains /admin/ in the path is still rejected."""
-        response = self._call_loginview(
-            '/login?token=t&next=https://evil.example.com/admin/',
-            self.staff_user,
-        )
+    def test_no_token_redirects_to_aithne_login(self):
+        """Branch 3: no valid token → redirect to aithne login."""
+        view = self._make_protected_view('eolas:admin')
+        request = self._make_auth_request(authenticated=False)
+        with patch.dict('os.environ', {'AITHNE_ORIGIN': 'http://aithne.test'}):
+            response = view(request)
         self.assertEqual(response.status_code, 302)
-        self.assertEqual(response['Location'], '/')
+        self.assertIn('http://aithne.test/auth/login', response['Location'])
 
+    def test_redirect_includes_next_param(self):
+        """Login redirect must include the current path as ?next=."""
+        view = self._make_protected_view('eolas:admin')
+        request = self._make_auth_request(authenticated=False, path='/admin/metadata/')
+        with patch.dict('os.environ', {'AITHNE_ORIGIN': 'http://aithne.test'}):
+            response = view(request)
+        self.assertIn('next=', response['Location'])
+        self.assertIn('%2Fadmin%2Fmetadata%2F', response['Location'])
+
+    def test_valid_token_empty_scopes_returns_403(self):
+        """Authenticated principal with no scopes → 403 (not redirect)."""
+        view = self._make_protected_view('eolas:admin')
+        request = self._make_auth_request(scopes=[])
+        response = view(request)
+        self.assertEqual(response.status_code, 403)
+
+    def test_different_scope_name_works(self):
+        """@require_scope works with any scope string, not just eolas:admin."""
+        @require_scope('eolas:read')
+        def view(request):
+            return HttpResponse(status=200)
+
+        request = self._make_auth_request(scopes=['eolas:read'])
+        response = view(request)
+        self.assertEqual(response.status_code, 200)
+
+    def test_valid_token_wrong_scope_not_redirected(self):
+        """Branch 2 (403) — not branch 3 (redirect) — when authenticated but missing scope."""
+        view = self._make_protected_view('eolas:admin')
+        request = self._make_auth_request(authenticated=True, scopes=['some:other'])
+        response = view(request)
+        # Must be 403, not 302 — re-login cannot grant a scope the principal doesn't have.
+        self.assertEqual(response.status_code, 403)
+
+
+# ---------------------------------------------------------------------------
+# @api_auth decorator tests (unchanged from before — regression coverage)
+# ---------------------------------------------------------------------------
 
 class ApiAuthDecoratorTest(SimpleTestCase):
 

@@ -1,7 +1,7 @@
 {% extends 'admin/base.html' %}
 
 {% block header %}
-	<lucos-navbar bg-colour="#44265d">
+	<lucos-navbar bg-colour="#44265d" aithne-origin="{{ AITHNE_ORIGIN }}">
 		Eolas{% if title %} - {{ title }}{% endif %}
 		{% include "language-selector.html" %}
 	</lucos-navbar>

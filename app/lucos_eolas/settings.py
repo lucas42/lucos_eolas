@@ -25,10 +25,6 @@ SECURE_PROXY_SSL_HEADER = (
     'HTTP_X_FORWARDED_PROTO', 'https'
 )
 
-AUTHENTICATION_BACKENDS = (
-    'lucos_eolas.lucosauth.models.LucosAuthBackend',
-)
-
 # Application definition
 
 INSTALLED_APPS = [
@@ -49,6 +45,9 @@ MIDDLEWARE = [
     'django.middleware.common.CommonMiddleware',
     'django.middleware.csrf.CsrfViewMiddleware',
     'django.contrib.auth.middleware.AuthenticationMiddleware',
+    # Populate request.user from aithne_session cookie / Bearer JWT (ADR-0002 §2).
+    # Registered after AuthenticationMiddleware so it overrides the default user.
+    'lucos_eolas.lucosauth.middleware.AithneAuthMiddleware',
     'django.contrib.messages.middleware.MessageMiddleware',
     'django.middleware.clickjacking.XFrameOptionsMiddleware',
     'django.middleware.locale.LocaleMiddleware',
@@ -68,6 +67,8 @@ TEMPLATES = [
                 'django.template.context_processors.request',
                 'django.contrib.auth.context_processors.auth',
                 'django.contrib.messages.context_processors.messages',
+                # Inject AITHNE_ORIGIN for the navbar keepalive (ADR-0002 §8).
+                'lucos_eolas.lucosauth.context_processors.aithne_origin',
             ],
         },
     },
