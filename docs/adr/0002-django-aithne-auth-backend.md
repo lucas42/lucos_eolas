@@ -15,7 +15,10 @@
 > `?next=` login-redirect value as an *internal path*. That is wrong — it must be a
 > **full, absolute, same-origin URL** (login happens on aithne's origin, so a bare path
 > resolves relative to aithne and the user never returns to eolas). §4 is corrected below;
-> the open-redirect guard is unchanged.
+> the open-redirect guard is unchanged. The same review also corrected §4 branch 2: the
+> scope-denied 403 must name **only** the required scope and must **not** enumerate the
+> principal's currently-held scopes (in the body or any log line) — `lucos_aithne`
+> local-verification-contract §6.
 
 ## Context
 
@@ -141,7 +144,14 @@ Protected views enforce via a small `@require_scope("…")` decorator (migration
 
 1. **Valid token *and* the required scope** → proceed.
 2. **Valid token, scope missing** → the service's **own styled 403** (not redirect-to-login —
-   the user is signed in; re-login yields the same scopeless token, an infinite loop).
+   the user is signed in; re-login yields the same scopeless token, an infinite loop). The 403
+   names **only** the required scope (e.g. `eolas:admin`) and **MUST NOT** enumerate the scopes
+   the principal currently holds — neither in the response body nor in any associated log line.
+   Echoing the granted set turns an eolas 403 into a cross-service inventory of the principal's
+   estate-wide access (more disclosure than the grant flow needs) and creates a self-contradiction
+   hazard (a page reading "you lack `eolas:admin`" while listing `eolas:admin` among held scopes).
+   Per `lucos_aithne` local-verification-contract §6; the reference impl initially shipped a
+   `Scopes granted: [...]` line plus a full-scope WARNING log and had to drop both.
 3. **No valid token** → redirect to `{AITHNE_ORIGIN}/auth/login?next=<full URL>`.
 
 **Access is the scope — the same test for every principal**, human or agent. Default-deny
