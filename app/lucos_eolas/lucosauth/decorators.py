@@ -2,6 +2,7 @@ from functools import wraps
 import logging
 
 from django.http import HttpResponse
+from django.utils.html import escape
 from django.views.decorators.csrf import csrf_exempt
 
 from .envvars import getUserByKey
@@ -74,15 +75,15 @@ def require_scope(scope):
 			# Branch 2: authenticated (valid JWT) but scope missing → 403
 			if request.user.is_authenticated:
 				logger.warning(
-					"Access denied to %s: scope '%s' required but not in %s",
-					request.path, scope, scopes,
+					"Access denied to %s: principal '%s' lacks required scope '%s'",
+					request.path, request.user.username, scope,
 				)
 				return HttpResponse(
-					f"<html><head><title>Access Denied</title>"
-					f"<meta charset=\"utf-8\"></head><body>"
-					f"<p>You don't have access to this page. "
-					f"Required scope: <code>{scope}</code></p>"
-					f"<nav><a href='/'>&#8592; Home</a></nav></body></html>",
+					"<html><head><title>Access Denied</title>"
+					"<meta charset=\"utf-8\"></head><body>"
+					"<p>You don't have access to this page. "
+					"Required scope: <code>" + escape(scope) + "</code></p>"
+					"<nav><a href='/'>&#8592; Home</a></nav></body></html>",
 					status=403,
 					content_type="text/html; charset=utf-8",
 				)

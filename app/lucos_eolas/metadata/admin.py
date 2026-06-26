@@ -76,16 +76,14 @@ class EolasAdminSite(admin.AdminSite):
 
 		if request.user.is_authenticated:
 			logger.warning(
-				"Admin 403: authenticated principal lacks eolas:admin "
-				"(scopes present: %s)",
-				scopes,
+				"Admin 403: principal '%s' is authenticated but lacks eolas:admin scope",
+				request.user.username,
 			)
 			return HttpResponse(
 				"<html><head><title>Access Denied</title>"
 				"<meta charset=\"utf-8\"></head><body>"
 				"<p>You are signed in but lack the <code>eolas:admin</code> "
 				"scope needed to access this admin area.</p>"
-				"<p>Scopes granted: <code>" + escape(str(scopes)) + "</code></p>"
 				"<p><a href='/'>&#8592; Home</a></p>"
 				"</body></html>",
 				status=403,
