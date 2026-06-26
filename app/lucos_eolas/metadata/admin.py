@@ -1,8 +1,11 @@
+import logging
+
 from django.contrib import admin
 from .models import *
 from .signals import metadata_post_delete
 from .utils_case import smart_lower, smart_title
-from django.utils.html import format_html, format_html_join
+from django.utils.html import escape, format_html, format_html_join
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.urls import reverse, path
 from django.utils.translation import gettext_lazy as _
 from ..lucosauth import views as auth_views
@@ -11,15 +14,83 @@ from django.contrib.admin.sites import AlreadyRegistered
 from django.contrib import messages
 from django.core.exceptions import PermissionDenied
 from django.db.models.signals import post_delete
-from django.http import HttpResponseRedirect
+from django.http import HttpResponse, HttpResponseRedirect
 from django.shortcuts import render
 from loganne import updateLoganne
 from urllib.parse import urlencode
 
+logger = logging.getLogger(__name__)
+
+
 class EolasAdminSite(admin.AdminSite):
 	site_title = 'LucOS Eolas'
 	index_title = None
+
+	def has_permission(self, request):
+		"""Grant admin access to principals holding the eolas:admin scope.
+
+		For aithne JWT requests (which always populate request.aithne_scopes),
+		scope is the single source of truth — exactly one check, no is_staff
+		indirection.  The OR branch preserves access for Django test-client
+		users (force_login + is_staff) who have no JWT at all; in production
+		aithne JWTs always populate aithne_scopes so the left side fires first.
+		"""
+		scopes = getattr(request, 'aithne_scopes', [])
+		return "eolas:admin" in scopes or (request.user.is_active and request.user.is_staff)
+
 	def login(self, request):
+		"""Handle requests to the admin login URL.
+
+		Django admin routes here whenever has_permission() returns False.
+		Three cases need different responses:
+
+		1. eolas:admin IS in scopes (JWT was re-minted between the original
+		   /admin/ request and this /admin/login/ redirect, e.g. by the
+		   navbar keepalive) → redirect to the intended destination.
+		   Without this, a re-minted token with the correct scope would still
+		   show a 403 because has_permission() read the old token.
+
+		2. No eolas:admin + authenticated (valid JWT, wrong scope) → styled
+		   403.  A redirect would loop: re-login yields the same token.
+
+		3. No valid JWT → redirect to aithne login so the user can
+		   authenticate and be redirected back.
+		"""
+		scopes = getattr(request, 'aithne_scopes', [])
+
+		if "eolas:admin" in scopes:
+			# Scope now present (re-minted since the redirect was issued).
+			# Redirect to the originally intended URL, validated as an
+			# internal path to prevent open-redirect attacks (/admin/login/
+			# is a public URL not wrapped by admin_view(), so ?next= is
+			# attacker-controlled).
+			next_param = request.GET.get('next', '')
+			if next_param and url_has_allowed_host_and_scheme(
+				url=next_param, allowed_hosts={request.get_host()}
+			):
+				next_url = next_param
+			else:
+				next_url = reverse('admin:index', current_app=self.name)
+			logger.debug("Admin login: eolas:admin now present — redirecting to %s", next_url)
+			return HttpResponseRedirect(next_url)
+
+		if request.user.is_authenticated:
+			logger.warning(
+				"Admin 403: principal '%s' is authenticated but lacks eolas:admin scope",
+				request.user.username,
+			)
+			return HttpResponse(
+				"<html><head><title>Access Denied</title>"
+				"<meta charset=\"utf-8\"></head><body>"
+				"<p>You are signed in but lack the <code>eolas:admin</code> "
+				"scope needed to access this admin area.</p>"
+				"<p><a href='/'>&#8592; Home</a></p>"
+				"</body></html>",
+				status=403,
+				content_type="text/html; charset=utf-8",
+			)
+
+		logger.debug("Admin login: no valid JWT — redirecting to aithne")
 		return auth_views.loginview(request)
 eolasadmin = EolasAdminSite()
 

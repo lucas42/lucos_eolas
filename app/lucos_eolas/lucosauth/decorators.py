@@ -1,7 +1,15 @@
 from functools import wraps
-from .envvars import getUserByKey
+import logging
+
 from django.http import HttpResponse
+from django.utils.html import escape
 from django.views.decorators.csrf import csrf_exempt
+
+from .envvars import getUserByKey
+from .aithne import aithne_login_redirect
+
+logger = logging.getLogger(__name__)
+
 
 def api_auth(func=None, *, required_scope=None):
 	"""Decorator that enforces Bearer/key authentication on a view.
@@ -37,4 +45,55 @@ def api_auth(func=None, *, required_scope=None):
 	# Support both @api_auth and @api_auth(required_scope='...')
 	if func is not None:
 		return decorator(func)
+	return decorator
+
+
+def require_scope(scope):
+	"""Decorator that enforces aithne JWT authentication and scope on a view.
+
+	Three-branch pattern (ADR-0002 §4):
+	  1. Required scope present → proceed.
+	     (Scopes are only populated when the JWT verifies, so this implies
+	     a valid token — no need to check is_authenticated separately.)
+	  2. Scope absent + authenticated (valid JWT) → styled 403 naming the
+	     missing scope.  Not a redirect — re-login yields the same token,
+	     which would create an infinite loop.
+	  3. Scope absent + not authenticated (no valid JWT) → redirect to
+	     aithne login with the current page as ?next=.
+
+	request.aithne_scopes is populated by AithneAuthMiddleware.
+	"""
+	def decorator(f):
+		@wraps(f)
+		def _decorator(request, *args, **kwargs):
+			scopes = getattr(request, 'aithne_scopes', [])
+
+			# Branch 1: scope present → proceed
+			if scope in scopes:
+				return f(request, *args, **kwargs)
+
+			# Branch 2: authenticated (valid JWT) but scope missing → 403
+			if request.user.is_authenticated:
+				logger.warning(
+					"Access denied to %s: principal '%s' lacks required scope '%s'",
+					request.path, request.user.username, scope,
+				)
+				return HttpResponse(
+					"<html><head><title>Access Denied</title>"
+					"<meta charset=\"utf-8\"></head><body>"
+					"<p>You don't have access to this page. "
+					"Required scope: <code>" + escape(scope) + "</code></p>"
+					"<nav><a href='/'>&#8592; Home</a></nav></body></html>",
+					status=403,
+					content_type="text/html; charset=utf-8",
+				)
+
+			# Branch 3: no valid token → redirect to aithne login
+			logger.warning(
+				"Unauthenticated request to %s — no valid aithne token, redirecting to login",
+				request.path,
+			)
+			return aithne_login_redirect(request)
+
+		return _decorator
 	return decorator

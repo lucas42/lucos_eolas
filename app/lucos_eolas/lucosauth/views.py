@@ -1,21 +1,24 @@
-from django.shortcuts import render, redirect
-from django.contrib.auth import login, authenticate
-from django.http import HttpResponse, Http404
+import logging
+
 from django.utils.http import url_has_allowed_host_and_scheme
-from django import utils
-import os
+
+from .aithne import aithne_login_redirect
+
+logger = logging.getLogger(__name__)
+
 
 def loginview(request):
-	user = None
-	if ('token' in request.GET):
-		user = authenticate(token=request.GET['token'])
-	if user is None:
-		return redirect(os.environ["AUTH_ORIGIN"]+'/authenticate?' + utils.http.urlencode({'redirect_uri': request.build_absolute_uri()}))
-	login(request, user)
-	if ('next' in request.GET):
-		next_url = request.GET['next']
-		if url_has_allowed_host_and_scheme(url=next_url, allowed_hosts={request.get_host()}):
-			if next_url.startswith('/admin/') and user.is_staff is False:
-				return HttpResponse("<html><head><title>Access Denied</title></head><body>Your account doesn't have access to this page.<nav><a href='/'>&lt;- Home</a></nav></body></html>", status=403)
-			return redirect(next_url)
-	return redirect('/')    
+	"""Redirect to aithne login (ADR-0002 §5).
+
+	The aithne_session cookie is set domain-wide by aithne after authentication;
+	AithneAuthMiddleware picks it up automatically on return — no ?token= handling
+	or login() call needed.
+
+	?next= from the incoming query string is validated as an internal path, then
+	forwarded as a full URL so aithne knows which origin to redirect back to.
+	"""
+	next_path = request.GET.get("next", "/")
+	if not url_has_allowed_host_and_scheme(url=next_path, allowed_hosts={request.get_host()}):
+		logger.debug("loginview: rejecting external ?next=%s, falling back to /", next_path)
+		next_path = "/"
+	return aithne_login_redirect(request, next_path)
