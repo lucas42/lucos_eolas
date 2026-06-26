@@ -11,6 +11,12 @@
 > (`GET`/`HEAD`) access to the UI, including the Django admin. This replaces an earlier,
 > more complex `principal_class`-based access model.
 
+> **Correction 2026-06-26 (lucas42's review of #324):** §4 originally specified the
+> `?next=` login-redirect value as an *internal path*. That is wrong — it must be a
+> **full, absolute, same-origin URL** (login happens on aithne's origin, so a bare path
+> resolves relative to aithne and the user never returns to eolas). §4 is corrected below;
+> the open-redirect guard is unchanged.
+
 ## Context
 
 `lucos_eolas` and `lucos_contacts` are the estate's two Django services that authenticate
@@ -136,7 +142,7 @@ Protected views enforce via a small `@require_scope("…")` decorator (migration
 1. **Valid token *and* the required scope** → proceed.
 2. **Valid token, scope missing** → the service's **own styled 403** (not redirect-to-login —
    the user is signed in; re-login yields the same scopeless token, an infinite loop).
-3. **No valid token** → redirect to `{AITHNE_ORIGIN}/auth/login?next=<path>`.
+3. **No valid token** → redirect to `{AITHNE_ORIGIN}/auth/login?next=<full URL>`.
 
 **Access is the scope — the same test for every principal**, human or agent. Default-deny
 (`lucos_aithne` ADR-0001 §6) is the protection: a principal reaches a view only if granted its
@@ -146,9 +152,17 @@ access is scope-based, a future production agent scope (e.g. the planned human-a
 data-suggestions feature) needs no change to this model — it is just another granted scope a
 dedicated endpoint would check.
 
-The `?next=` value is validated as an **internal path only**
-(`url_has_allowed_host_and_scheme(allowed_hosts={request.get_host()})`, falling back to `/`)
-to close the open-redirect risk.
+The `?next=` value passed to aithne must be a **full, absolute, same-origin URL** —
+`request.build_absolute_uri()` (eolas's own origin + the current path) — **not a bare path**.
+Login happens on *aithne's* origin, so after authenticating aithne redirects the browser to
+`next`; a bare path (`/admin/`) would resolve relative to aithne (`{AITHNE_ORIGIN}/admin/`) and
+the user would land on aithne, never returning to eolas (the round-trip gets stuck). Only an
+absolute URL on eolas's own origin brings them back. It is still built **server-side** (never
+reflected from a caller-supplied `?next=`) and validated as same-origin before sending
+(`url_has_allowed_host_and_scheme(url, allowed_hosts={request.get_host()}, require_https=request.is_secure())`,
+falling back to `/`) to close the open-redirect risk. aithne re-validates host-side against
+`l42.eu`/`*.l42.eu` (or a `localhost` origin in dev — `lucos_aithne` `redirect.go`), but eolas
+must not emit an off-origin `next` in the first place.
 
 **Dev-only `render-ui`.** In development (`ENVIRONMENT == "development"`), the `render-ui` scope
 grants **read-only** (`GET`/`HEAD`) access to the UI, including the Django admin, so `lucos-ux`
