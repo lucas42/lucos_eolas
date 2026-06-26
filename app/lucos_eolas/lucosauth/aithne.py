@@ -63,6 +63,8 @@ class _LKGJWKSClient:
                 fallback = self._last_good_key
             if fallback is None:
                 # Cold start with no cached key: fail closed.
+                safe_msg = re.sub(r'[\x00-\x1f\x7f]', '', str(e))
+                logger.warning("JWKS fetch failed at cold start (no cached key — failing closed): %s", safe_msg)
                 raise
             safe_msg = re.sub(r'[\x00-\x1f\x7f]', '', str(e))
             logger.warning("JWKS fetch failed (using last-known-good): %s", safe_msg)
@@ -113,9 +115,9 @@ def verify_aithne_token(token_str):
         scopes = payload.get("scopes") or []
         sub = payload["sub"]
         return (principal_class, sub, scopes)
-    except Exception:
+    except Exception as e:
         # Expected noise: expired, bad signature, etc. Log at DEBUG only.
-        logger.debug("JWT verification failed: %s", type(Exception).__name__)
+        logger.debug("JWT verification failed: %s", type(e).__name__)
         return None
 
 
