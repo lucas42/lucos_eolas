@@ -5,6 +5,7 @@ from .models import *
 from .signals import metadata_post_delete
 from .utils_case import smart_lower, smart_title
 from django.utils.html import escape, format_html, format_html_join
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.urls import reverse, path
 from django.utils.translation import gettext_lazy as _
 from ..lucosauth import views as auth_views
@@ -59,8 +60,17 @@ class EolasAdminSite(admin.AdminSite):
 
 		if "eolas:admin" in scopes:
 			# Scope now present (re-minted since the redirect was issued).
-			# Redirect to the originally intended URL.
-			next_url = request.GET.get('next') or reverse('admin:index', current_app=self.name)
+			# Redirect to the originally intended URL, validated as an
+			# internal path to prevent open-redirect attacks (/admin/login/
+			# is a public URL not wrapped by admin_view(), so ?next= is
+			# attacker-controlled).
+			next_param = request.GET.get('next', '')
+			if next_param and url_has_allowed_host_and_scheme(
+				url=next_param, allowed_hosts={request.get_host()}
+			):
+				next_url = next_param
+			else:
+				next_url = reverse('admin:index', current_app=self.name)
 			logger.debug("Admin login: eolas:admin now present — redirecting to %s", next_url)
 			return HttpResponseRedirect(next_url)
 
