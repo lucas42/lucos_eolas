@@ -575,6 +575,24 @@ class ContentNegotiationTest(SimpleTestCase):
 		self.assertEqual(response.status_code, 303)
 		self.assertIn('/change/', response['Location'])
 
+	def test_hyphenated_pk_rdf_accept_redirects_to_data(self):
+		"""Hyphenated pks (e.g. ISO 639 art-x-* codes) must reach the entrypoint, not fall through to admin login."""
+		response = self.client.get('/metadata/language/art-x-ewok/', HTTP_ACCEPT='application/rdf+xml')
+		self.assertEqual(response.status_code, 303)
+		self.assertIn('/data/', response['Location'])
+
+	def test_hyphenated_pk_html_accept_redirects_to_change(self):
+		"""Hyphenated pks must redirect to /change/ for HTML requests, not to /login/."""
+		response = self.client.get('/metadata/language/art-x-ewok/', HTTP_ACCEPT='text/html')
+		self.assertEqual(response.status_code, 303)
+		self.assertIn('/change/', response['Location'])
+
+	def test_add_pk_does_not_match_entrypoint(self):
+		"""The literal pk 'add' must not be handled by thing_entrypoint (Django admin uses /metadata/<type>/add/ for new-object forms)."""
+		response = self.client.get('/metadata/language/add/')
+		# Django admin redirects to login, never 303 See Other
+		self.assertNotEqual(response.status_code, 303)
+
 
 class SafeLocalRedirectTest(SimpleTestCase):
 	"""_safe_local_redirect blocks external URLs and passes through relative paths."""
