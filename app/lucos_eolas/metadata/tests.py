@@ -1,7 +1,7 @@
 import json
 from django.core.cache import cache
-from django.test import SimpleTestCase, TestCase, override_settings
-from django.contrib.auth.models import User
+from django.test import SimpleTestCase, TestCase, RequestFactory, override_settings
+from django.contrib.auth.models import User, AnonymousUser
 from django.http import QueryDict
 from unittest.mock import patch, MagicMock, call
 from django.core.exceptions import ValidationError
@@ -1708,3 +1708,48 @@ class SmartTitleTest(SimpleTestCase):
 	def test_single_lowercase_word(self):
 		"""A single lowercase word is capitalised."""
 		self.assertEqual(smart_title('road'), 'Road')
+
+
+# ─── EolasAdminSite.login() — local page vs redirect when aithne is ───────────
+#     unreachable (lucas42/lucos_eolas#333)
+
+class EolasAdminSiteLoginUnavailableTest(SimpleTestCase):
+	"""The no-valid-JWT branch of EolasAdminSite.login() renders a local
+	"sign-in unavailable" page instead of redirecting into a dead aithne when
+	aithne is known to be unreachable."""
+
+	def setUp(self):
+		from .admin import EolasAdminSite
+		self.factory = RequestFactory()
+		self.site = EolasAdminSite()
+
+	def _make_unauth_request(self, path='/admin/login/'):
+		request = self.factory.get(path)
+		request.user = AnonymousUser()
+		request.aithne_scopes = []
+		return request
+
+	def test_renders_local_page_when_unreachable(self):
+		# is_aithne_reachable is imported at module level into admin.py
+		# (`from ..lucosauth.aithne import ... is_aithne_reachable`), so the
+		# name to patch is the binding in the *consuming* module.
+		request = self._make_unauth_request()
+		with patch('lucos_eolas.metadata.admin.is_aithne_reachable', return_value=False):
+			response = self.site.login(request)
+		self.assertEqual(response.status_code, 503)
+		self.assertIn(b'temporarily unavailable', response.content.lower())
+
+	def test_does_not_redirect_when_unreachable(self):
+		request = self._make_unauth_request()
+		with patch('lucos_eolas.metadata.admin.is_aithne_reachable', return_value=False):
+			response = self.site.login(request)
+		self.assertNotEqual(response.status_code, 302)
+
+	def test_still_redirects_when_reachable(self):
+		"""Existing behaviour is preserved when aithne is up."""
+		request = self._make_unauth_request()
+		with patch('lucos_eolas.metadata.admin.is_aithne_reachable', return_value=True), \
+			 patch.dict('os.environ', {'AITHNE_ORIGIN': 'http://aithne.test'}):
+			response = self.site.login(request)
+		self.assertEqual(response.status_code, 302)
+		self.assertIn('/auth/login', response['Location'])

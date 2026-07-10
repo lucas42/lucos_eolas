@@ -6,7 +6,7 @@ from django.utils.html import escape
 from django.views.decorators.csrf import csrf_exempt
 
 from .envvars import getUserByKey
-from .aithne import aithne_login_redirect
+from .aithne import aithne_login_redirect, aithne_unavailable_response, is_aithne_reachable
 
 logger = logging.getLogger(__name__)
 
@@ -59,7 +59,10 @@ def require_scope(scope):
 	     missing scope.  Not a redirect — re-login yields the same token,
 	     which would create an infinite loop.
 	  3. Scope absent + not authenticated (no valid JWT) → redirect to
-	     aithne login with the current page as ?next=.
+	     aithne login with the current page as ?next=.  If aithne itself
+	     is known unreachable (see is_aithne_reachable()), render a local
+	     "sign-in unavailable" page instead of redirecting into a dead
+	     aithne.
 
 	request.aithne_scopes is populated by AithneAuthMiddleware.
 	"""
@@ -88,7 +91,12 @@ def require_scope(scope):
 					content_type="text/html; charset=utf-8",
 				)
 
-			# Branch 3: no valid token → redirect to aithne login
+			# Branch 3: no valid token → redirect to aithne login, unless aithne
+			# itself is known unreachable — in that case redirecting just hands
+			# the visitor a dead link with no explanation, so render a local
+			# "sign-in unavailable" page instead.
+			if not is_aithne_reachable():
+				return aithne_unavailable_response(request)
 			logger.warning(
 				"Unauthenticated request to %s — no valid aithne token, redirecting to login",
 				request.path,

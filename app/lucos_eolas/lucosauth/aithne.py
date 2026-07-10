@@ -5,6 +5,8 @@ Public API:
   verify_aithne_token(token_str)                      -> (principal_class, sub, scopes) or None
   map_principal(request, principal_class, sub, scopes) -> None
   aithne_login_redirect(request, next_path=None)       -> HttpResponseRedirect
+  aithne_unavailable_response(request)                 -> HttpResponse (503, local page)
+  is_aithne_reachable()                                -> bool
   get_aithne_origin()                                  -> str
 """
 
@@ -19,10 +21,17 @@ from jwt import PyJWKClient, PyJWKClientError
 
 logger = logging.getLogger(__name__)
 
-# Import PyJWKClientNetworkError if available (PyJWT >= 2.4.0); fall back to
-# the base class so the except clause still catches network failures.
+# PyJWT exports PyJWKClientConnectionError (added in 2.8.0) specifically for a
+# JWKS fetch failing due to a connection/network error — as opposed to the
+# broader PyJWKClientError, which also covers e.g. "kid not found" once the
+# endpoint has been reached successfully.  (PyJWKClientNetworkError never
+# existed in PyJWT's public API — the name below is kept only as our own
+# internal alias for readability at call sites.)  Older PyJWT versions before
+# 2.8.0 don't export it — fall back to the base class so the except clauses
+# below still catch *something*, though at that point they can no longer
+# distinguish a genuine network failure from other JWKS client errors.
 try:
-    from jwt import PyJWKClientNetworkError
+    from jwt import PyJWKClientConnectionError as PyJWKClientNetworkError
 except ImportError:
     PyJWKClientNetworkError = PyJWKClientError
 
@@ -41,11 +50,19 @@ class _LKGJWKSClient:
     Falls back to the last successfully fetched signing key when a network
     error occurs.  Cold-start (no cached key) fails closed — the token is
     rejected and the caller treats the request as unauthenticated.
+
+    Also tracks whether the *most recent* fetch attempt hit a network error
+    (`_unreachable`), regardless of whether a last-known-good key let
+    verification succeed anyway.  This is a best-effort reachability signal
+    for aithne itself (see `is_aithne_reachable()` below) — it is only ever
+    updated when a token is actually presented for verification, so it can
+    lag reality until the next token-bearing request comes in.
     """
 
     def __init__(self, uri):
         self._client = PyJWKClient(uri, cache_keys=True, lifespan=300)
         self._last_good_key = None
+        self._unreachable = False
         self._lock = threading.Lock()
 
     def get_signing_key_from_jwt(self, token):
@@ -53,17 +70,24 @@ class _LKGJWKSClient:
             key = self._client.get_signing_key_from_jwt(token)
             with self._lock:
                 self._last_good_key = key
+                self._unreachable = False
             return key
         except PyJWKClientNetworkError as e:
             with self._lock:
                 fallback = self._last_good_key
+                self._unreachable = True
             safe_msg = re.sub(r'[\x00-\x1f\x7f]', '', str(e))
             if fallback is None:
                 logger.warning("JWKS fetch failed at cold start (no cached key — failing closed): %s", safe_msg)
                 raise
             logger.warning("JWKS fetch failed (using last-known-good): %s", safe_msg)
             return fallback
-        # Any other PyJWKClientError (e.g. kid not found after refresh) propagates normally.
+        # Any other PyJWKClientError (e.g. kid not found after refresh) propagates normally —
+        # that means the JWKS endpoint WAS reached, so it doesn't affect _unreachable.
+
+    def is_unreachable(self):
+        with self._lock:
+            return self._unreachable
 
 
 # Module-level client shared across all requests.
@@ -79,6 +103,17 @@ def _set_jwks_client(client):
 def get_aithne_origin():
     """Return AITHNE_ORIGIN, always fresh from the environment (testable)."""
     return os.environ.get("AITHNE_ORIGIN", "https://aithne.l42.eu")
+
+
+def is_aithne_reachable():
+    """Best-effort signal for whether aithne is currently reachable.
+
+    Backed by `_LKGJWKSClient.is_unreachable()` — see that class's docstring
+    for what "best-effort" means here.  Used to decide whether it's safe to
+    redirect an unauthenticated visitor to aithne's login page, or whether
+    that redirect would just hand them a dead link.
+    """
+    return not _jwks_client.is_unreachable()
 
 
 def verify_aithne_token(token_str):
@@ -195,3 +230,33 @@ def aithne_login_redirect(request, next_path=None):
     login_url = f"{aithne_origin}/auth/login?{urlencode({'next': next_url})}"
     logger.debug("Redirecting to aithne login (next=%s)", next_url)
     return redirect(login_url)
+
+
+def aithne_unavailable_response(request):
+    """Return a local, lucos_eolas-branded "sign-in unavailable" page.
+
+    Used instead of aithne_login_redirect() when aithne itself is known to be
+    unreachable — redirecting to a dead aithne just hands the visitor their
+    browser's own "can't reach this page" error, with no explanation and no
+    retry guidance.  Returns 503 (Service Unavailable): sign-in genuinely
+    can't proceed right now, and it isn't the visitor's fault.
+
+    Rendered as inline HTML rather than a template, matching the existing
+    403 pages in decorators.py / metadata/admin.py — this repo has no
+    non-admin base template to extend.
+    """
+    from django.http import HttpResponse
+
+    logger.warning(
+        "aithne unreachable — rendering local sign-in-unavailable page for %s instead of redirecting",
+        request.path,
+    )
+    return HttpResponse(
+        "<html><head><title>Sign-in unavailable</title>"
+        "<meta charset=\"utf-8\"></head><body>"
+        "<p>Sign-in is temporarily unavailable. Try again in a few minutes.</p>"
+        "<pre>Couldn't reach the authentication service (aithne) to verify your session.</pre>"
+        "</body></html>",
+        status=503,
+        content_type="text/html; charset=utf-8",
+    )

@@ -9,6 +9,7 @@ from django.utils.http import url_has_allowed_host_and_scheme
 from django.urls import reverse, path
 from django.utils.translation import gettext_lazy as _
 from ..lucosauth import views as auth_views
+from ..lucosauth.aithne import aithne_unavailable_response, is_aithne_reachable
 from django.apps import apps
 from django.contrib.admin.sites import AlreadyRegistered
 from django.contrib import messages
@@ -54,7 +55,10 @@ class EolasAdminSite(admin.AdminSite):
 		   403.  A redirect would loop: re-login yields the same token.
 
 		3. No valid JWT → redirect to aithne login so the user can
-		   authenticate and be redirected back.
+		   authenticate and be redirected back.  If aithne itself is known
+		   unreachable (see is_aithne_reachable()), render a local
+		   "sign-in unavailable" page instead of redirecting into a dead
+		   aithne.
 		"""
 		scopes = getattr(request, 'aithne_scopes', [])
 
@@ -89,6 +93,9 @@ class EolasAdminSite(admin.AdminSite):
 				status=403,
 				content_type="text/html; charset=utf-8",
 			)
+
+		if not is_aithne_reachable():
+			return aithne_unavailable_response(request)
 
 		logger.debug("Admin login: no valid JWT — redirecting to aithne")
 		return auth_views.loginview(request)
