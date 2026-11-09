@@ -19,7 +19,6 @@
                 "sha256:034cc8cbf72d00553b4be256703ac545120b4e50af13b49dec99da899aeeecb4",
                 "sha256:f9596a2434512686473d50f96ff6207fbba49ae1a785dfac614df4aeb085674d"
             ],
-            "index": "pypi",
             "markers": "python_version >= '3.11'",
             "version": "==3.13.0"
         },
@@ -385,12 +384,12 @@
         },
         "django": {
             "hashes": [
-                "sha256:141efee6ec64d1db6db90683bf734c550102450f444fb099063b0be1bd27d991",
-                "sha256:a1e92451ccb8b514e91bbb3b6d186d20b4030558f116b5d9de6535455ff210b7"
+                "sha256:a0530e3fdac55d34ccc5893c36f6c57d7a7083064f3d414537e51473648b3290",
+                "sha256:b5d2d9e35295065d13b1927b3f19a59bd119f737aa6299def14ccca1ae3c8c0d"
             ],
             "index": "pypi",
             "markers": "python_version >= '3.12'",
-            "version": "==6.1.2"
+            "version": "==6.1.3"
         },
         "gunicorn": {
             "hashes": [
@@ -424,18 +423,18 @@
                 "c"
             ],
             "hashes": [
-                "sha256:6574f23fd79bf129ee0616b49f6e358faf7ae1bf3a362d2ad599cf8f9c3d4935",
-                "sha256:d592e88a077e01ff57f22d59f16e828b92f2b2d9f439b6679d582b48d74cf306"
+                "sha256:86c135a9a6f5e98404975c5787e620bf436a7807e088baebd1b20fa48d3b4b4f",
+                "sha256:ca50af6072ba9ea6866f33021975230c2555d7bfdb9d8f94ca3af5c3d1bf2167"
             ],
             "markers": "python_version >= '3.10'",
-            "version": "==3.3.7"
+            "version": "==3.3.8"
         },
         "psycopg-c": {
             "hashes": [
-                "sha256:cf63d929860ce5203a86d9e3089a516c399bb32d621d3c0f210044a1d46054a1"
+                "sha256:af81a99b02600e6c2cdf468509c04bb8208500ea60d63f70616e32ea9cb2758f"
             ],
             "markers": "python_version >= '3.10'",
-            "version": "==3.3.7"
+            "version": "==3.3.8"
         },
         "pycparser": {
             "hashes": [
@@ -487,7 +486,6 @@
                 "sha256:3be5a72d04c873d690d7c6dedd33d6fae2ef82759881ceec02fc2efd0cba564f",
                 "sha256:ca722573f848ff2d30e40ea30f53a104b7dea7635ea9285891263eb2c58fb6e7"
             ],
-            "index": "pypi",
             "markers": "python_version >= '3.10'",
             "version": "==0.6.1"
         },
